@@ -1,0 +1,9 @@
+gravitySim.sln
+gravitySim.vcxproj
+gravitySim.vcxproj.filters
+gravitySim.vcxproj.user
+x64
+Debug
+outdated
+.vs
+imgui.ini
