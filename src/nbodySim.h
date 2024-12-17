@@ -3,7 +3,7 @@
 
 #include "octtree.h"
 #include "ffthelper.h"
-#include "enums.h"
+#include "common.h"
 #include <vector>
 
 float E = 2.71828182845904523536;

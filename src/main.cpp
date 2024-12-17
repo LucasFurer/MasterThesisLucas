@@ -25,6 +25,7 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 #include "visquad.h"
+#include "scene.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -35,7 +36,7 @@ void processInput(GLFWwindow* window);
 unsigned int screenWidth = 1920;
 unsigned int screenHeight = 1080;
 
-Camera camera(glm::vec3(0.0f, 0.0f, -130.0f));
+Scene* scenes[2];
 float lastX = 400;
 float lastY = 300;
 bool firstMouse = true;
@@ -49,7 +50,7 @@ float lastFrame = 0.0f; // Time of last frame
 int gravType = 0;
 int frameCounter = 0;
 int frameCounted = 0;
-int visSelect = 0;
+int sceneSelect = 0;
 
 int main(void)
 {
@@ -104,29 +105,36 @@ int main(void)
 
     // global stuff
     // ---------------------------------------
-    NbodySim simulation = NbodySim(rainbowCube, naive, 1.0f, 9999999, 1500, 0.0001f, 0.001f, 1.0f, 30, 0);
-    VisQuad potSimulation(16 * 8, 9 * 8, 0.1f, 30, 1.0f, 1.0f);
-    //MoldPlane simulation(1920 / 4, 1080 / 4, 50000, 0.7f, 3.0f, 0.1f, 60);
-
-
-    std::vector<Buffer*> objects = { simulation.particlesBuffer };
-    Buffer quad(verticesQuad, sizeof(verticesQuad), indicesQuad, sizeof(indicesQuad), posUV);
-    std::vector<Buffer*> potObjects = { &quad };
-    
+    NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 1500, 0.0001f, 0.001f, 1.0f, 30, 0);
     glm::mat4 particleModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-    std::vector<glm::mat4> transforms = { particleModel };
+    Shader shaderNbody("shaders/shader.vs", "shaders/shader.fs");
 
+    Renderable renderable1(GL_POINTS, particleModel, simulation.particlesBuffer, &shaderNbody, nullptr);
+    Renderable renderable2(GL_LINES, particleModel, simulation.boxBuffer, &shaderNbody, nullptr);
+    Renderable* renderables1 = new Renderable[2]{ renderable1, renderable2 };   // delete
+
+    Camera cameraNbody(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f,1.0f,0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
+
+    Scene nbodyScene(&cameraNbody, &screenWidth, &screenHeight, renderables1, 2 * sizeof(Renderable));
+
+
+    VisQuad potSimulation(16 * 8, 9 * 8, 0.1f, 30, 1.0f, 1.0f);
+    Buffer quad(verticesQuad, sizeof(verticesQuad), indicesQuad, sizeof(indicesQuad), posUV);
     Shader shaderQuad("shaders/shaderQuad.vs", "shaders/shaderQuad.fs");
-    Shader shader("shaders/shader.vs", "shaders/shader.fs");
-    shader.use();
-    //Shader shaderQuad("shaders/shaderQuad.vs", "shaders/shaderQuad.fs");
-    //shaderQuad.use();
-   
-    float prevVal = 0.0f;
+    Renderable renderable3(GL_TRIANGLES, glm::mat4(1.0f), &quad, &shaderQuad, potSimulation.texture);
+    Renderable* renderables2 = new Renderable[1]{ renderable3 };    // delete
+
+    Camera cameraQuad(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
+
+    Scene quadScene(&cameraQuad, &screenWidth, &screenHeight, renderables2, 1 * sizeof(Renderable));
+
+
+    scenes[0] = &nbodyScene;
+    scenes[1] = &quadScene;
+
+
     float lastTimePressed = 0.0f;
-
     float lastFrameUpdate = 0.0f;
-
 
 
     // render loop
@@ -135,38 +143,38 @@ int main(void)
     glPointSize(4.0f);
     while (!glfwWindowShouldClose(window))
     {
-        if (glfwGetTime() - lastTimePressed > 0.2f)
+        // initial
+        processInput(window);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        float timeBeginFrame = glfwGetTime();
+        // initial
+
+
+        if (timeBeginFrame - lastTimePressed > 0.2f)
         {
             if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
                 simulation.showLevel += 1;
             if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
                 simulation.showLevel -= 1;
 
-            lastTimePressed = glfwGetTime();
+            lastTimePressed = timeBeginFrame;
         }
 
 
-        // initial
-        processInput(window);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        float timeValue = glfwGetTime();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        // initial
 
         
 
-        if (visSelect == 0)
+        if (sceneSelect == 0)
         { 
-            //std::cout << "total time for frame: " << timeValue - prevVal << std::endl;
-            prevVal = timeValue;
-
             if (gravType == 0)
             {
-                //std::cout << "im in barnes hut" << std::endl;
                 simulation.setAccelerationType(barnesHut);
                 simulation.simulate();
             }
@@ -176,30 +184,7 @@ int main(void)
                 simulation.simulate();
             }
 
-
-
-
-
-            shader.use();
-
-            glm::mat4 view = camera.GetViewMatrix();
-            shader.setMat4("view", view);
-
-            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)screenWidth / (float)screenHeight, 0.01f, 1000.0f);
-            shader.setMat4("projection", projection);
-
-        
-
-            for (Buffer* buff : objects)
-            {
-                shader.setMat4("model", transforms[0]);
-
-                objects[0]->BindVAO();
-                glDrawArrays(GL_POINTS, 0, simulation.particlesSize/sizeof(Particle));
-
-                //buff->BindVAO();
-                //glDrawElements(GL_TRIANGLES, buff->elementAmount, GL_UNSIGNED_INT, 0);
-            }
+            scenes[sceneSelect]->Render();
 
             if (gravType == 0)
             {
@@ -210,20 +195,10 @@ int main(void)
         }
         else
         {
-            shaderQuad.use();
             potSimulation.updateVisual();
-
-            shaderQuad.setInt("planeTexture", 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, potSimulation.texture->TEX);
-            shaderQuad.use();
-
-            for (Buffer* buff : potObjects)
-            {
-                buff->BindVAO();
-                glDrawElements(GL_TRIANGLES, buff->elementAmount, GL_UNSIGNED_INT, 0);
-            }
+            scenes[sceneSelect]->Render();
         }
+
 
         
 
@@ -247,8 +222,8 @@ int main(void)
         //static float myVariable = 0.0f;
         //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
 
-        ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
-        if (visSelect == 0) 
+        ImGui::SliderInt("gravitySim <-> potentialSolver", &sceneSelect, 0, 1);
+        if (sceneSelect == 0)
         { 
             ImGui::SliderInt("Barnes&Hut <-> naive: ", &gravType, 0, 1);
             if (gravType == 0)
@@ -270,6 +245,9 @@ int main(void)
         lastFrame = currentFrame;
         // final
     }
+
+    //delete[] renderables1;
+    //delete[] renderables2;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -305,13 +283,13 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastY = ypos;
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        camera.ProcessMouseMovement(xoffset, yoffset);
+        scenes[sceneSelect]->camera->processMouseMovement(xoffset, yoffset);
     }
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    scenes[sceneSelect]->camera->processMouseScroll(static_cast<float>(yoffset));
 }
 
 void processInput(GLFWwindow* window)
@@ -320,11 +298,11 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        scenes[sceneSelect]->camera->processKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        scenes[sceneSelect]->camera->processKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        scenes[sceneSelect]->camera->processKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        scenes[sceneSelect]->camera->processKeyboard(RIGHT, deltaTime);
 }
