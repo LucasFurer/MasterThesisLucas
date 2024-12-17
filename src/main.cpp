@@ -203,8 +203,6 @@ int main(void)
         
 
 
-
-
         frameCounter++;
         if (glfwGetTime() - lastFrameUpdate > 1.0f)
         {
