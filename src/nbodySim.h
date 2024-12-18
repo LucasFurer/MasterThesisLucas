@@ -21,7 +21,7 @@ public:
     Buffer* particlesBuffer;
 
     std::vector<LineSegment> lineSegments;
-    Buffer* boxBuffer;
+    Buffer* boxBuffer = new Buffer();
 
     AccelerationType accelerationType;
     float t;
@@ -49,7 +49,7 @@ public:
         particles = new Particle[particleAmount];
 
         float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-        particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize/sizeof(Particle)), posCol);
+        particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize/sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
         delete[] particlesToBuffer;
     }
 
@@ -127,7 +127,7 @@ public:
             }
 
             float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol);
+            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
             delete[] particlesToBuffer;
         }
         break;
@@ -179,7 +179,7 @@ public:
                 particles[i] = Particle(pos, speed, col, 1.0f);
             }
             float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol);
+            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
             delete[] particlesToBuffer;
         }
         break;
@@ -246,7 +246,6 @@ public:
             particlesBuffer->updateBuffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol);
             delete[] particlesToBuffer;
         }
- 
     }
 
     void particleMeshAcc()
@@ -321,7 +320,7 @@ public:
         root.getLineSegments(lineSegments, 0, showLevel);
 
         float* lineSegmentsToBuffer = LineSegment::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment));
-        boxBuffer = new Buffer(lineSegmentsToBuffer, 12 * sizeof(float) * lineSegments.size(), posCol);
+        boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 12 * sizeof(float) * lineSegments.size(), posCol, GL_DYNAMIC_DRAW);
         delete[] lineSegmentsToBuffer;
     }
 

@@ -12,6 +12,7 @@ float rand(vec2 co)
 
 void main()
 {
+	
 	//float valx = rand(FragPos.xy);
 	//float valy = rand(FragPos.xz);
 	//float valz = rand(FragPos.zy);

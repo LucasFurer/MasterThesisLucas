@@ -36,7 +36,7 @@ void processInput(GLFWwindow* window);
 unsigned int screenWidth = 1920;
 unsigned int screenHeight = 1080;
 
-Scene* scenes[2];
+Scene* scenes[3];
 float lastX = 400;
 float lastY = 300;
 bool firstMouse = true;
@@ -48,9 +48,10 @@ float lastFrame = 0.0f; // Time of last frame
 
 //std::string gravType = "barnesHut";
 int gravType = 0;
+int visSelect = 0;
 int frameCounter = 0;
 int frameCounted = 0;
-int sceneSelect = 0;
+
 
 int main(void)
 {
@@ -105,42 +106,47 @@ int main(void)
 
     // global stuff
     // ---------------------------------------
-    NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 1500, 0.0001f, 0.001f, 1.0f, 30, 0);
+    NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
     glm::mat4 particleModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-    Shader shaderNbody("shaders/shader.vs", "shaders/shader.fs");
+    Shader shaderPoint("shaders/shaderPoint.vs", "shaders/shaderPoint.fs");
+    Shader shaderLine("shaders/shaderLine.vs", "shaders/shaderLine.fs");
 
-    Renderable renderable1(GL_POINTS, particleModel, simulation.particlesBuffer, &shaderNbody, nullptr);
-    Renderable renderable2(GL_LINES, particleModel, simulation.boxBuffer, &shaderNbody, nullptr);
-    Renderable* renderables1 = new Renderable[2]{ renderable1, renderable2 };   // delete
+    Renderable particleRenderable(GL_POINTS, particleModel, simulation.particlesBuffer, &shaderPoint, nullptr);
+    Renderable boxRenderable(GL_LINES, particleModel, simulation.boxBuffer, &shaderLine, nullptr);
+    Renderable* particleBoxRenderables = new Renderable[2]{ particleRenderable, boxRenderable };
+    Renderable* particleRenderables = new Renderable[1]{ particleRenderable };
 
     Camera cameraNbody(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f,1.0f,0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
 
-    Scene nbodyScene(&cameraNbody, &screenWidth, &screenHeight, renderables1, 2 * sizeof(Renderable));
+    Scene nbodyParticleBoxScene(&cameraNbody, &screenWidth, &screenHeight, particleBoxRenderables, 2 * sizeof(Renderable));
+    Scene nbodyParticleScene(&cameraNbody, &screenWidth, &screenHeight, particleRenderables, 1 * sizeof(Renderable));
 
 
     VisQuad potSimulation(16 * 8, 9 * 8, 0.1f, 30, 1.0f, 1.0f);
-    Buffer quad(verticesQuad, sizeof(verticesQuad), indicesQuad, sizeof(indicesQuad), posUV);
+    Buffer quad(verticesQuad, sizeof(verticesQuad), indicesQuad, sizeof(indicesQuad), posUV, GL_STATIC_DRAW);
     Shader shaderQuad("shaders/shaderQuad.vs", "shaders/shaderQuad.fs");
-    Renderable renderable3(GL_TRIANGLES, glm::mat4(1.0f), &quad, &shaderQuad, potSimulation.texture);
-    Renderable* renderables2 = new Renderable[1]{ renderable3 };    // delete
+    Renderable quadRenderable(GL_TRIANGLES, glm::mat4(1.0f), &quad, &shaderQuad, potSimulation.texture);
+    Renderable* quadRenderables = new Renderable[1]{ quadRenderable };
 
     Camera cameraQuad(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
 
-    Scene quadScene(&cameraQuad, &screenWidth, &screenHeight, renderables2, 1 * sizeof(Renderable));
+    Scene quadScene(&cameraQuad, &screenWidth, &screenHeight, quadRenderables, 1 * sizeof(Renderable));
 
-
-    scenes[0] = &nbodyScene;
-    scenes[1] = &quadScene;
+    
+    scenes[0] = &nbodyParticleBoxScene;
+    scenes[1] = &nbodyParticleScene;
+    scenes[2] = &quadScene;
 
 
     float lastTimePressed = 0.0f;
     float lastFrameUpdate = 0.0f;
 
+    
 
     // render loop
     // -----------
     glEnable(GL_DEPTH_TEST);
-    glPointSize(4.0f);
+    glPointSize(20.0f);
     while (!glfwWindowShouldClose(window))
     {
         // initial
@@ -171,32 +177,30 @@ int main(void)
 
         
 
-        if (sceneSelect == 0)
+        if (visSelect == 0)
         { 
             if (gravType == 0)
             {
                 simulation.setAccelerationType(barnesHut);
                 simulation.simulate();
+                //std::cout << simulation.lineSegments.size() * 2 << std::endl;
+                scenes[0]->Render();
             }
             else
             {
                 simulation.setAccelerationType(naive);
                 simulation.simulate();
+
+                scenes[1]->Render();
             }
 
-            scenes[sceneSelect]->Render();
-
-            if (gravType == 0)
-            {
-                simulation.boxBuffer->BindVAO();
-                glDrawArrays(GL_LINES, 0, simulation.lineSegments.size() * 2);
-            }
+           
 
         }
         else
         {
             potSimulation.updateVisual();
-            scenes[sceneSelect]->Render();
+            scenes[2]->Render();
         }
 
 
@@ -220,8 +224,8 @@ int main(void)
         //static float myVariable = 0.0f;
         //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
 
-        ImGui::SliderInt("gravitySim <-> potentialSolver", &sceneSelect, 0, 1);
-        if (sceneSelect == 0)
+        ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
+        if (visSelect == 0)
         { 
             ImGui::SliderInt("Barnes&Hut <-> naive: ", &gravType, 0, 1);
             if (gravType == 0)
@@ -281,13 +285,13 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastY = ypos;
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        scenes[sceneSelect]->camera->processMouseMovement(xoffset, yoffset);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processMouseMovement(xoffset, yoffset);
     }
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    scenes[sceneSelect]->camera->processMouseScroll(static_cast<float>(yoffset));
+    scenes[std::max(2 * visSelect, gravType)]->camera->processMouseScroll(static_cast<float>(yoffset));
 }
 
 void processInput(GLFWwindow* window)
@@ -296,11 +300,11 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        scenes[sceneSelect]->camera->processKeyboard(FORWARD, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        scenes[sceneSelect]->camera->processKeyboard(BACKWARD, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        scenes[sceneSelect]->camera->processKeyboard(LEFT, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        scenes[sceneSelect]->camera->processKeyboard(RIGHT, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(RIGHT, deltaTime);
 }

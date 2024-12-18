@@ -60,7 +60,17 @@ public:
 				glDrawArrays(GL_POINTS, 0, renderables[i].buffer->elementAmount);
 				break;
 			case GL_LINES:
+				view = camera->getViewMatrix();
+				renderables[i].shader->setMat4("view", view);
 
+				projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
+				renderables[i].shader->setMat4("projection", projection);
+
+				renderables[i].shader->setMat4("model", renderables[i].model);
+
+				renderables[i].buffer->BindVAO();
+				glDrawArrays(GL_LINES, 0, renderables[i].buffer->elementAmount);
+				//glDrawArrays(GL_LINES, 0, simulation.lineSegments.size() * 2);
 				break;
 			case GL_TRIANGLES:
 				renderables[i].shader->setInt("planeTexture", 0);
