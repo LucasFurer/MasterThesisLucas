@@ -13,8 +13,8 @@ public:
 	Camera* camera;
 	glm::mat4 view;
 	glm::mat4 projection;
-	unsigned int* screenWidth;
-	unsigned int* screenHeight;
+	//unsigned int* screenWidth;
+	//unsigned int* screenHeight;
 	Renderable* renderables;
 	std::size_t renderablesSize;
 
@@ -22,13 +22,14 @@ public:
 	{
 	}
 
-	Scene(Camera* initCamera, unsigned int* screenWidthReference, unsigned int* screenHeightReference, Renderable* initRenderables, std::size_t initRenderablesSize)
+	Scene(Camera* initCamera, Renderable* initRenderables, std::size_t initRenderablesSize)
 	{
 		camera = initCamera;
 		view = initCamera->getViewMatrix();
-		screenWidth = screenWidthReference;
-		screenHeight = screenHeightReference;
-		projection = glm::perspective(glm::radians(initCamera->Zoom), (float)*screenWidthReference / (float)*screenHeightReference, 0.01f, 1000.0f);
+		//screenWidth = screenWidthReference;
+		//screenHeight = screenHeightReference;
+		projection = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, 1.0f, 1000.0f);
+		//projection = glm::perspective(glm::radians(initCamera->Zoom), (float)*screenWidthReference / (float)*screenHeightReference, 0.01f, 1000.0f);
 		renderables = initRenderables;
 		renderablesSize = initRenderablesSize;
 	}
@@ -50,7 +51,8 @@ public:
 				view = camera->getViewMatrix();
 				renderables[i].shader->setMat4("view", view);
 
-				projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
+				projection = camera->getProjectionMatrix();
+				//projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
 				renderables[i].shader->setMat4("projection", projection);
 
 				renderables[i].shader->setMat4("model", renderables[i].model);
@@ -63,7 +65,8 @@ public:
 				view = camera->getViewMatrix();
 				renderables[i].shader->setMat4("view", view);
 
-				projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
+				projection = camera->getProjectionMatrix();
+				//projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
 				renderables[i].shader->setMat4("projection", projection);
 
 				renderables[i].shader->setMat4("model", renderables[i].model);

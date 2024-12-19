@@ -10,7 +10,9 @@ enum Camera_Movement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP,
+    DOWN
 };
 
 // Default camera values
@@ -38,17 +40,30 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    float nearPlane;
+    float farPlane;
+    bool perspective;
+
+    unsigned int* screenWidth;
+    unsigned int* screenHeight;
+
+
 
     Camera
     (
-        glm::vec3 initPosition, 
-        glm::vec3 up, 
-        float initYaw, 
-        float initPitch, 
-        glm::vec3 initFront, 
-        float initMovementSpeed, 
-        float initSensitivity, 
-        float initZoom
+        glm::vec3 initPosition,
+        glm::vec3 up,
+        float initYaw,
+        float initPitch,
+        glm::vec3 initFront,
+        float initMovementSpeed,
+        float initSensitivity,
+        float initZoom,
+        float initNearPlane,
+        float initFarPlane,
+        bool initPerspective,
+        unsigned int* initScreenWidth,
+        unsigned int* initScreenHeight
     )
     {
         Position = initPosition;
@@ -61,6 +76,12 @@ public:
         MovementSpeed = initMovementSpeed;
         MouseSensitivity = initSensitivity;
         Zoom = initZoom;
+        nearPlane = initNearPlane;
+        farPlane = initFarPlane;
+        perspective = initPerspective;
+
+        screenWidth = initScreenWidth;
+        screenHeight = initScreenHeight;
 
         updateCameraVectors();
     }
@@ -71,18 +92,49 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
+    glm::mat4 getProjectionMatrix()
+    {
+        if (perspective) 
+        { 
+            return glm::perspective(glm::radians(Zoom), (float)*screenWidth / (float)*screenHeight, nearPlane, farPlane);
+        }
+        else 
+        { 
+            /*
+            
+            float halfHeight = tan(glm::radians(Zoom) / 2.0f) * nearPlane; // Half height at nearPlane
+            float halfWidth = halfHeight * aspect;
+
+            std::cout << halfWidth << std::endl;
+            std::cout << halfHeight << std::endl;
+
+            return glm::ortho(
+                -halfWidth, halfWidth,   // left, right
+                -halfHeight, halfHeight, // bottom, top
+                nearPlane, farPlane      // near, far
+            );
+            */
+            float aspect = (float)*screenWidth / (float)*screenHeight;
+            return glm::ortho(-Zoom * 1.0f * aspect, Zoom * 1.0f * aspect, -Zoom * 1.0f, Zoom * 1.0f, nearPlane, farPlane);
+        }
+    }
+
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void processKeyboard(Camera_Movement direction, float deltaTime)
+    void processKeyboard(int key, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD)
+        if (key == GLFW_KEY_W)
             Position += Front * velocity;
-        if (direction == BACKWARD)
+        if (key == GLFW_KEY_S)
             Position -= Front * velocity;
-        if (direction == LEFT)
+        if (key == GLFW_KEY_A)
             Position -= Right * velocity;
-        if (direction == RIGHT)
+        if (key == GLFW_KEY_D)
             Position += Right * velocity;
+        if (key == GLFW_KEY_LEFT_SHIFT)
+            Position += Up * velocity;
+        if (key == GLFW_KEY_LEFT_CONTROL)
+            Position -= Up * velocity;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

@@ -52,6 +52,8 @@ int visSelect = 0;
 int frameCounter = 0;
 int frameCounted = 0;
 
+int per = 1;
+
 
 int main(void)
 {
@@ -116,10 +118,10 @@ int main(void)
     Renderable* particleBoxRenderables = new Renderable[2]{ particleRenderable, boxRenderable };
     Renderable* particleRenderables = new Renderable[1]{ particleRenderable };
 
-    Camera cameraNbody(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f,1.0f,0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
+    Camera cameraNbody(glm::vec3(0.0f, 0.0f, -30.0f), glm::vec3(0.0f,1.0f,0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);
 
-    Scene nbodyParticleBoxScene(&cameraNbody, &screenWidth, &screenHeight, particleBoxRenderables, 2 * sizeof(Renderable));
-    Scene nbodyParticleScene(&cameraNbody, &screenWidth, &screenHeight, particleRenderables, 1 * sizeof(Renderable));
+    Scene nbodyParticleBoxScene(&cameraNbody, particleBoxRenderables, 2 * sizeof(Renderable));
+    Scene nbodyParticleScene(&cameraNbody, particleRenderables, 1 * sizeof(Renderable));
 
 
     VisQuad potSimulation(16 * 8, 9 * 8, 0.1f, 30, 1.0f, 1.0f);
@@ -128,9 +130,9 @@ int main(void)
     Renderable quadRenderable(GL_TRIANGLES, glm::mat4(1.0f), &quad, &shaderQuad, potSimulation.texture);
     Renderable* quadRenderables = new Renderable[1]{ quadRenderable };
 
-    Camera cameraQuad(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f);
+    Camera cameraQuad(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene quadScene(&cameraQuad, &screenWidth, &screenHeight, quadRenderables, 1 * sizeof(Renderable));
+    Scene quadScene(&cameraQuad, quadRenderables, 1 * sizeof(Renderable));
 
     
     scenes[0] = &nbodyParticleBoxScene;
@@ -161,6 +163,15 @@ int main(void)
         float timeBeginFrame = glfwGetTime();
         // initial
 
+        if (per == 1)
+        {
+            cameraNbody.perspective = true;
+        }
+        else
+        {
+            cameraNbody.perspective = false;
+        }
+        
 
         if (timeBeginFrame - lastTimePressed > 0.2f)
         {
@@ -223,6 +234,8 @@ int main(void)
         ImGui::Text(frameOutput.c_str());
         //static float myVariable = 0.0f;
         //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
+
+        ImGui::SliderInt("orthographic <-> perspective", &per, 0, 1);
 
         ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
         if (visSelect == 0)
@@ -300,11 +313,15 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(FORWARD, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_W, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(BACKWARD, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_S, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(LEFT, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_A, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(RIGHT, deltaTime);
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_D, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_LEFT_SHIFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_LEFT_CONTROL, deltaTime);
 }
