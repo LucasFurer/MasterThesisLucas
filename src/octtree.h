@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include "particle.h"
+#include "particles/particle3D.h"
 
 struct LineSegment
 {
@@ -65,7 +65,7 @@ class OctTree
 {
 public:
 	static int maxChildren;
-	static Particle* allParticles;
+	static Particle3D* allParticles;
 	static std::size_t allParticlesSize;
 
 	float totalMass;
@@ -86,7 +86,7 @@ public:
 		glm::vec3 setLowestCorner(std::numeric_limits<float>::infinity());
 		glm::vec3 setHighestCorner(-std::numeric_limits<float>::infinity());
 
-		for (int i = 0; i < allParticlesSize / sizeof(Particle); i++)
+		for (int i = 0; i < allParticlesSize / sizeof(Particle3D); i++)
 		{
 			occupants.push_back(i);
 
@@ -310,7 +310,7 @@ private:
 };
 
 int OctTree::maxChildren = 1;
-Particle* OctTree::allParticles = nullptr;
+Particle3D* OctTree::allParticles = nullptr;
 std::size_t OctTree::allParticlesSize = 0;
 
 #endif

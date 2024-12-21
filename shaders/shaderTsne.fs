@@ -5,11 +5,6 @@ out vec4 FragColor;
 in vec3 FragPos;
 in vec3 FragCol;
 
-float rand(vec2 co)
-{
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
 void main()
 {
 	vec2 coord = gl_PointCoord - vec2(0.5);

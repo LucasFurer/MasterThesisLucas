@@ -1,7 +1,8 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
-enum AccelerationType {
+enum AccelerationType 
+{
     naive,
     barnesHut,
     particleMesh

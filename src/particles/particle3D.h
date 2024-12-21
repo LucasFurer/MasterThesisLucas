@@ -1,21 +1,19 @@
-#ifndef PARTICLE_H
-#define PARTICLE_H
+#ifndef PARTICLE3D_H
+#define PARTICLE3D_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Particle
+class Particle3D
 {
 public:
-    // the program ID
     glm::vec3 position;
     glm::vec3 speed;
     glm::vec3 color;
     float mass;
 
-    // constructor reads and builds the shader
-    Particle(glm::vec3 initPosition, glm::vec3 initSpeed, glm::vec3 initColor, float initMass)
+    Particle3D(glm::vec3 initPosition, glm::vec3 initSpeed, glm::vec3 initColor, float initMass)
     {
         position = initPosition;
         speed = initSpeed;
@@ -23,13 +21,13 @@ public:
         mass = initMass;
     }
 
-    Particle() : position(glm::vec3(0.0f)), speed(glm::vec3(0.0f)), color(glm::vec3(0.0f))
+    Particle3D() : position(glm::vec3(0.0f)), speed(glm::vec3(0.0f)), color(glm::vec3(0.0f))
     {
     }
 
-    static float* ParticleToFloat(Particle* particles, std::size_t particlesSize)
+    static float* Particle3DToFloat(Particle3D* particles, std::size_t particlesSize)
     {
-        int particleAmount = particlesSize / sizeof(Particle);
+        int particleAmount = particlesSize / sizeof(Particle3D);
 
         float* result = new float[6 * particleAmount];
 

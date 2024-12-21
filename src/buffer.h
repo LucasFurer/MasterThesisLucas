@@ -1,11 +1,15 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-enum DataType {
-	posNormColUV,
-	pos,
-	posCol,
-	posUV
+//#include "common.h"
+
+enum DataType
+{
+	pos3DNorm3DCol3DUV2D,
+	pos3D,
+	pos3DCol3D,
+	pos3DUV2D,
+	pos2DCol3D
 };
 
 class Buffer
@@ -46,7 +50,7 @@ public:
 		switch (dataType)
 		{
 		//case pos:
-		case posCol:
+		case pos3DCol3D:
 			if (elementAmount != verticesSize / (6 * sizeof(float)))
 			{
 				std::cout << "tried to update a buffer with a different size of data" << std::endl;
@@ -98,7 +102,7 @@ public:
 
 		switch (dataType)
 		{
-		case posNormColUV:
+		case pos3DNorm3DCol3DUV2D:
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -113,7 +117,7 @@ public:
 			//glBindVertexArray(0);
 			//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			break;
-		case posUV:
+		case pos3DUV2D:
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -133,18 +137,26 @@ public:
 
 		switch (dataType)
 		{
-		case pos:
+		case pos3D:
 			elementAmount = verticesSize / (3 * sizeof(vertices[0]));
 
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 			break;
-		case posCol:
+		case pos3DCol3D:
 			elementAmount = verticesSize / (6 * sizeof(vertices[0]));
 
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+			glEnableVertexAttribArray(1);
+			break;
+		case pos2DCol3D:
+			elementAmount = verticesSize / (5 * sizeof(vertices[0]));
+
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 			glEnableVertexAttribArray(1);
 			break;
 		default:

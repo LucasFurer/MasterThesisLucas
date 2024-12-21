@@ -16,7 +16,7 @@ enum SimulationData {
 class NbodySim
 {
 public:
-    Particle* particles;
+    Particle3D* particles;
     std::size_t particlesSize;
     Buffer* particlesBuffer;
 
@@ -35,7 +35,7 @@ public:
 
     int showLevel;
 
-    NbodySim(Particle* initParticles, std::size_t initParticlesSize, AccelerationType initAccelerationType, float initT, int initSimAmountPerSec)
+    NbodySim(Particle3D* initParticles, std::size_t initParticlesSize, AccelerationType initAccelerationType, float initT, int initSimAmountPerSec)
     {
         particlesSize = initParticlesSize;
         accelerationType = initAccelerationType;
@@ -43,17 +43,17 @@ public:
         lastTimeSimulated = 0.0f;
         simAmountPerSec = initSimAmountPerSec;
 
-        int particleAmount = initParticlesSize / sizeof(Particle);
+        int particleAmount = initParticlesSize / sizeof(Particle3D);
 
         acceleration = new glm::vec3[particleAmount];
-        particles = new Particle[particleAmount];
+        particles = new Particle3D[particleAmount];
 
-        float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-        particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize/sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
+        float* particlesToBuffer = Particle3D::Particle3DToFloat(particles, particlesSize);
+        particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize/sizeof(Particle3D)), pos3DCol3D, GL_DYNAMIC_DRAW);
         delete[] particlesToBuffer;
     }
 
-    NbodySim(SimulationData simulationData, AccelerationType initAccelerationType, float initT, int initSimAmountPerSec, int ParticleAmount, float initGravConst, float initSoftening, float initTheta, int initMeshAmount, int initShowLevel)
+    NbodySim(SimulationData simulationData, AccelerationType initAccelerationType, float initT, int initSimAmountPerSec, int particleAmount, float initGravConst, float initSoftening, float initTheta, int initMeshAmount, int initShowLevel)
     {
         accelerationType = initAccelerationType;
         t = initT;
@@ -68,14 +68,14 @@ public:
         {
         case blueGreenCube:
         {
-            int partSize = ParticleAmount;
-            particlesSize = partSize * sizeof(Particle);
+            //int partSize = ParticleAmount;
+            particlesSize = particleAmount * sizeof(Particle3D);
             
-            particles = new Particle[partSize];
-            acceleration = new glm::vec3[partSize];
+            particles = new Particle3D[particleAmount];
+            acceleration = new glm::vec3[particleAmount];
 
             float sizeParam = 30.0f;
-            for (int i = 0; i < partSize; i++)
+            for (int i = 0; i < particleAmount; i++)
             {
                 glm::vec3 pos = glm::vec3(0.0f);
                 glm::vec3 speed = glm::vec3(0.0f);
@@ -123,24 +123,24 @@ public:
                 }
 
 
-                particles[i] = Particle(pos, speed, col, 1.0f);
+                particles[i] = Particle3D(pos, speed, col, 1.0f);
             }
 
-            float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
+            float* particlesToBuffer = Particle3D::Particle3DToFloat(particles, particlesSize);
+            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle3D)), pos3DCol3D, GL_DYNAMIC_DRAW);
             delete[] particlesToBuffer;
         }
         break;
         case rainbowCube:
         {
-            int partSize = ParticleAmount;
-            particlesSize = partSize * sizeof(Particle);
+            //int partSize = ParticleAmount;
+            particlesSize = particleAmount * sizeof(Particle3D);
 
-            particles = new Particle[partSize];
-            acceleration = new glm::vec3[partSize];
+            particles = new Particle3D[particleAmount];
+            acceleration = new glm::vec3[particleAmount];
 
             float sizeParam = 30.0f;
-            for (int i = 0; i < partSize; i++)
+            for (int i = 0; i < particleAmount; i++)
             {
                 glm::vec3 pos = glm::vec3(0.0f);
                 glm::vec3 speed = glm::vec3(0.0f);
@@ -176,10 +176,10 @@ public:
                     1.0f
                 );
                 
-                particles[i] = Particle(pos, speed, col, 1.0f);
+                particles[i] = Particle3D(pos, speed, col, 1.0f);
             }
-            float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol, GL_DYNAMIC_DRAW);
+            float* particlesToBuffer = Particle3D::Particle3DToFloat(particles, particlesSize);
+            particlesBuffer = new Buffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle3D)), pos3DCol3D, GL_DYNAMIC_DRAW);
             delete[] particlesToBuffer;
         }
         break;
@@ -216,7 +216,7 @@ public:
             }
             
 
-            int particleAmount = particlesSize / sizeof(Particle);
+            int particleAmount = particlesSize / sizeof(Particle3D);
             float maxDis = std::numeric_limits<float>::infinity();
             for (int i = 0; i < particleAmount; i++)
             {
@@ -242,8 +242,8 @@ public:
                 }
             }
 
-            float* particlesToBuffer = Particle::ParticleToFloat(particles, particlesSize);
-            particlesBuffer->updateBuffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle)), posCol);
+            float* particlesToBuffer = Particle3D::Particle3DToFloat(particles, particlesSize);
+            particlesBuffer->updateBuffer(particlesToBuffer, 6 * sizeof(float) * (particlesSize / sizeof(Particle3D)), pos3DCol3D);
             delete[] particlesToBuffer;
         }
     }
@@ -272,7 +272,7 @@ public:
 
     void naiveAcc()
     {
-        int particleAmount = particlesSize / sizeof(Particle);
+        int particleAmount = particlesSize / sizeof(Particle3D);
         glm::vec3 tempAcceleration;
 
         for (int i = 0; i < particleAmount; i++)
@@ -296,7 +296,7 @@ public:
     void barnesHutSimulate()
     {
         //lastTimeSimulated = currentTime;
-        int particleAmount = particlesSize / sizeof(Particle);
+        int particleAmount = particlesSize / sizeof(Particle3D);
         //glm::vec3 tempAcceleration;
 
         OctTree::maxChildren = 5;
@@ -320,11 +320,11 @@ public:
         root.getLineSegments(lineSegments, 0, showLevel);
 
         float* lineSegmentsToBuffer = LineSegment::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment));
-        boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 12 * sizeof(float) * lineSegments.size(), posCol, GL_DYNAMIC_DRAW);
+        boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 12 * sizeof(float) * lineSegments.size(), pos3DCol3D, GL_DYNAMIC_DRAW);
         delete[] lineSegmentsToBuffer;
     }
 
-    glm::vec3 getBarnesHutAcc(OctTree* node, Particle particle)
+    glm::vec3 getBarnesHutAcc(OctTree* node, Particle3D particle)
     {
         glm::vec3 acc(0.0f);
 
