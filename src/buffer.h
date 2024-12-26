@@ -70,6 +70,26 @@ public:
 			glBufferSubData(GL_ARRAY_BUFFER, 0, verticesSize, vertices);
 
 			break;
+		case pos2DCol3D:
+			if (elementAmount != verticesSize / (5 * sizeof(float)))
+			{
+				std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			}
+
+			for (int i = 0; i < verticesSize / sizeof(float); i++)
+			{
+				if (vertices[i] != vertices[i])
+				{
+					std::cout << "encountered nan" << std::endl;
+					vertices[i] = 0.0f;
+				}
+			}
+
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, verticesSize, vertices);
+
+			break;
 		default:
 			std::cout << "invalid BufferType given" << std::endl;
 		}

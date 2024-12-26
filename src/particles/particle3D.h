@@ -21,7 +21,7 @@ public:
         mass = initMass;
     }
 
-    Particle3D() : position(glm::vec3(0.0f)), speed(glm::vec3(0.0f)), color(glm::vec3(0.0f))
+    Particle3D() : position(glm::vec3(0.0f)), speed(glm::vec3(0.0f)), color(glm::vec3(1.0f))
     {
     }
 

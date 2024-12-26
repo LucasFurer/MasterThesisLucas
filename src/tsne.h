@@ -15,9 +15,15 @@ public:
     unsigned int dataPDimension;
 
 	Particle2D* dataQ;
+    Particle2D* dataQPrev;
+    Particle2D* dataQPrevPrev;
 	std::size_t dataQSize;
 	Buffer* dataQBuffer;
 
+    float* dataQDerivative;
+
+    float learnRate;
+    float accelerationRate;
 
 	//TSNE()
 	//{
@@ -26,10 +32,18 @@ public:
     
 	TSNE()
 	{
+        learnRate = 100.0f;
+        accelerationRate = 0.5f;
+
         loadCustomData();
 
         dataQ = new Particle2D[dataPAmount];
+        dataQPrev = new Particle2D[dataPAmount];
+        dataQPrevPrev = new Particle2D[dataPAmount];
         dataQSize = dataPAmount * sizeof(Particle2D);
+
+        dataQDerivative = new float[dataPAmount * 2];
+        memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
 
         float sizeParam = 30.0f;
         for (int i = 0; i < dataPAmount; i++)
@@ -77,9 +91,37 @@ public:
 	{
 		delete[] dataP;
 		delete[] dataQ;
+		delete[] dataQPrev;
+		delete[] dataQPrevPrev;
+        delete[] dataQDerivative;
 	}
     
     void timeStep()
+    {
+        
+        updateDerivativeNaive();
+        
+        Particle2D* temp = dataQPrevPrev;   // shift current, prev, and prevprev
+        dataQPrevPrev = dataQPrev;
+        dataQPrev = dataQ;
+        dataQ = temp;
+
+
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            dataQ[i].position.x = dataQPrev[i].position.x + learnRate * dataQDerivative[2 * i + 0] + accelerationRate * (dataQPrev[i].position.x - dataQPrevPrev[i].position.x);
+            dataQ[i].position.y = dataQPrev[i].position.y + learnRate * dataQDerivative[2 * i + 1] + accelerationRate * (dataQPrev[i].position.y - dataQPrevPrev[i].position.y);
+        }
+        
+        float* toBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
+        dataQBuffer->updateBuffer(toBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D);
+        delete[] toBuffer;
+    }
+
+private:
+
+    void updateDerivativeNaive()
     {
 
     }
@@ -134,8 +176,6 @@ public:
         dataP[28] = -13.0f;
         dataP[29] = -11.0f;
     }
-    
-private:
 
 };
 

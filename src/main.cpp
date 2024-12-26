@@ -184,6 +184,7 @@ int main(void)
         // initial
 
 
+        tsne.timeStep();
         scenes[0]->Render();
 
         
@@ -276,9 +277,6 @@ int main(void)
         lastFrame = currentFrame;
         // final
     }
-
-    //delete[] renderables1;
-    //delete[] renderables2;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
