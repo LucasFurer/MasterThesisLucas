@@ -10,22 +10,29 @@
 class TSNE
 {
 public:
-	Particle2D* particles;
-	std::size_t particlesSize;
-	Buffer* particlesBuffer;
+    float* dataP;
+    unsigned int dataPAmount;
+    unsigned int dataPDimension;
 
+	Particle2D* dataQ;
+	std::size_t dataQSize;
+	Buffer* dataQBuffer;
+
+
+	//TSNE()
+	//{
+            
+	//}
+    
 	TSNE()
 	{
+        loadCustomData();
 
-	}
+        dataQ = new Particle2D[dataPAmount];
+        dataQSize = dataPAmount * sizeof(Particle2D);
 
-	TSNE(int particleAmount)
-	{
-		particles = new Particle2D[particleAmount];
-		particlesSize = particleAmount * sizeof(Particle2D);
-
-        float sizeParam = 300.0f;
-        for (int i = 0; i < particleAmount; i++)
+        float sizeParam = 30.0f;
+        for (int i = 0; i < dataPAmount; i++)
         {
             glm::vec2 pos = glm::vec2(0.0f);
             glm::vec2 speed = glm::vec2(0.0f);
@@ -46,31 +53,88 @@ public:
                 powf(sizeParam * randY, 1.0f)
             );
 
-
             speed = glm::vec2(
                 (((float)rand() / RAND_MAX) - 0.5f) / 30.0f,
                 (((float)rand() / RAND_MAX) - 0.5f) / 30.0f
             );
 
-
-            col = glm::vec3(
-                randX * 0.5f + 0.5f,
-                randY * 0.5f + 0.5f,
-                randZ * 0.5f + 0.5f
-            );
-
-            particles[i] = Particle2D(pos, speed, col, 1.0f);
+            col = glm::vec3(1.0f);
+            
+            //col = glm::vec3(
+            //    randX * 0.5f + 0.5f,
+            //    randY * 0.5f + 0.5f,
+            //    randZ * 0.5f + 0.5f
+            //);
+            
+            dataQ[i] = Particle2D(pos, speed, col, 1.0f);
         }
-        float* particlesToBuffer = Particle2D::Particle2DToFloat(particles, particlesSize);
-        particlesBuffer = new Buffer(particlesToBuffer, 5 * sizeof(float) * (particlesSize / sizeof(Particle3D)), pos2DCol3D, GL_DYNAMIC_DRAW);
+        float* particlesToBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
+        dataQBuffer = new Buffer(particlesToBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D, GL_DYNAMIC_DRAW);
         delete[] particlesToBuffer;
 	}
 	
 	~TSNE()
 	{
-		delete[] particles;
+		delete[] dataP;
+		delete[] dataQ;
 	}
+    
+    void timeStep()
+    {
 
+    }
+
+    void loadCustomData()
+    {
+        dataPAmount = 10;
+        dataPDimension = 3;
+        dataP = new float[dataPAmount * dataPDimension];
+
+        dataP[0] = 10.0f;
+        dataP[1] = 10.0f;
+        dataP[2] = 10.0f;
+
+        dataP[3] = 11.0f;
+        dataP[4] = 9.0f;
+        dataP[5] = 12.0f;
+
+        dataP[6] = 8.6f;
+        dataP[7] = 9.2f;
+        dataP[8] = 10.4f;
+
+        dataP[9] = 13.2f;
+        dataP[10] = 12.1f;
+        dataP[11] = 9.2f;
+
+        //-------------
+
+        dataP[12] = -8.2f;
+        dataP[13] = 11.3f;
+        dataP[14] = 14.2f;
+
+        dataP[15] = -11.0f;
+        dataP[16] = 13.0f;
+        dataP[17] = 8.0f;
+
+        dataP[18] = -7.0f;
+        dataP[19] = 14.0f;
+        dataP[20] = 12.0f;
+
+        //----------------------------------
+
+        dataP[21] = 8.0f;
+        dataP[22] = -9.0f;
+        dataP[23] = -9.0f;
+
+        dataP[24] = 12.0f;
+        dataP[25] = -11.0f;
+        dataP[26] = -9.0f;
+
+        dataP[27] = 12.0f;
+        dataP[28] = -13.0f;
+        dataP[29] = -11.0f;
+    }
+    
 private:
 
 };

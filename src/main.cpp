@@ -145,14 +145,14 @@ int main(void)
     */
 
     //NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
-    TSNE tsne(300000);
+    TSNE tsne;
     glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
     Shader shaderTsne("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
 
-    Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.particlesBuffer, &shaderTsne, nullptr);
+    Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.dataQBuffer, &shaderTsne, nullptr);
     Renderable* tsneRenderables = new Renderable[1]{ tsneRenderable };
 
-    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);
+    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -100.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);
 
     Scene tsneScene(&cameraTsne, tsneRenderables, 1 * sizeof(Renderable));
 
@@ -168,7 +168,7 @@ int main(void)
     // render loop
     // -----------
     glEnable(GL_DEPTH_TEST);
-    glPointSize(1.0f);
+    glPointSize(5.0f);
     while (!glfwWindowShouldClose(window))
     {
         // initial
