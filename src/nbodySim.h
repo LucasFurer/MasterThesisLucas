@@ -6,7 +6,7 @@
 #include "common.h"
 #include <vector>
 
-float E = 2.71828182845904523536;
+//float E = 2.71828182845904523536;
 
 enum SimulationData {
     blueGreenCube,

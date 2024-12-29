@@ -1,6 +1,8 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
+float E = 2.71828182845904523536;
+
 enum AccelerationType 
 {
     naive,
