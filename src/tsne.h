@@ -36,7 +36,7 @@ public:
     
 	TSNE()
 	{
-        learnRate = 0.001f;
+        learnRate = 1.0f;
         accelerationRate = 0.0f;
         sigma = 1.0f;
 
@@ -221,8 +221,8 @@ private:
 
         for (int i = 0; i < dataPAmount; i++)
         {
-            dataQDerivative[2 * i + 0] = attractForce[2 * i + 0];// +repulsForce[2 * i + 0];
-            dataQDerivative[2 * i + 1] = attractForce[2 * i + 1];// +repulsForce[2 * i + 1];
+            dataQDerivative[2 * i + 0] = -0.01f * attractForce[2 * i + 0] + -0.0000001f * repulsForce[2 * i + 0];
+            dataQDerivative[2 * i + 1] = -0.01f * attractForce[2 * i + 1] + -0.0000001f * repulsForce[2 * i + 1];
         }
 
         //std::cout << "force between 0 and 1: " << std::endl;
