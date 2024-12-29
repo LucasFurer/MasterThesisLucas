@@ -20,6 +20,9 @@ public:
 	std::size_t dataQSize;
 	Buffer* dataQBuffer;
 
+    float* attractForce;
+    float* repulsForce;
+
     float* dataQDerivative;
 
     float learnRate;
@@ -44,8 +47,12 @@ public:
 
         dataQDerivative = new float[dataPAmount * 2];
         memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
+        attractForce = new float[dataPAmount * 2];
+        memset(attractForce, 0, sizeof(float) * dataPAmount * 2);
+        repulsForce = new float[dataPAmount * 2];
+        memset(repulsForce, 0, sizeof(float) * dataPAmount * 2);
 
-        float sizeParam = 30.0f;
+        float sizeParam = 20.0f;
         for (int i = 0; i < dataPAmount; i++)
         {
             glm::vec2 pos = glm::vec2(0.0f);
@@ -67,10 +74,10 @@ public:
                 powf(sizeParam * randY, 1.0f)
             );
 
-            speed = glm::vec2(
-                (((float)rand() / RAND_MAX) - 0.5f) / 30.0f,
-                (((float)rand() / RAND_MAX) - 0.5f) / 30.0f
-            );
+            //speed = glm::vec2(
+            //    (((float)rand() / RAND_MAX) - 0.5f) / 30.0f,
+            //    (((float)rand() / RAND_MAX) - 0.5f) / 30.0f
+            //);
 
             col = glm::vec3(1.0f);
             
@@ -93,6 +100,10 @@ public:
 		delete[] dataQ;
 		delete[] dataQPrev;
 		delete[] dataQPrevPrev;
+
+        delete[] attractForce;
+        delete[] repulsForce;
+
         delete[] dataQDerivative;
 	}
     
@@ -123,7 +134,45 @@ private:
 
     void updateDerivativeNaive()
     {
+        memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
+        memset(attractForce, 0, sizeof(float) * dataPAmount * 2);
+        memset(repulsForce, 0, sizeof(float) * dataPAmount * 2);
 
+        float qijTotal = 0.0f;
+
+        //std::cout << dataQDerivative[0] << std::endl;
+        //std::cout << "all points: " << std::endl;
+        //for (int i = 0; i < dataPAmount; i++)
+        //{
+        //    std::cout << glm::to_string(dataQ[i].position) << std::endl;
+        //}
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            for (int j = 0; j < dataPAmount; j++)
+            {
+                glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
+                float distance = iminj.length();
+                if (i != j) { qijTotal += (1.0f + distance); }
+                glm::vec2 result = iminj / ((1.0f + distance) * (1.0f + distance));
+                repulsForce[2 * i + 0] += result.x;
+                repulsForce[2 * i + 1] += result.y;
+            }
+        }
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            repulsForce[2 * i + 0] *= -4.0f * qijTotal;
+            repulsForce[2 * i + 1] *= -4.0f * qijTotal;
+        }
+
+        // attractive force
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            dataQDerivative[2 * i + 0] = attractForce[2 * i + 0] + repulsForce[2 * i + 0];
+            dataQDerivative[2 * i + 1] = attractForce[2 * i + 1] + repulsForce[2 * i + 1];
+        }
     }
 
     void loadCustomData()
