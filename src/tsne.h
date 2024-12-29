@@ -36,7 +36,7 @@ public:
     
 	TSNE()
 	{
-        learnRate = 0.00001f;
+        learnRate = 0.001f;
         accelerationRate = 0.0f;
         sigma = 1.0f;
 
@@ -173,38 +173,72 @@ private:
             repulsForce[2 * i + 1] *= -4.0f * qijTotal;
         }
         
-        /*
+        
         for (int i = 0; i < dataPAmount; i++)
         {
             for (int j = 0; j < dataPAmount; j++)
             {
-                //glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
-                //float distance = iminj.length();
+                if (i != j) 
+                {
+                    float PjiDivide = 0.0f;
+                    for (int k = 0; k < dataPAmount; k++)
+                    {
+                        if (k != i)
+                        {
+                            PjiDivide += pow(E, -pDistance(i, k) / (2.0f * sigma * sigma));
+                        }
+                    }
+                    float PijDivide = 0.0f;
+                    for (int k = 0; k < dataPAmount; k++)
+                    {
+                        if (k != j)
+                        {
+                            PijDivide += pow(E, -pDistance(j, k) / (2.0f * sigma * sigma));
+                        }
+                    }
+
+                    float Pji = pow(E, -pDistance(i, j) / (2.0f * sigma * sigma)) / PjiDivide;
+                    float Pij = pow(E, -pDistance(j, i) / (2.0f * sigma * sigma)) / PijDivide;
+
+                    float PijSym = (Pji + Pij) / (2.0f * (float)dataPAmount);
+                    
+                    glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
+                    float distance = iminj.length();
                 
-                if (i != j) { pijTotal += pow(E, -pDistance(i,j)/(2*sigma*sigma)); }
-                glm::vec2 result = iminj / ((1.0f + distance) * (1.0f + distance));
-                attractForce[2 * i + 0] += result.x;
-                attractForce[2 * i + 1] += result.y;
+                    glm::vec2 result = iminj / ((1.0f + distance));
+
+                    attractForce[2 * i + 0] += 4.0f * PijSym * result.x;
+                    attractForce[2 * i + 1] += 4.0f * PijSym * result.y;
+                }
             }
         }
-        for (int i = 0; i < dataPAmount; i++)
-        {
-            attractForce[2 * i + 0] *= -4.0f * qijTotal;
-            attractForce[2 * i + 1] *= -4.0f * qijTotal;
-        }
-        */
+        //for (int i = 0; i < dataPAmount; i++)
+        //{
+        //    attractForce[2 * i + 0] *= -4.0f * qijTotal;
+        //    attractForce[2 * i + 1] *= -4.0f * qijTotal;
+        //}
+        
 
         for (int i = 0; i < dataPAmount; i++)
         {
-            dataQDerivative[2 * i + 0] = attractForce[2 * i + 0] + repulsForce[2 * i + 0];
-            dataQDerivative[2 * i + 1] = attractForce[2 * i + 1] + repulsForce[2 * i + 1];
+            dataQDerivative[2 * i + 0] = attractForce[2 * i + 0];// +repulsForce[2 * i + 0];
+            dataQDerivative[2 * i + 1] = attractForce[2 * i + 1];// +repulsForce[2 * i + 1];
         }
+
+        //std::cout << "force between 0 and 1: " << std::endl;
+        //std::cout << attractForce[0] << ", " << attractForce[1] << std::endl;
+        //std::cout << attractForce[2] << ", " << attractForce[3] << std::endl;
     }
 
     float pDistance(int i, int j)
     {
-        //for ()
-        //dataP
+        float distance = 0.0f;
+        for (int d = 0; d < dataPDimension; d++)
+        {
+            distance += pow(dataP[i * dataPDimension + d] - dataP[j * dataPDimension + d],2.0f);
+        }
+
+        return sqrt(distance);
     }
 
     void loadCustomData()
@@ -220,7 +254,7 @@ private:
         dataP[3] = 11.0f;
         dataP[4] = 9.0f;
         dataP[5] = 12.0f;
-
+        
         dataP[6] = 8.6f;
         dataP[7] = 9.2f;
         dataP[8] = 10.4f;
@@ -256,6 +290,7 @@ private:
         dataP[27] = 12.0f;
         dataP[28] = -13.0f;
         dataP[29] = -11.0f;
+        
     }
 
 };
