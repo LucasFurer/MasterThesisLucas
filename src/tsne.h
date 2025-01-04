@@ -1,8 +1,6 @@
 #ifndef TSNE_H
 #define TSNE_H
 
-//#include "octtree.h"
-//#include "ffthelper.h"
 #include "common.h"
 //#include <vector>
 #include "buffer.h"
@@ -22,25 +20,24 @@ public:
 
     float* attractForce;
     float* repulsForce;
-
     float* dataQDerivative;
 
     float learnRate;
     float accelerationRate;
-    float sigma;
-
-	//TSNE()
-	//{
-            
-	//}
+    float perplexity;
+    float* sigma;
     
 	TSNE()
 	{
         learnRate = 1.0f;
         accelerationRate = 0.0f;
-        sigma = 1.0f;
+        perplexity = 4.0f;
 
         loadCustomData();
+
+        sigma = new float[dataPAmount];
+        std::fill(sigma, sigma + dataPAmount, 1.0f);
+
 
         dataQ = new Particle2D[dataPAmount];
         dataQPrev = new Particle2D[dataPAmount];
@@ -76,20 +73,23 @@ public:
                 powf(sizeParam * randY, 1.0f)
             );
 
-            //speed = glm::vec2(
-            //    (((float)rand() / RAND_MAX) - 0.5f) / 30.0f,
-            //    (((float)rand() / RAND_MAX) - 0.5f) / 30.0f
-            //);
 
-            col = glm::vec3(1.0f);
-            
-            //col = glm::vec3(
-            //    randX * 0.5f + 0.5f,
-            //    randY * 0.5f + 0.5f,
-            //    randZ * 0.5f + 0.5f
-            //);
-            
+            if (i < 4)
+            {
+                col = glm::vec3(1.0f, 0.0f, 0.0f);
+            }
+            else if (i < 7)
+            {
+                col = glm::vec3(0.0f, 1.0f, 0.0f);
+            }
+            else
+            {
+                col = glm::vec3(0.0f, 0.0f, 1.0f);
+            }
+
             dataQ[i] = Particle2D(pos, speed, col, 1.0f);
+            dataQPrev[i] = Particle2D(pos, speed, col, 1.0f);
+            dataQPrevPrev[i] = Particle2D(pos, speed, col, 1.0f);
         }
         float* particlesToBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
         dataQBuffer = new Buffer(particlesToBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D, GL_DYNAMIC_DRAW);
@@ -102,6 +102,7 @@ public:
 		delete[] dataQ;
 		delete[] dataQPrev;
 		delete[] dataQPrevPrev;
+        delete[] sigma;
 
         delete[] attractForce;
         delete[] repulsForce;
@@ -137,19 +138,35 @@ private:
     void updateDerivativeNaive()
     {
         memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
-        memset(attractForce, 0, sizeof(float) * dataPAmount * 2);
-        memset(repulsForce, 0, sizeof(float) * dataPAmount * 2);
 
-        float qijTotal = 0.0f;
-        //float pijTotal = 0.0f;
 
-        //std::cout << dataQDerivative[0] << std::endl;
         std::cout << "all points: " << std::endl;
         for (int i = 0; i < dataPAmount; i++)
         {
             std::cout << glm::to_string(dataQ[i].position) << std::endl;
         }
+
+        updateSigma();
+
+        updateRepulsive();
         
+        updateAttractive();
+
+        
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            dataQDerivative[2 * i + 0] = -0.01f * attractForce[2 * i + 0] + -0.0000001f * repulsForce[2 * i + 0];
+            dataQDerivative[2 * i + 1] = -0.01f * attractForce[2 * i + 1] + -0.0000001f * repulsForce[2 * i + 1];
+        }
+    }
+
+    void updateRepulsive()
+    {
+        memset(repulsForce, 0, sizeof(float) * dataPAmount * 2);
+
+        float qijTotal = 0.0f;
+
         for (int i = 0; i < dataPAmount; i++)
         {
             for (int j = 0; j < dataPAmount; j++)
@@ -158,8 +175,8 @@ private:
                 {
                     glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
                     float distance = iminj.length();
-                    
-                    qijTotal += (1.0f + distance); 
+
+                    qijTotal += (1.0f + distance);
 
                     glm::vec2 result = iminj / ((1.0f + distance) * (1.0f + distance));
                     repulsForce[2 * i + 0] += result.x;
@@ -172,20 +189,24 @@ private:
             repulsForce[2 * i + 0] *= -4.0f * qijTotal;
             repulsForce[2 * i + 1] *= -4.0f * qijTotal;
         }
-        
-        
+    }
+
+    void updateAttractive()
+    {
+        memset(attractForce, 0, sizeof(float) * dataPAmount * 2);
+
         for (int i = 0; i < dataPAmount; i++)
         {
             for (int j = 0; j < dataPAmount; j++)
             {
-                if (i != j) 
+                if (i != j)
                 {
                     float PjiDivide = 0.0f;
                     for (int k = 0; k < dataPAmount; k++)
                     {
                         if (k != i)
                         {
-                            PjiDivide += pow(E, -pDistance(i, k) / (2.0f * sigma * sigma));
+                            PjiDivide += pow(E, -pDistance(i, k) / (2.0f * sigma[i] * sigma[i]));
                         }
                     }
                     float PijDivide = 0.0f;
@@ -193,18 +214,18 @@ private:
                     {
                         if (k != j)
                         {
-                            PijDivide += pow(E, -pDistance(j, k) / (2.0f * sigma * sigma));
+                            PijDivide += pow(E, -pDistance(j, k) / (2.0f * sigma[i] * sigma[i]));
                         }
                     }
 
-                    float Pji = pow(E, -pDistance(i, j) / (2.0f * sigma * sigma)) / PjiDivide;
-                    float Pij = pow(E, -pDistance(j, i) / (2.0f * sigma * sigma)) / PijDivide;
+                    float Pji = pow(E, -pDistance(i, j) / (2.0f * sigma[i] * sigma[i])) / PjiDivide;
+                    float Pij = pow(E, -pDistance(j, i) / (2.0f * sigma[i] * sigma[i])) / PijDivide;
 
                     float PijSym = (Pji + Pij) / (2.0f * (float)dataPAmount);
-                    
+
                     glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
                     float distance = iminj.length();
-                
+
                     glm::vec2 result = iminj / ((1.0f + distance));
 
                     attractForce[2 * i + 0] += 4.0f * PijSym * result.x;
@@ -212,22 +233,113 @@ private:
                 }
             }
         }
-        //for (int i = 0; i < dataPAmount; i++)
-        //{
-        //    attractForce[2 * i + 0] *= -4.0f * qijTotal;
-        //    attractForce[2 * i + 1] *= -4.0f * qijTotal;
-        //}
-        
+    }
 
+    void updateSigma()
+    {
+        //std::fill(sigma, sigma + dataPAmount, 1.0f);
+        
         for (int i = 0; i < dataPAmount; i++)
         {
-            dataQDerivative[2 * i + 0] = -0.01f * attractForce[2 * i + 0] + -0.0000001f * repulsForce[2 * i + 0];
-            dataQDerivative[2 * i + 1] = -0.01f * attractForce[2 * i + 1] + -0.0000001f * repulsForce[2 * i + 1];
+            int wentUp = 2;
+            bool searching = true;
+            int halving = 5;
+            float lastChange = 0.0f;
+
+
+            while (searching)
+            {
+                float calculatedPerplexity = getPerplexity(i);
+
+                if (wentUp == 2)
+                {
+                    if (calculatedPerplexity > perplexity)
+                    {
+                        sigma[i] /= 2.0f;
+                        lastChange = sigma[i];
+                        wentUp = 0;
+                    }
+                    else
+                    {
+                        sigma[i] *= 2.0f;
+                        lastChange = sigma[i]/2.0f;
+                        wentUp = 1;
+                    }
+                }
+                else if (wentUp == 1)
+                {
+                    if (calculatedPerplexity > perplexity)
+                    {
+                        sigma[i] /= 2.0f;
+                        lastChange = sigma[i];
+                        wentUp = 0;
+                        searching = false;
+                    }
+                    else
+                    {
+                        sigma[i] *= 2.0f;
+                        lastChange = sigma[i] / 2.0f;
+                        wentUp = 1;
+                    }
+                }
+                else
+                {
+                    if (calculatedPerplexity > perplexity)
+                    {
+                        sigma[i] /= 2.0f;
+                        lastChange = sigma[i];
+                        wentUp = 0;
+                    }
+                    else
+                    {
+                        sigma[i] *= 2.0f;
+                        lastChange = sigma[i] / 2.0f;
+                        wentUp = 1;
+                        searching = false;
+                    }
+                }
+            }
+
+            for (int d = 0; d < halving; d++)
+            {
+                float calculatedPerplexity = getPerplexity(i);
+
+                if (calculatedPerplexity > perplexity)
+                {
+                    lastChange /= 2.0f;
+                    sigma[i] -= lastChange;
+                }
+                else
+                {
+                    lastChange /= 2.0f;
+                    sigma[i] += lastChange;
+                }
+            }
+
+        }
+        
+    }
+
+    float getPerplexity(int i)
+    {
+        float PDivide = 0.0f;
+        for (int k = 0; k < dataPAmount; k++)
+        {
+            if (i != k)
+            {
+                PDivide += pow(E, pDistance(i, k) / (2.0f * sigma[i] * sigma[i]));
+            }
         }
 
-        //std::cout << "force between 0 and 1: " << std::endl;
-        //std::cout << attractForce[0] << ", " << attractForce[1] << std::endl;
-        //std::cout << attractForce[2] << ", " << attractForce[3] << std::endl;
+        float PjiSum = 0.0f;
+        for (int j = 0; j < dataPAmount; j++)
+        {
+            float Pji = pow(E, pDistance(i, j) / (2.0f * sigma[i] * sigma[i])) / PDivide;
+            PjiSum -= Pji * std::log2(Pji);
+        }
+
+        float calculatedPerplexity = pow(2.0f, PjiSum);
+        return calculatedPerplexity;
     }
 
     float pDistance(int i, int j)
@@ -235,7 +347,7 @@ private:
         float distance = 0.0f;
         for (int d = 0; d < dataPDimension; d++)
         {
-            distance += pow(dataP[i * dataPDimension + d] - dataP[j * dataPDimension + d],2.0f);
+            distance += pow(dataP[i * dataPDimension + d] - dataP[j * dataPDimension + d], 2.0f);
         }
 
         return sqrt(distance);
