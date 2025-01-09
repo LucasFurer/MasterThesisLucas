@@ -4,6 +4,7 @@
 #include "common.h"
 //#include <vector>
 #include "buffer.h"
+#include "loader.h"
 
 class TSNE
 {
@@ -11,6 +12,7 @@ public:
     float* dataP;
     unsigned int dataPAmount;
     unsigned int dataPDimension;
+    int* labelsP;
 
 	Particle2D* dataQ;
     Particle2D* dataQPrev;
@@ -26,14 +28,24 @@ public:
     float accelerationRate;
     float perplexity;
     float* sigma;
+
+    float timeStepsPerSec;
+    float lastTimeUpdated;
     
 	TSNE()
 	{
+        //srand(time(NULL));
         learnRate = 1.0f;
         accelerationRate = 0.0f;
         perplexity = 4.0f;
 
-        loadCustomData();
+        timeStepsPerSec = 1000.0f;
+        lastTimeUpdated = 0.0f;
+
+        loadData1();
+        std::filesystem::path currentPath = std::filesystem::current_path();
+        std::filesystem::path newPath = currentPath / "data\\t10k-images.idx3-ubyte";
+        loadData2(newPath.string().c_str());
 
         sigma = new float[dataPAmount];
         std::fill(sigma, sigma + dataPAmount, 1.0f);
@@ -72,7 +84,7 @@ public:
                 powf(sizeParam * randX, 1.0f),
                 powf(sizeParam * randY, 1.0f)
             );
-
+            //col = glm::vec3(((float)rand() / RAND_MAX), ((float)rand() / RAND_MAX), ((float)rand() / RAND_MAX));
 
             if (i < 4)
             {
@@ -94,6 +106,8 @@ public:
         float* particlesToBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
         dataQBuffer = new Buffer(particlesToBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D, GL_DYNAMIC_DRAW);
         delete[] particlesToBuffer;
+
+        updateSigma();
 	}
 	
 	~TSNE()
@@ -112,48 +126,48 @@ public:
     
     void timeStep()
     {
-        
-        updateDerivativeNaive();
-        
-        Particle2D* temp = dataQPrevPrev;   // shift current, prev, and prevprev
-        dataQPrevPrev = dataQPrev;
-        dataQPrev = dataQ;
-        dataQ = temp;
-
-
-
-        for (int i = 0; i < dataPAmount; i++)
+        if (glfwGetTime() - lastTimeUpdated >= 1.0f / timeStepsPerSec)
         {
-            dataQ[i].position.x = dataQPrev[i].position.x + learnRate * dataQDerivative[2 * i + 0] + accelerationRate * (dataQPrev[i].position.x - dataQPrevPrev[i].position.x);
-            dataQ[i].position.y = dataQPrev[i].position.y + learnRate * dataQDerivative[2 * i + 1] + accelerationRate * (dataQPrev[i].position.y - dataQPrevPrev[i].position.y);
+            lastTimeUpdated = glfwGetTime();
+
+            updateDerivativeNaive();
+
+            Particle2D* temp = dataQPrevPrev;   // shift current, prev, and prevprev
+            dataQPrevPrev = dataQPrev;
+            dataQPrev = dataQ;
+            dataQ = temp;
+
+
+
+            for (int i = 0; i < dataPAmount; i++)
+            {
+                dataQ[i].position.x = dataQPrev[i].position.x + learnRate * dataQDerivative[2 * i + 0] + accelerationRate * (dataQPrev[i].position.x - dataQPrevPrev[i].position.x);
+                dataQ[i].position.y = dataQPrev[i].position.y + learnRate * dataQDerivative[2 * i + 1] + accelerationRate * (dataQPrev[i].position.y - dataQPrevPrev[i].position.y);
+            }
+
+            float* toBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
+            dataQBuffer->updateBuffer(toBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D);
+            delete[] toBuffer;
         }
-        
-        float* toBuffer = Particle2D::Particle2DToFloat(dataQ, dataQSize);
-        dataQBuffer->updateBuffer(toBuffer, 5 * sizeof(float) * (dataQSize / sizeof(Particle2D)), pos2DCol3D);
-        delete[] toBuffer;
     }
 
 private:
 
     void updateDerivativeNaive()
     {
-        memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
-
-
+        /*
         std::cout << "all points: " << std::endl;
         for (int i = 0; i < dataPAmount; i++)
         {
             std::cout << glm::to_string(dataQ[i].position) << std::endl;
         }
-
-        updateSigma();
+        */
 
         updateRepulsive();
         
         updateAttractive();
 
-        
-
+        memset(dataQDerivative, 0, sizeof(float) * dataPAmount * 2);
         for (int i = 0; i < dataPAmount; i++)
         {
             dataQDerivative[2 * i + 0] = -0.01f * attractForce[2 * i + 0] + -0.0000001f * repulsForce[2 * i + 0];
@@ -195,44 +209,45 @@ private:
     {
         memset(attractForce, 0, sizeof(float) * dataPAmount * 2);
 
+        float* totalDivide = new float[dataPAmount];
+        memset(totalDivide, 0, sizeof(float) * dataPAmount);
+
         for (int i = 0; i < dataPAmount; i++)
         {
             for (int j = 0; j < dataPAmount; j++)
             {
                 if (i != j)
                 {
-                    float PjiDivide = 0.0f;
-                    for (int k = 0; k < dataPAmount; k++)
-                    {
-                        if (k != i)
-                        {
-                            PjiDivide += pow(E, -pDistance(i, k) / (2.0f * sigma[i] * sigma[i]));
-                        }
-                    }
-                    float PijDivide = 0.0f;
-                    for (int k = 0; k < dataPAmount; k++)
-                    {
-                        if (k != j)
-                        {
-                            PijDivide += pow(E, -pDistance(j, k) / (2.0f * sigma[i] * sigma[i]));
-                        }
-                    }
-
-                    float Pji = pow(E, -pDistance(i, j) / (2.0f * sigma[i] * sigma[i])) / PjiDivide;
-                    float Pij = pow(E, -pDistance(j, i) / (2.0f * sigma[i] * sigma[i])) / PijDivide;
-
-                    float PijSym = (Pji + Pij) / (2.0f * (float)dataPAmount);
-
-                    glm::vec2 iminj = dataQ[i].position - dataQ[j].position;
-                    float distance = iminj.length();
-
-                    glm::vec2 result = iminj / ((1.0f + distance));
-
-                    attractForce[2 * i + 0] += 4.0f * PijSym * result.x;
-                    attractForce[2 * i + 1] += 4.0f * PijSym * result.y;
+                    totalDivide[i] += pow(E, -pDistance(i, j) / (2.0f * sigma[i] * sigma[i]));
+                    totalDivide[j] += pow(E, -pDistance(j, i) / (2.0f * sigma[j] * sigma[j]));
                 }
             }
         }
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            for (int j = 0; j < dataPAmount; j++)
+            {
+                if (i != j)
+                {
+                    float Pij = ((pow(E, -pDistance(i, j) / (2.0f * sigma[i] * sigma[i])) / totalDivide[i]) +
+                                 (pow(E, -pDistance(j, i) / (2.0f * sigma[j] * sigma[j])) / totalDivide[j])) / (2.0f * (float)dataPAmount);
+
+                    glm::vec2 diffVec = dataQ[i].position - dataQ[j].position;
+                    glm::vec2 force = (Pij / (1.0f + diffVec.length())) * diffVec;
+                    attractForce[2 * i + 0] += force.x;
+                    attractForce[2 * i + 1] += force.y;
+                }
+            }
+        }
+
+        for (int i = 0; i < dataPAmount; i++)
+        {
+            attractForce[2 * i + 0] *= 4.0f;
+            attractForce[2 * i + 1] *= 4.0f;
+        }
+
+        delete[] totalDivide;
     }
 
     void updateSigma()
@@ -353,7 +368,7 @@ private:
         return sqrt(distance);
     }
 
-    void loadCustomData()
+    void loadData1()
     {
         dataPAmount = 10;
         dataPDimension = 3;
@@ -403,6 +418,15 @@ private:
         dataP[28] = -13.0f;
         dataP[29] = -11.0f;
         
+    }
+
+    void loadData2(const char* path)
+    {
+        Loader::loadMNIST(dataP, &dataPAmount, &dataPDimension, path);
+
+        std::cout << dataPAmount << std::endl;
+        std::cout << dataPDimension << std::endl;
+        std::cout << dataP[0] << std::endl;
     }
 
 };
