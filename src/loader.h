@@ -4,7 +4,7 @@
 class Loader
 {
 public:
-	static void loadMNIST(float* data, unsigned int* dataAmount, unsigned int* dataDimension, const char* path)
+	static float* loadMNIST(unsigned int* dataAmount, unsigned int* dataDimension, const char* path, int maxAmount)
 	{
         FILE* file = fopen(path, "rb"); // open file at path in mode rb (read buffer)
 
@@ -14,19 +14,23 @@ public:
         uint32_t cols = getNextFourBytes(file);
 
         int totalBytes = amount * rows * cols;
+        int maxTotalBytes = maxAmount * rows * cols;
 
-        unsigned char* dataChar = new unsigned char[totalBytes];
-        fread(dataChar, 1, totalBytes, file);
+        unsigned char* dataChar = new unsigned char[std::min(totalBytes, maxTotalBytes)];
+        fread(dataChar, 1, std::min(totalBytes, maxTotalBytes), file);
 
-        *dataAmount = amount;
+        *dataAmount = std::min((int)amount, maxAmount);
         *dataDimension = rows * cols;
-        data = new float[totalBytes];
-        for (int i = 0; i < totalBytes; i++)
+        float* data = new float[std::min(totalBytes, maxTotalBytes)];
+
+        for (int i = 0; i < std::min(totalBytes, maxTotalBytes); i++)
         {
             data[i] = (float)dataChar[i];
         }
 
+        delete[] dataChar;
         fclose(file);
+        return data;
 	}
 
 private:

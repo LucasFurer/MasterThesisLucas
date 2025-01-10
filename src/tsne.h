@@ -37,7 +37,7 @@ public:
         //srand(time(NULL));
         learnRate = 1.0f;
         accelerationRate = 0.0f;
-        perplexity = 4.0f;
+        perplexity = 6.0f;
 
         timeStepsPerSec = 1000.0f;
         lastTimeUpdated = 0.0f;
@@ -45,7 +45,7 @@ public:
         loadData1();
         std::filesystem::path currentPath = std::filesystem::current_path();
         std::filesystem::path newPath = currentPath / "data\\t10k-images.idx3-ubyte";
-        loadData2(newPath.string().c_str());
+        //loadData2(newPath.string().c_str());
 
         sigma = new float[dataPAmount];
         std::fill(sigma, sigma + dataPAmount, 1.0f);
@@ -63,7 +63,7 @@ public:
         repulsForce = new float[dataPAmount * 2];
         memset(repulsForce, 0, sizeof(float) * dataPAmount * 2);
 
-        float sizeParam = 20.0f;
+        float sizeParam = 200.0f;
         for (int i = 0; i < dataPAmount; i++)
         {
             glm::vec2 pos = glm::vec2(0.0f);
@@ -85,7 +85,7 @@ public:
                 powf(sizeParam * randY, 1.0f)
             );
             //col = glm::vec3(((float)rand() / RAND_MAX), ((float)rand() / RAND_MAX), ((float)rand() / RAND_MAX));
-
+            
             if (i < 4)
             {
                 col = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -98,6 +98,8 @@ public:
             {
                 col = glm::vec3(0.0f, 0.0f, 1.0f);
             }
+            
+            //col = glm::vec3(1.0f);
 
             dataQ[i] = Particle2D(pos, speed, col, 1.0f);
             dataQPrev[i] = Particle2D(pos, speed, col, 1.0f);
@@ -203,6 +205,8 @@ private:
             repulsForce[2 * i + 0] *= -4.0f * qijTotal;
             repulsForce[2 * i + 1] *= -4.0f * qijTotal;
         }
+
+
     }
 
     void updateAttractive()
@@ -422,11 +426,7 @@ private:
 
     void loadData2(const char* path)
     {
-        Loader::loadMNIST(dataP, &dataPAmount, &dataPDimension, path);
-
-        std::cout << dataPAmount << std::endl;
-        std::cout << dataPDimension << std::endl;
-        std::cout << dataP[0] << std::endl;
+        dataP = Loader::loadMNIST(&dataPAmount, &dataPDimension, path, 50);
     }
 
 };

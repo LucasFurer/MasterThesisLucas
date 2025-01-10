@@ -96,6 +96,10 @@ public:
     {
         if (perspective) 
         { 
+            if (Zoom < 1.0f)
+                Zoom = 1.0f;
+            if (Zoom > 45.0f)
+                Zoom = 45.0f;
             return glm::perspective(glm::radians(Zoom), (float)*screenWidth / (float)*screenHeight, nearPlane, farPlane);
         }
         else 
@@ -163,10 +167,10 @@ public:
     void processMouseScroll(float yoffset)
     {
         Zoom -= (float)yoffset;
-        if (Zoom < 1.0f)
-            Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+        //if (Zoom < 1.0f)
+        //    Zoom = 1.0f;
+        //if (Zoom > 45.0f)
+        //    Zoom = 45.0f;
     }
 
 private:
