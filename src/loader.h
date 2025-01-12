@@ -6,6 +6,7 @@ class Loader
 public:
 	static float* loadMNIST(unsigned int* dataAmount, unsigned int* dataDimension, const char* path, int maxAmount)
 	{
+        // this is the format of the data https://yann.lecun.com/exdb/mnist/
         FILE* file = fopen(path, "rb"); // open file at path in mode rb (read buffer)
 
         uint32_t magicNumber = getNextFourBytes(file);
@@ -43,3 +44,8 @@ private:
 
 };
 #endif
+
+//call like this
+//std::filesystem::path currentPath = std::filesystem::current_path();
+//std::filesystem::path newPath = currentPath / "data\\t10k-images.idx3-ubyte";
+// dataP = Loader::loadMNIST(&dataPAmount, &dataPDimension, newPath.string().c_str(), 50);

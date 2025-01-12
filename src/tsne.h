@@ -5,6 +5,14 @@
 //#include <vector>
 #include "buffer.h"
 #include "loader.h"
+#include <fstream>
+#include <eigen-3.4.0/Eigen/Eigen>
+#include <eigen-3.4.0/unsupported/Eigen/SparseExtra>
+#include <filesystem>
+#include <format>
+#include <math.h>
+#include <numbers>
+
 
 class TSNE
 {
@@ -31,6 +39,8 @@ public:
 
     float timeStepsPerSec;
     float lastTimeUpdated;
+
+    Eigen::SparseMatrix<double> Pmatrix;
     
 	TSNE()
 	{
@@ -43,9 +53,24 @@ public:
         lastTimeUpdated = 0.0f;
 
         loadData1();
-        std::filesystem::path currentPath = std::filesystem::current_path();
-        std::filesystem::path newPath = currentPath / "data\\t10k-images.idx3-ubyte";
-        //loadData2(newPath.string().c_str());
+
+        //std::string fileName = "data/P_matrix_amount" + std::to_string(dataPAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
+        std::string fileName = "data/P_matrix_amount1000_perp30.mtx";
+        std::ifstream file(fileName);
+
+        if (file.is_open()) 
+        {
+            Eigen::loadMarket(Pmatrix, fileName);
+            std::cout << "Matrix loaded successfully!" << std::endl;
+            //Pmatrix.coeff(i, j)
+            //Pmatrix.rows()
+            //Pmatrix.cols()
+        }
+        else 
+        {
+            std::cerr << "Failed to open " + fileName + " file!" << std::endl;
+        }
+
 
         sigma = new float[dataPAmount];
         std::fill(sigma, sigma + dataPAmount, 1.0f);

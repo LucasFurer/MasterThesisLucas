@@ -29,6 +29,17 @@
 #include "scene.h"
 #include "tsne.h"
 #include "common.h"
+#include <fstream>
+#include <eigen-3.4.0/Eigen/Dense>
+#include <eigen-3.4.0/Eigen/Sparse>
+#include <eigen-3.4.0/Eigen/SparseCore>
+#include <eigen-3.4.0/Eigen/SparseLU>
+#include <eigen-3.4.0/Eigen/SparseQR>
+#include <eigen-3.4.0/Eigen/Eigen>
+#include <eigen-3.4.0/unsupported/Eigen/MatrixFunctions>
+#include <eigen-3.4.0/unsupported/Eigen/SparseExtra>
+#include <eigen-3.4.0/Eigen/Geometry>
+//std::cout << std::format("{}", std::numbers::pi_v<double>);
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -102,7 +113,6 @@ int main(void)
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
 
 
 
