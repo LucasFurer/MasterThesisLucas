@@ -46,13 +46,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 50;
         float perplexity = 30.0f;
 
         learnRate = 1.0f;
         accelerationRate = 0.0f;
 
-        timeStepsPerSec = 1000.0f;
+        timeStepsPerSec = 60.0f;
         lastTimeUpdated = 0.0f;
 
         embeddedPoints.resize(dataAmount);
@@ -116,6 +116,24 @@ public:
         }
     }
 
+    std::tuple<float, float, float, float> getEdges()
+    {
+        float left  = std::numeric_limits<float>::max();
+        float down  = std::numeric_limits<float>::max();
+        float right = std::numeric_limits<float>::min();
+        float up    = std::numeric_limits<float>::min();
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            if (embeddedPoints[i].position.x < left) { left = embeddedPoints[i].position.x; }
+            if (embeddedPoints[i].position.x > right) { right = embeddedPoints[i].position.x; }
+            if (embeddedPoints[i].position.y < down) { down = embeddedPoints[i].position.y; }
+            if (embeddedPoints[i].position.y > up) { up = embeddedPoints[i].position.y; }
+        }
+
+        return std::make_tuple(left, right, down, up);
+    }
+
 private:
 
     void updateDerivativeNaive()
@@ -126,7 +144,7 @@ private:
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            //embeddeDerivative[i] = -0.01f * attractForce[i] + -0.0000001f * repulsForce[i];
+            embeddeDerivative[i] = -0.01f * attractForce[i] + -0.0000001f * repulsForce[i];
         }
     }
 

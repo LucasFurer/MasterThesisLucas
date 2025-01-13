@@ -119,6 +119,7 @@ public:
             );
             */
             float aspect = (float)*screenWidth / (float)*screenHeight;
+            //return glm::ortho(-200.0f * aspect, 200.0f * aspect, -200.0f, 200.0f, nearPlane, farPlane);
             return glm::ortho(-Zoom * 1.0f * aspect, Zoom * 1.0f * aspect, -Zoom * 1.0f, Zoom * 1.0f, nearPlane, farPlane);
         }
     }
