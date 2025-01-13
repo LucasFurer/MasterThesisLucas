@@ -2,12 +2,22 @@
 #define TSNE_H
 
 #include "common.h"
-//#include <vector>
 #include "buffer.h"
 #include "loader.h"
 #include <fstream>
-#include <eigen-3.4.0/Eigen/Eigen>
-#include <eigen-3.4.0/unsupported/Eigen/SparseExtra>
+
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <Eigen/SparseCore>
+#include <Eigen/SparseLU>
+#include <Eigen/SparseQR>
+#include <Eigen/Eigen>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <unsupported/Eigen/SparseExtra>
+#include <Eigen/Geometry>
+#include <Eigen/Eigen>
+#include <unsupported/Eigen/SparseExtra>
+
 #include <filesystem>
 #include <format>
 #include <math.h>
