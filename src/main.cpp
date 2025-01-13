@@ -19,6 +19,7 @@
 #include "texture.h"
 #include "particles/particle3D.h"
 #include "particles/particle2D.h"
+#include "particles/embeddedPoint.h"
 #include <vector>
 #include "nbodySim.h"
 #include "ffthelper.h"
@@ -159,7 +160,7 @@ int main(void)
     glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
     Shader shaderTsne("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
 
-    Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.dataQBuffer, &shaderTsne, nullptr);
+    Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable* tsneRenderables = new Renderable[1]{ tsneRenderable };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);

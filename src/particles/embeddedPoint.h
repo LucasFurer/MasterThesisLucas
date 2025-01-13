@@ -20,11 +20,12 @@ public:
     {
     }
 
+    /*
     static float* Particle2DToFloat(EmbeddedPoint* particles, std::size_t particlesSize)
     {
         int particleAmount = particlesSize / sizeof(EmbeddedPoint);
 
-        float* result = new float[5 * particleAmount];
+        float* result = new float[3 * particleAmount];
 
         for (int i = 0; i < particleAmount; i++)
         {
@@ -38,5 +39,6 @@ public:
 
         return result;
     }
+    */
 private:
 };

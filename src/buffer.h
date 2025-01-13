@@ -2,6 +2,7 @@
 #define BUFFER_H
 
 //#include "common.h"
+#include "particles/embeddedPoint.h"
 
 enum DataType
 {
@@ -9,7 +10,8 @@ enum DataType
 	pos3D,
 	pos3DCol3D,
 	pos3DUV2D,
-	pos2DCol3D
+	pos2DCol3D,
+	pos2DlabelInt
 };
 
 class Buffer
@@ -43,6 +45,15 @@ public:
 		glGenVertexArrays(1, &VAO);
 
 		createVertexBuffer(vertices, verticesSize, dataType, bufferType);
+	}
+
+	Buffer(EmbeddedPoint* data, int dataAmount, DataType dataType, GLenum bufferType)
+	{
+		//this is the new system
+		glGenBuffers(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+
+		createVertexBufferNew(data, dataAmount, dataType, bufferType);
 	}
 
 	void updateBuffer(float* vertices, std::size_t verticesSize, DataType dataType)
@@ -90,6 +101,31 @@ public:
 			glBufferSubData(GL_ARRAY_BUFFER, 0, verticesSize, vertices);
 
 			break;
+		default:
+			std::cout << "invalid BufferType given" << std::endl;
+		}
+	}
+
+	void updateBufferNew(EmbeddedPoint* data, int dataAmount, DataType dataType)
+	{
+		std::size_t dataSize = dataAmount * sizeof(EmbeddedPoint);
+
+		switch (dataType)
+		{
+		case pos2DlabelInt:
+		
+			if (elementAmount != dataAmount)
+			{
+				std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			}
+
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+			glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, data);
+
+			break;
+		
 		default:
 			std::cout << "invalid BufferType given" << std::endl;
 		}
@@ -177,6 +213,30 @@ public:
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+			glEnableVertexAttribArray(1);
+			break;
+		default:
+			std::cout << "invalid BufferType given" << std::endl;
+		}
+	}
+
+	void createVertexBufferNew(EmbeddedPoint* data, int dataAmount, DataType dataType, GLenum bufferType)
+	{
+		elementAmount = dataAmount;
+
+		glBindVertexArray(VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		//std::size_t dataSize = dataAmount * (2 * sizeof(float) + sizeof(int));
+		std::size_t dataSize = dataAmount * sizeof(EmbeddedPoint);
+		glBufferData(GL_ARRAY_BUFFER, dataSize, data, bufferType);
+
+		switch (dataType)
+		{
+		case pos2DlabelInt:
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribIPointer(1, 1, GL_INT, 3 * sizeof(float), (void*)(2 * sizeof(float)));
 			glEnableVertexAttribArray(1);
 			break;
 		default:
