@@ -110,6 +110,8 @@ public:
 	{
 		std::size_t dataSize = dataAmount * sizeof(EmbeddedPoint);
 
+		std::cout << "update: " << dataAmount << std::endl;
+
 		switch (dataType)
 		{
 		case pos2DlabelInt:

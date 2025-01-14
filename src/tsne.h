@@ -46,7 +46,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 50;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1.0f;
@@ -54,6 +54,25 @@ public:
 
         timeStepsPerSec = 60.0f;
         lastTimeUpdated = 0.0f;
+
+
+        std::string fileName = "data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
+        //std::string fileName = "data/P_matrix_amount1000_perp30.mtx";
+        std::ifstream file(fileName);
+
+        if (file.is_open())
+        {
+            Eigen::loadMarket(Pmatrix, fileName);
+            std::cout << "Matrix loaded successfully!" << std::endl;
+            //Pmatrix.coeff(i, j)
+            //Pmatrix.rows()
+            //Pmatrix.cols()
+        }
+        else
+        {
+            std::cerr << "Failed to open " + fileName + " file!" << std::endl;
+        }
+        dataAmount = 100;
 
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
@@ -100,17 +119,27 @@ public:
     {
         if (glfwGetTime() - lastTimeUpdated >= 1.0f / timeStepsPerSec)
         {
+
+
             lastTimeUpdated = glfwGetTime();
 
             updateDerivativeNaive();
 
-            embeddedPoints.swap(embeddedPointsPrev);
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
+            embeddedPoints.swap(embeddedPointsPrev);
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddeDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrev[i].position);
+                //embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddeDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + glm::vec2(0.01f);
             }
+
+            std::cout << "print all" << std::endl;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+            {
+                std::cout << glm::to_string(embeddedPoints[i].position) << std::endl;
+            }
+            std::cout << "print done" << std::endl;
 
             embeddedBuffer->updateBufferNew(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt);
         }
@@ -144,7 +173,7 @@ private:
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            embeddeDerivative[i] = -0.01f * attractForce[i] + -0.0000001f * repulsForce[i];
+            embeddeDerivative[i] = -0.01f * attractForce[i] + -0.000001f * repulsForce[i];
         }
     }
 
@@ -166,7 +195,7 @@ private:
                     qijTotal += (1.0f + distance);
 
                     glm::vec2 result = iminj / ((1.0f + distance) * (1.0f + distance));
-                    repulsForce[i] += result.x;
+                    repulsForce[i] += result;
                 }
             }
         }
@@ -181,6 +210,27 @@ private:
     void updateAttractive()
     {
         std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                if (i != j)
+                {
+                    glm::vec2 iminj = embeddedPoints[i].position - embeddedPoints[j].position;
+                    float distance = iminj.length();
+
+                    //qijTotal += (1.0f + distance);
+
+                    glm::vec2 result = iminj / (1.0f + distance);
+                    //attractForce[i] += (float)Pmatrix.coeff(i, j) * result;
+                }
+            }
+        }
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            //attractForce[i] *= 4.0f;
+        }
     }
 };
 
