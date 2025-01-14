@@ -155,7 +155,7 @@ int main(void)
     Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable* tsneRenderables = new Renderable[1]{ tsneRenderable };
 
-    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);
+    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
     Scene tsneScene(&cameraTsne, tsneRenderables, 1 * sizeof(Renderable));
 
@@ -189,9 +189,10 @@ int main(void)
 
         tsne.timeStep();
 
-        auto [left, right, down, up] = tsne.getEdges();
-        scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
-        scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+        //auto [left, right, down, up] = tsne.getEdges();
+        //scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
+        //scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+
         //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
 
         scenes[0]->Render();

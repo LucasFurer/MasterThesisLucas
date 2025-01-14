@@ -42,6 +42,8 @@ public:
     float lastTimeUpdated;
 
     Eigen::SparseMatrix<double> Pmatrix;
+    std::vector<std::vector<float>> Qmatrix;
+    float Qsum;
     
 	TSNE()
 	{
@@ -72,7 +74,9 @@ public:
         {
             std::cerr << "Failed to open " + fileName + " file!" << std::endl;
         }
-        dataAmount = 100;
+        Qmatrix.resize(dataAmount);
+        for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
+
 
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
@@ -130,16 +134,18 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                //embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddeDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + glm::vec2(0.01f);
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddeDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                //embeddedPoints[i].position = embeddedPointsPrev[i].position + glm::vec2(0.01f);
             }
 
-            std::cout << "print all" << std::endl;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-            {
-                std::cout << glm::to_string(embeddedPoints[i].position) << std::endl;
-            }
-            std::cout << "print done" << std::endl;
+            //std::cout << glm::to_string(embeddedPoints[0].position) << std::endl;
+            
+            //std::cout << "print all" << std::endl;
+            //for (int i = 0; i < embeddedPoints.size(); i++)
+            //{
+            //    std::cout << glm::to_string(embeddedPoints[i].position) << std::endl;
+            //}
+            //std::cout << "print done" << std::endl;
 
             embeddedBuffer->updateBufferNew(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt);
         }
@@ -167,13 +173,67 @@ private:
 
     void updateDerivativeNaive()
     {
+        updateQ();
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; i < embeddedPoints.size(); i++)
+            {
+                if (i != j)
+                {
+                    //float mult = ((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * Qmatrix[i][j];
+                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * (mult / Qsum);
+
+                    //float mult = ((float)Pmatrix.coeff(i, j) - (Qmatrix[i][j] / Qsum)) * Qmatrix[i][j];
+                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * mult;
+
+                    //float mult = (0.0f - (Qmatrix[i][j] / Qsum)) * Qmatrix[i][j];
+                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * mult;
+
+                    float mult = ((float)Pmatrix.coeff(i, j) - (0.0f / Qsum));
+                    embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
+                }
+            }
+        }
+
+
+
+        /*
         updateRepulsive();
         
         updateAttractive();
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            embeddeDerivative[i] = -0.01f * attractForce[i] + -0.000001f * repulsForce[i];
+            //embeddeDerivative[i] = -0.01f * attractForce[i] + -0.000001f * repulsForce[i];
+            embeddeDerivative[i] = 1.0f * attractForce[i] + 1.0f * repulsForce[i];
+        }
+        */
+    }
+
+    void updateQ()
+    {
+        for (int i = 0; i < embeddedPoints.size(); i++) 
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                Qmatrix[i][j] = 0.0f;
+            }
+        }
+        
+        Qsum = 0.0f;
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; i < embeddedPoints.size(); i++)
+            {
+                if (i != j)
+                {
+                    float distance = (embeddedPoints[i].position - embeddedPoints[j].position).length();
+                    Qmatrix[i][j] = 1.0f / (1.0f + distance);
+                    Qsum += Qmatrix[i][j];
+                }
+            }
         }
     }
 
@@ -187,7 +247,7 @@ private:
         {
             for (int j = 0; j < embeddedPoints.size(); j++)
             {
-                if (i != j)
+                if (i != j)//might be useless
                 {
                     glm::vec2 iminj = embeddedPoints[i].position - embeddedPoints[j].position;
                     float distance = iminj.length();
@@ -220,16 +280,14 @@ private:
                     glm::vec2 iminj = embeddedPoints[i].position - embeddedPoints[j].position;
                     float distance = iminj.length();
 
-                    //qijTotal += (1.0f + distance);
-
                     glm::vec2 result = iminj / (1.0f + distance);
-                    //attractForce[i] += (float)Pmatrix.coeff(i, j) * result;
+                    attractForce[i] += (float)Pmatrix.coeff(i, j) * result;
                 }
             }
         }
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            //attractForce[i] *= 4.0f;
+            attractForce[i] *= 4.0f;
         }
     }
 };
