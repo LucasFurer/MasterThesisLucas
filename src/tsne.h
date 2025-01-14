@@ -51,7 +51,7 @@ public:
         int dataAmount = 1000;
         float perplexity = 30.0f;
 
-        learnRate = 1.0f;
+        learnRate = 0.0001f;
         accelerationRate = 0.0f;
 
         timeStepsPerSec = 60.0f;
@@ -187,11 +187,14 @@ private:
                     //float mult = ((float)Pmatrix.coeff(i, j) - (Qmatrix[i][j] / Qsum)) * Qmatrix[i][j];
                     //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * mult;
 
-                    //float mult = (0.0f - (Qmatrix[i][j] / Qsum)) * Qmatrix[i][j];
-                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * mult;
+                    //float mult = (0.0f - (Qmatrix[i][j] / Qsum));
+                    //embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
 
-                    float mult = ((float)Pmatrix.coeff(i, j) - (0.0f / Qsum));
-                    embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
+                    //float mult = ((float)Pmatrix.coeff(i, j) - (0.0f / Qsum));
+                    //embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
+
+                    glm::vec2 diff = 1.0f * (embeddedPoints[i].position - embeddedPoints[j].position);
+                    embeddeDerivative[i] += ((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff / (1.0f + diff.length());
                 }
             }
         }
@@ -232,6 +235,17 @@ private:
                     float distance = (embeddedPoints[i].position - embeddedPoints[j].position).length();
                     Qmatrix[i][j] = 1.0f / (1.0f + distance);
                     Qsum += Qmatrix[i][j];
+                }
+            }
+        }
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; i < embeddedPoints.size(); i++)
+            {
+                if (i != j)
+                {
+                    Qmatrix[i][j] = Qsum / Qmatrix[i][j];
                 }
             }
         }
