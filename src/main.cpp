@@ -155,7 +155,7 @@ int main(void)
     Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable* tsneRenderables = new Renderable[1]{ tsneRenderable };
 
-    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
     Scene tsneScene(&cameraTsne, tsneRenderables, 1 * sizeof(Renderable));
 

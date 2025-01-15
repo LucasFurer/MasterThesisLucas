@@ -55,8 +55,8 @@ public:
         int dataAmount = 1000;
         float perplexity = 30.0f;
 
-        learnRate = 1.0f;
-        accelerationRate = 0.0f;
+        learnRate = 10.0f;
+        accelerationRate = 0.5f;
 
         timeStepsPerSec = 60.0f;
         lastTimeUpdated = 0.0f;
@@ -138,7 +138,7 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i]; // +accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
                 //embeddedPoints[i].position = embeddedPointsPrev[i].position + glm::vec2(0.01f);
             }
 
@@ -178,6 +178,7 @@ private:
     void updateDerivativeNaive()
     {
         updateQ();
+        std::cout << "new cost is: " << kullbackLeiblerdivergence() << std::endl;
         /*
         float testSum = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
@@ -191,8 +192,9 @@ private:
             }
         }
         std::cout << "q sum: " << testSum << std::endl;
-
-        testSum = 0.0f;
+        */
+        /*
+        double testSum = 0.0;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             for (int j = 0; j < embeddedPoints.size(); j++)
@@ -202,8 +204,14 @@ private:
                     testSum += Pmatrix.coeff(i, j);
                 }
             }
+            if (testSum <= 0.0005)
+            {
+                std::cout << "sum of all j with i being " << i << ": " << testSum << " this should bigger then: " << 1.0f / (2.0f * 1000.0f) << std::endl;
+            }
+            
+            testSum = 0.0;
         }
-        std::cout << "p sum: " << testSum << std::endl;
+        //std::cout << "p sum: " << testSum << std::endl;
         */
 
 
@@ -225,10 +233,11 @@ private:
                     //float mult = ((float)Pmatrix.coeff(i, j) - (0.0f / Qsum));
                     //embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
 
-                    glm::vec2 diff = 1.0f * (embeddedPoints[i].position - embeddedPoints[j].position);
+                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
                     //std::cout << "i: " << i << " j: " << j << " distance: " << glm::length(diff) << std::endl;
-                    //embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
-                    embeddedDerivative[i] += ((Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
+                    embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
+                    //embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j)) * diff) / (1.0f + glm::length(diff));
+                    //embeddedDerivative[i] += ((-Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
                     
                 }
             }
@@ -346,6 +355,30 @@ private:
         {
             attractForce[i] *= 4.0f;
         }
+    }
+
+    float kullbackLeiblerdivergence()
+    {
+        float cost = 0.0f;
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                if (i != j)
+                {
+                    if (Qmatrix[i][j] != 0.0f && Pmatrix.coeff(i, j) != 0) 
+                    { 
+                        //std::cout << "divide by zero" << std::endl; 
+                        //std::cout << "put in log: " << (float)Pmatrix.coeff(i, j) / Qmatrix[i][j] << std::endl;
+                        cost += (float)Pmatrix.coeff(i, j) * std::log((float)Pmatrix.coeff(i, j) / Qmatrix[i][j]);
+                    }
+
+                }
+            }
+        }
+
+        return cost;
     }
 };
 
