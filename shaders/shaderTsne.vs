@@ -40,9 +40,9 @@ void main()
    float hue = float(aLab) / 9.0f;
    vec3 hsvCol = vec3(hue, 1.0f, 1.0f);
 
-   vec3 disco = vec3(aPos.s, aPos.y, 1.0f);
+   //vec3 disco = vec3(aPos.x / 150.0f, aPos.y / 150.0f, 1.0f);
 
-   FragCol = disco;
-   //FragCol = vec3(1.0f);
+   //FragCol = disco;
+   FragCol = vec3(1.0f);
    //FragCol = hsv2rgb(hsvCol);
 }
