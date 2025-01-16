@@ -83,6 +83,7 @@ int main(void)
         glfwTerminate();
         return -1;
     }
+    glfwMaximizeWindow(window);
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);

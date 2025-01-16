@@ -45,13 +45,9 @@ public:
     Eigen::SparseMatrix<double> Pmatrix;
     std::vector<std::vector<float>> Qmatrix;
     float Qsum;
-
-    std::vector<int> testI;
     
 	TSNE()
 	{
-        testI = { 0,1,2,3,4,5 };
-
         //srand(time(NULL));
         int dataAmount = 1000;
         float perplexity = 30.0f;
@@ -129,8 +125,6 @@ public:
     {
         if (glfwGetTime() - lastTimeUpdated >= 1.0f / timeStepsPerSec)
         {
-
-
             lastTimeUpdated = glfwGetTime();
 
             updateDerivativeNaive();
@@ -141,17 +135,7 @@ public:
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
                 embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-                //embeddedPoints[i].position = embeddedPointsPrev[i].position + glm::vec2(0.01f);
             }
-
-            //std::cout << glm::to_string(embeddedPoints[0].position) << std::endl;
-            
-            //std::cout << "print all" << std::endl;
-            //for (int i = 0; i < embeddedPoints.size(); i++)
-            //{
-            //    std::cout << glm::to_string(embeddedPoints[i].position) << std::endl;
-            //}
-            //std::cout << "print done" << std::endl;
 
             embeddedBuffer->updateBufferNew(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt);
         }
@@ -181,40 +165,6 @@ private:
     {
         updateQ();
         std::cout << "new cost is: " << kullbackLeiblerdivergence() << std::endl;
-        /*
-        float testSum = 0.0f;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    testSum += Qmatrix[i][j];
-                }
-            }
-        }
-        std::cout << "q sum: " << testSum << std::endl;
-        */
-        /*
-        double testSum = 0.0;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    testSum += Pmatrix.coeff(i, j);
-                }
-            }
-            if (testSum <= 0.0005)
-            {
-                std::cout << "sum of all j with i being " << i << ": " << testSum << " this should bigger then: " << 1.0f / (2.0f * 1000.0f) << std::endl;
-            }
-            
-            testSum = 0.0;
-        }
-        //std::cout << "p sum: " << testSum << std::endl;
-        */
 
 
         for (int i = 0; i < embeddedPoints.size(); i++)
@@ -223,27 +173,10 @@ private:
             {
                 if (i != j)
                 {
-                    //float mult = ((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * Qmatrix[i][j];
-                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * (mult / Qsum);
-
-                    //float mult = ((float)Pmatrix.coeff(i, j) - (Qmatrix[i][j] / Qsum)) * Qmatrix[i][j];
-                    //embeddeDerivative[i] += (embeddedPoints[i].position - embeddedPoints[j].position) * mult;
-
-                    //float mult = (0.0f - (Qmatrix[i][j] / Qsum));
-                    //embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
-
-                    //float mult = ((float)Pmatrix.coeff(i, j) - (0.0f / Qsum));
-                    //embeddeDerivative[i] += (embeddedPoints[j].position - embeddedPoints[i].position) * mult;
-
                     glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                    //std::cout << "i: " << i << " j: " << j << " distance: " << glm::length(diff) << std::endl;
                     embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
-                    //embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j)) * diff) / (1.0f + glm::length(diff));
-                    //embeddedDerivative[i] += ((-Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
-                    
                 }
             }
-            //std::cout << "deriv: " << glm::to_string(embeddedDerivative[i]) << std::endl;
         }
 
 
@@ -282,11 +215,6 @@ private:
                     float distance = glm::length(embeddedPoints[i].position - embeddedPoints[j].position);
                     Qmatrix[i][j] = 1.0f / (1.0f + distance);
                     Qsum += Qmatrix[i][j];
-                    //std::cout << glm::to_string(embeddedPoints[i].position) << std::endl;
-                    //std::cout << glm::to_string(embeddedPoints[j].position) << std::endl;
-                    //std::cout << glm::to_string(embeddedPoints[i].position - embeddedPoints[j].position) << std::endl;
-                    //std::cout << (embeddedPoints[i].position - embeddedPoints[j].position).length() << std::endl;
-                    //std::cout << distance << std::endl;
                 }
             }
         }
@@ -297,9 +225,7 @@ private:
             {
                 if (i != j)
                 {
-                    //std::cout << "before: " << Qmatrix[i][j] << std::endl;
                     Qmatrix[i][j] = Qmatrix[i][j] / Qsum;
-                    //std::cout << "after: " << Qmatrix[i][j] << std::endl;
                 }
             }
         }
@@ -330,32 +256,6 @@ private:
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             repulsForce[i] *= -4.0f * qijTotal;
-        }
-
-
-    }
-
-    void updateAttractive()
-    {
-        std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    glm::vec2 iminj = embeddedPoints[i].position - embeddedPoints[j].position;
-                    float distance = glm::length(iminj);
-
-                    glm::vec2 result = iminj / (1.0f + distance);
-                    attractForce[i] += (float)Pmatrix.coeff(i, j) * result;
-                }
-            }
-        }
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            attractForce[i] *= 4.0f;
         }
     }
 
