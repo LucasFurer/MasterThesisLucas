@@ -41,6 +41,7 @@ public:
     float timeStepsPerSec;
     float lastTimeUpdated;
 
+    std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
     std::vector<std::vector<float>> Qmatrix;
     float Qsum;
@@ -62,10 +63,11 @@ public:
         lastTimeUpdated = 0.0f;
 
 
+        std::string labelsPath = "data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin";
+        labels = Loader::loadLabels(labelsPath);
+        
         std::string fileName = "data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
-        //std::string fileName = "data/P_matrix_amount1000_perp30.mtx";
         std::ifstream file(fileName);
-
         if (file.is_open())
         {
             Eigen::loadMarket(Pmatrix, fileName);
@@ -106,7 +108,7 @@ public:
                 powf(sizeParam * randY, 1.0f)
             );
 
-            int lab = 0;
+            int lab = labels[i];
             
             embeddedPoints[i] = EmbeddedPoint(pos, lab);
             embeddedPointsPrev[i] = EmbeddedPoint(pos, lab);

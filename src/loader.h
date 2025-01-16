@@ -33,6 +33,17 @@ public:
         fclose(file);
         return data;
 	}
+    
+    static std::vector<uint8_t> loadLabels(std::string path)
+    {
+        std::ifstream file(path, std::ios::binary);
+
+        if (!file) {
+            std::cerr << "Error opening file!" << std::endl;
+        }
+
+        return std::vector<uint8_t>((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    }
 
 private:
     static uint32_t getNextFourBytes(FILE* file)
