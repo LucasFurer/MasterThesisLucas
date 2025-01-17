@@ -37,7 +37,7 @@ void main()
    gl_Position = projection * view * model * vec4(vec3(aPos.xy, 0.0f), 1.0f);
    FragPos = vec3(model * vec4(vec3(aPos.xy, 0.0f), 1.0f));
 
-   float hue = float(aLab) / 9.0f;
+   float hue = float(aLab) / 10.0f;
    vec3 hsvCol = vec3(hue, 1.0f, 1.0f);
 
    //FragCol = vec3(1.0f);

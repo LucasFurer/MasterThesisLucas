@@ -52,10 +52,10 @@ public:
         int dataAmount = 1000;
         float perplexity = 30.0f;
 
-        learnRate = 10.0f;
+        learnRate = 100.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 60.0f;
+        timeStepsPerSec = 99999.0f;
         lastTimeUpdated = 0.0f;
 
 
@@ -88,7 +88,7 @@ public:
         attractForce.resize(dataAmount);
         repulsForce.resize(dataAmount);
 
-        float sizeParam = 200.0f;
+        float sizeParam = 2.0f;
         for (int i = 0; i < dataAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
@@ -163,9 +163,9 @@ private:
 
     void updateDerivativeNaive()
     {
+        /*
         updateQ();
         std::cout << "new cost is: " << kullbackLeiblerdivergence() << std::endl;
-
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -175,28 +175,86 @@ private:
                 {
                     glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
                     embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
+                    //embeddedDerivative[i] += ((-Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
+                    //embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j)) * diff) / (1.0f + glm::length(diff));
                 }
             }
         }
-
-
-
-        /*
+        */
+        
         updateRepulsive();
         
         updateAttractive();
 
+        std::fill(embeddedDerivative.begin(), embeddedDerivative.end(), glm::vec2(0.0f, 0.0f));
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            //embeddeDerivative[i] = -0.01f * attractForce[i] + -0.000001f * repulsForce[i];
-            embeddeDerivative[i] = 1.0f * attractForce[i] + 1.0f * repulsForce[i];
+            embeddedDerivative[i] = attractForce[i] - repulsForce[i];
+        }
+        
+    }
+
+    void updateRepulsive()
+    {
+        std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
+
+        float QijTotal = 0.0f;
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                if (i != j)//might be useless
+                {
+                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
+                    float distance = glm::length(diff);
+
+                    float Qij = 1.0f / (1.0f + distance);
+                    QijTotal += Qij;
+
+                    repulsForce[i] += Qij * (1.0f / (1.0f + distance)) * diff;
+                }
+            }
+        }
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            repulsForce[i] *= (1.0f / QijTotal);
+        }
+    }
+
+    void updateAttractive()
+    {
+        std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
+
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) { // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) {
+                glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
+                float distance = glm::length(diff);
+
+                attractForce[it.col()] += (float)it.value() * (diff / (1.0f + distance));
+            }
+        }
+        /*
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                if (i != j)//might be useless
+                {
+                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
+                    float distance = glm::length(diff);
+
+                    attractForce[i] += (float)Pmatrix.coeff(i, j) * (diff / (1.0f + distance));
+                }
+            }
         }
         */
     }
 
     void updateQ()
     {
-        for (int i = 0; i < embeddedPoints.size(); i++) 
+        for (int i = 0; i < embeddedPoints.size(); i++)
         {
             for (int j = 0; j < embeddedPoints.size(); j++)
             {
@@ -228,34 +286,6 @@ private:
                     Qmatrix[i][j] = Qmatrix[i][j] / Qsum;
                 }
             }
-        }
-    }
-
-    void updateRepulsive()
-    {
-        std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
-
-        float qijTotal = 0.0f;
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)//might be useless
-                {
-                    glm::vec2 iminj = embeddedPoints[i].position - embeddedPoints[j].position;
-                    float distance = glm::length(iminj);
-
-                    qijTotal += (1.0f + distance);
-
-                    glm::vec2 result = iminj / ((1.0f + distance) * (1.0f + distance));
-                    repulsForce[i] += result;
-                }
-            }
-        }
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            repulsForce[i] *= -4.0f * qijTotal;
         }
     }
 
