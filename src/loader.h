@@ -1,6 +1,8 @@
 #ifndef LOADER_H
 #define LOADER_H
 
+#include <unsupported/Eigen/SparseExtra>
+
 class Loader
 {
 public:
@@ -43,6 +45,25 @@ public:
         }
 
         return std::vector<uint8_t>((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    }
+
+    static Eigen::SparseMatrix<double> loadPmatrix(std::string path)
+    {
+        std::ifstream file(path);
+        if (file.is_open())
+        {
+            Eigen::SparseMatrix<double> Pmatrix;
+            Eigen::loadMarket(Pmatrix, path);
+            std::cout << "Matrix loaded successfully!" << std::endl;
+            return Pmatrix;
+            //Pmatrix.coeff(i, j)
+            //Pmatrix.rows()
+            //Pmatrix.cols()
+        }
+        else
+        {
+            std::cerr << "Failed to open " + path + " file!" << std::endl;
+        }
     }
 
 private:

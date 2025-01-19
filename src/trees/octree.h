@@ -1,5 +1,5 @@
-#ifndef OCTTREE_H
-#define OCTTREE_H
+#ifndef OCTREE_H
+#define OCTREE_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include "particles/particle3D.h"
+#include "../particles/particle3D.h"
 
 struct LineSegment
 {
@@ -40,19 +40,19 @@ struct LineSegment
 
 		for (int i = 0; i < lineSegmentAmount; i++)
 		{
-			result[12 * i + 0 ] = lineSegments[i].pointB.x;
-			result[12 * i + 1 ] = lineSegments[i].pointB.y;
-			result[12 * i + 2 ] = lineSegments[i].pointB.z;
+			result[12 * i + 0] = lineSegments[i].pointB.x;
+			result[12 * i + 1] = lineSegments[i].pointB.y;
+			result[12 * i + 2] = lineSegments[i].pointB.z;
 
-			result[12 * i + 3 ] = lineSegments[i].colorB.r;
-			result[12 * i + 4 ] = lineSegments[i].colorB.g;
-			result[12 * i + 5 ] = lineSegments[i].colorB.b;
+			result[12 * i + 3] = lineSegments[i].colorB.r;
+			result[12 * i + 4] = lineSegments[i].colorB.g;
+			result[12 * i + 5] = lineSegments[i].colorB.b;
 
-			result[12 * i + 6 ] = lineSegments[i].pointE.x;
-			result[12 * i + 7 ] = lineSegments[i].pointE.y;
-			result[12 * i + 8 ] = lineSegments[i].pointE.z;
+			result[12 * i + 6] = lineSegments[i].pointE.x;
+			result[12 * i + 7] = lineSegments[i].pointE.y;
+			result[12 * i + 8] = lineSegments[i].pointE.z;
 
-			result[12 * i + 9 ] = lineSegments[i].colorE.r;
+			result[12 * i + 9] = lineSegments[i].colorE.r;
 			result[12 * i + 10] = lineSegments[i].colorE.g;
 			result[12 * i + 11] = lineSegments[i].colorE.b;
 		}
@@ -80,7 +80,7 @@ public:
 
 	//OctTree** children;
 	std::vector<OctTree*> children;
-	
+
 	OctTree()
 	{
 		glm::vec3 setLowestCorner(std::numeric_limits<float>::infinity());
@@ -114,7 +114,7 @@ public:
 
 		//std::cout << "new node created" << std::endl;
 	}
-	
+
 	std::pair<float, glm::vec3> createTree()
 	{
 		//std::cout << "createTree begin" << std::endl;
@@ -131,7 +131,7 @@ public:
 			std::vector<int> LHL;
 			std::vector<int> LLL;
 
-			float l = (highestCorner.x - lowestCorner.x)/2.0f;
+			float l = (highestCorner.x - lowestCorner.x) / 2.0f;
 			float middleX = lowestCorner.x + l;
 			float middleY = lowestCorner.y + l;
 			float middleZ = lowestCorner.z + l;
@@ -140,7 +140,7 @@ public:
 			{
 				int index = occupants[i];
 
-				if      (allParticles[index].position.x >= middleX && allParticles[index].position.y >= middleY && allParticles[index].position.z >= middleZ)
+				if (allParticles[index].position.x >= middleX && allParticles[index].position.y >= middleY && allParticles[index].position.z >= middleZ)
 				{
 					HHH.push_back(occupants[i]);
 				}
@@ -179,15 +179,15 @@ public:
 
 				//std::cout << "the " << i << "th value has been added" << std::endl;
 			}
-			
-			if (HHH.size() != 0) { children.push_back(new OctTree(HHH, glm::vec3(middleX,        middleY,        middleZ),        glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z))); }
-			if (HHL.size() != 0) { children.push_back(new OctTree(HHL, glm::vec3(middleX,        middleY,        lowestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, middleZ)        )); }
-			if (HLH.size() != 0) { children.push_back(new OctTree(HLH, glm::vec3(middleX,        lowestCorner.y, middleZ),        glm::vec3(highestCorner.x, middleY,         highestCorner.z))); }
-			if (LHH.size() != 0) { children.push_back(new OctTree(LHH, glm::vec3(lowestCorner.x, middleY,        middleZ),        glm::vec3(middleX,         highestCorner.y, highestCorner.z))); }
-			if (HLL.size() != 0) { children.push_back(new OctTree(HLL, glm::vec3(middleX,        lowestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, middleY,         middleZ)        )); }
-			if (LLH.size() != 0) { children.push_back(new OctTree(LLH, glm::vec3(lowestCorner.x, lowestCorner.y, middleZ),        glm::vec3(middleX,         middleY,         highestCorner.z))); }
-			if (LHL.size() != 0) { children.push_back(new OctTree(LHL, glm::vec3(lowestCorner.x, middleY,        lowestCorner.z), glm::vec3(middleX,         highestCorner.y, middleZ)        )); }
-			if (LLL.size() != 0) { children.push_back(new OctTree(LLL, glm::vec3(lowestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(middleX,         middleY,         middleZ)        )); }
+
+			if (HHH.size() != 0) { children.push_back(new OctTree(HHH, glm::vec3(middleX, middleY, middleZ), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z))); }
+			if (HHL.size() != 0) { children.push_back(new OctTree(HHL, glm::vec3(middleX, middleY, lowestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, middleZ))); }
+			if (HLH.size() != 0) { children.push_back(new OctTree(HLH, glm::vec3(middleX, lowestCorner.y, middleZ), glm::vec3(highestCorner.x, middleY, highestCorner.z))); }
+			if (LHH.size() != 0) { children.push_back(new OctTree(LHH, glm::vec3(lowestCorner.x, middleY, middleZ), glm::vec3(middleX, highestCorner.y, highestCorner.z))); }
+			if (HLL.size() != 0) { children.push_back(new OctTree(HLL, glm::vec3(middleX, lowestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, middleY, middleZ))); }
+			if (LLH.size() != 0) { children.push_back(new OctTree(LLH, glm::vec3(lowestCorner.x, lowestCorner.y, middleZ), glm::vec3(middleX, middleY, highestCorner.z))); }
+			if (LHL.size() != 0) { children.push_back(new OctTree(LHL, glm::vec3(lowestCorner.x, middleY, lowestCorner.z), glm::vec3(middleX, highestCorner.y, middleZ))); }
+			if (LLL.size() != 0) { children.push_back(new OctTree(LLL, glm::vec3(lowestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(middleX, middleY, middleZ))); }
 
 			/*
 			std::cout << "lowest corner is: " << glm::to_string(lowestCorner) << std::endl;
@@ -230,7 +230,7 @@ public:
 		}
 	}
 
-	void getLineSegments(std::vector<LineSegment> &lineSegments, int level, int showLevel)
+	void getLineSegments(std::vector<LineSegment>& lineSegments, int level, int showLevel)
 	{
 		if (level == showLevel)
 		{
@@ -259,18 +259,18 @@ public:
 				color = glm::vec3(1.0f, 1.0f, 1.0f);
 			}
 
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  lowestCorner.y,  lowestCorner.z),  glm::vec3(highestCorner.x, lowestCorner.y,  lowestCorner.z),  color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  lowestCorner.y,  lowestCorner.z),  glm::vec3(lowestCorner.x,  highestCorner.y, lowestCorner.z),  color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  lowestCorner.y,  lowestCorner.z),  glm::vec3(lowestCorner.x,  lowestCorner.y,  highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  highestCorner.y, highestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z),  glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y,  highestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  lowestCorner.y,  highestCorner.z), glm::vec3(lowestCorner.x,  highestCorner.y, highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y,  lowestCorner.z),  glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z),  color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  highestCorner.y, lowestCorner.z),  glm::vec3(lowestCorner.x,  highestCorner.y, highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  highestCorner.y, lowestCorner.z),  glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z),  color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x,  lowestCorner.y,  highestCorner.z), glm::vec3(highestCorner.x, lowestCorner.y,  highestCorner.z), color, color, level));
-			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y,  lowestCorner.z),  glm::vec3(highestCorner.x, lowestCorner.y,  highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, lowestCorner.y, lowestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(lowestCorner.x, highestCorner.y, lowestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(lowestCorner.x, lowestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, highestCorner.y, highestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y, highestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, lowestCorner.y, highestCorner.z), glm::vec3(lowestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, highestCorner.y, lowestCorner.z), glm::vec3(lowestCorner.x, highestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, highestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, highestCorner.y, lowestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(lowestCorner.x, lowestCorner.y, highestCorner.z), glm::vec3(highestCorner.x, lowestCorner.y, highestCorner.z), color, color, level));
+			lineSegments.push_back(LineSegment(glm::vec3(highestCorner.x, lowestCorner.y, lowestCorner.z), glm::vec3(highestCorner.x, lowestCorner.y, highestCorner.z), color, color, level));
 		}
 
 
@@ -305,7 +305,7 @@ public:
 	{
 
 	}
-	
+
 private:
 };
 

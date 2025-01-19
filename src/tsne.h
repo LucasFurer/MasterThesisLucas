@@ -5,23 +5,15 @@
 #include "buffer.h"
 #include "loader.h"
 #include <fstream>
-
-#include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include <Eigen/SparseCore>
-#include <Eigen/SparseLU>
-#include <Eigen/SparseQR>
-#include <Eigen/Eigen>
-#include <unsupported/Eigen/MatrixFunctions>
-#include <unsupported/Eigen/SparseExtra>
-#include <Eigen/Geometry>
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/SparseExtra>
-
 #include <filesystem>
 #include <format>
 #include <math.h>
 #include <numbers>
+#include "nbodysolvers/nBodySolverNaive.h"
+#include "nbodysolvers/nBodySolverBarnesHut.h"
 
 class TSNE
 {
@@ -43,7 +35,7 @@ public:
 
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
-    std::vector<std::vector<float>> Qmatrix;
+    //std::vector<std::vector<float>> Qmatrix;
     float Qsum;
     
 	TSNE()
@@ -63,6 +55,9 @@ public:
         labels = Loader::loadLabels(labelsPath);
         
         std::string fileName = "data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
+        Pmatrix = Loader::loadPmatrix(fileName);
+
+        /*
         std::ifstream file(fileName);
         if (file.is_open())
         {
@@ -76,8 +71,10 @@ public:
         {
             std::cerr << "Failed to open " + fileName + " file!" << std::endl;
         }
-        Qmatrix.resize(dataAmount);
-        for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
+        */
+
+        //Qmatrix.resize(dataAmount);
+        //for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
 
 
         embeddedPoints.resize(dataAmount);
@@ -196,10 +193,15 @@ private:
 
     void updateRepulsive()
     {
-        std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
-
         float QijTotal = 0.0f;
 
+
+        //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        
+        NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 5, 0.1f);
+        
+        /*
+        std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             for (int j = 0; j < embeddedPoints.size(); j++)
@@ -216,6 +218,7 @@ private:
                 }
             }
         }
+        */
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -252,6 +255,7 @@ private:
         */
     }
 
+    /*
     void updateQ()
     {
         for (int i = 0; i < embeddedPoints.size(); i++)
@@ -312,6 +316,8 @@ private:
 
         return cost;
     }
+    */
+
 };
 
 #endif

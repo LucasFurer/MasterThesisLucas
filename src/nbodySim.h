@@ -1,7 +1,7 @@
 #ifndef NBODYSIM_H
 #define NBODYSIM_H
 
-#include "octtree.h"
+#include "trees/octree.h"
 #include "ffthelper.h"
 #include "common.h"
 #include <vector>
