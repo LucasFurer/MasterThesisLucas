@@ -72,7 +72,7 @@ public:
 
 	std::vector<int> occupants;
 
-	std::vector<QuadTree*> children;
+	std::vector<QuadTree*> children; // maybe change to no a pointer
 
 	QuadTree(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
 	{
@@ -109,17 +109,12 @@ public:
 		highestCorner = initHighestCorner;
 
 		occupants = initOccupants;
-
-		//std::cout << "new node created" << std::endl;
 	}
 
 	std::pair<float, glm::vec2> createTree()
 	{
-		//std::cout << "createTree begin" << std::endl;
-		//std::cout << occupants.size() << std::endl;
 		if (occupants.size() > maxChildren)
 		{
-			//std::cout << "coondition" << std::endl;
 			std::vector<int> HH;
 			std::vector<int> HL;
 			std::vector<int> LH;
@@ -153,29 +148,12 @@ public:
 				{
 					std::cout << "something is wrong in octtree" << std::endl;
 				}
-
-				//std::cout << "the " << i << "th value has been added" << std::endl;
 			}
 
 			if (HH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HH, glm::vec2(middleX, middleY),               glm::vec2(highestCorner.x, highestCorner.y))); }
 			if (HL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y),        glm::vec2(highestCorner.x, middleY))); }
 			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY),        glm::vec2(middleX, highestCorner.y))); }
 			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
-
-			/*
-			std::cout << "lowest corner is: " << glm::to_string(lowestCorner) << std::endl;
-			std::cout << "highest corner is: " << glm::to_string(highestCorner) << std::endl;
-
-			std::cout << "occupants size is: " << occupants.size() << std::endl;
-			std::cout << "HHH size is: " << HHH.size() << std::endl;
-			std::cout << "HHL size is: " << HHL.size() << std::endl;
-			std::cout << "HLH size is: " << HLH.size() << std::endl;
-			std::cout << "LHH size is: " << LHH.size() << std::endl;
-			std::cout << "HLL size is: " << HLL.size() << std::endl;
-			std::cout << "LLH size is: " << LLH.size() << std::endl;
-			std::cout << "LHL size is: " << LHL.size() << std::endl;
-			std::cout << "LLL size is: " << LLL.size() << std::endl;
-			*/
 
 			for (QuadTree* octTree : children)
 			{

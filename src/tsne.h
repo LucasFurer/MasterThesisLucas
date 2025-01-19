@@ -41,7 +41,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 100.0f;
@@ -198,7 +198,7 @@ private:
 
         //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 5, 0.1f);
+        NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.5f);
         
         /*
         std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
