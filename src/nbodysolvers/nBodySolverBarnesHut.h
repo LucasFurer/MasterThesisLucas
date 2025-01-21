@@ -5,8 +5,15 @@
 class NBodySolverBarnesHut
 {
 public:
+    std::vector<LineSegment2D> lineSegments;
+    Buffer* boxBuffer = new Buffer();
+    int showLevel = 0;
 
-    static void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<EmbeddedPoint>* embeddedPoints, int maxChildren, float theta)
+    NBodySolverBarnesHut()
+    {
+    }
+
+    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<EmbeddedPoint>* embeddedPoints, int maxChildren, float theta)
     {
         //std::cout << "start the barnes hut solver" << std::endl;
 
@@ -24,21 +31,30 @@ public:
             (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], theta);
         }
         //std::cout << "time it took for force calculations: " << glfwGetTime() - timeBefore << std::endl;
+
+        //int showLevel = 0;
+        lineSegments.clear();
+        root.getLineSegments(lineSegments, 0, showLevel);
+
+        float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
+        boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
+        delete[] lineSegmentsToBuffer;
     }
 
 private:
-    static glm::vec2 getBarnesHutAcc(float* total, QuadTree* node, EmbeddedPoint particle, float theta)
+    glm::vec2 getBarnesHutAcc(float* total, QuadTree* node, EmbeddedPoint particle, float theta)
     {
         glm::vec2 acc(0.0f);
 
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 cubeCentre = ((node->highestCorner + node->lowestCorner) / 2.0f);
 
-        glm::vec2 nodeDiff = node->centreOfMass - particle.position;
+        glm::vec2 nodeDiff = node->centreOfMass - particle.position; // change this
         float parCentreDistance = glm::length(nodeDiff);
-        if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
-            float Qij = 1.0f / (1.0f + parCentreDistance);
+            float Qij = node->totalMass * (1.0f / (1.0f + parCentreDistance));
             *total += Qij;
 
             acc += Qij * (1.0f / (1.0f + parCentreDistance)) * nodeDiff;

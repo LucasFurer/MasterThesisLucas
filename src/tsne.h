@@ -27,6 +27,8 @@ public:
     std::vector<glm::vec2> attractForce;
     std::vector<glm::vec2> repulsForce;
 
+    NBodySolverBarnesHut nBodySolverBarnesHut;
+
     float learnRate;
     float accelerationRate;
 
@@ -44,7 +46,7 @@ public:
         int dataAmount = 10000;
         float perplexity = 30.0f;
 
-        learnRate = 100.0f;
+        learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
         timeStepsPerSec = 99999.0f;
@@ -108,6 +110,7 @@ public:
             embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
         }
 
+        //nBodySolverBarnesHut = new NBodySolverBarnesHut;
         embeddedBuffer = new Buffer(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt, GL_DYNAMIC_DRAW);
 	}
 	
@@ -198,7 +201,10 @@ private:
 
         //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.5f);
+
+        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //NBodySolverBarnesHut nBodySolverBarnesHut;
+        //NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.5f);
         
         /*
         std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));

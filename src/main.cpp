@@ -152,13 +152,15 @@ int main(void)
     TSNE tsne;
     glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
     Shader shaderTsne("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
+    Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
 
-    Renderable tsneRenderable(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
-    Renderable* tsneRenderables = new Renderable[1]{ tsneRenderable };
+    Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
+    Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
+    Renderable* tsneRenderables = new Renderable[2]{ tsneRenderablePoints, tsneRenderableLines };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene tsneScene(&cameraTsne, tsneRenderables, 1 * sizeof(Renderable));
+    Scene tsneScene(&cameraTsne, tsneRenderables, 2 * sizeof(Renderable));
 
     scenes[0] = &tsneScene;
 
@@ -274,6 +276,8 @@ int main(void)
             }
         }
         */
+        ImGui::SliderInt("show tree level", &tsne.nBodySolverBarnesHut.showLevel, 0, 10);
+
         ImGui::End();
 
         ImGui::Render();
