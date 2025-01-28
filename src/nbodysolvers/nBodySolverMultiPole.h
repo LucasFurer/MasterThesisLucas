@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../trees/quadtree.h"
+#include "../trees/quadtreemultipole.h"
 
-class NBodySolverBarnesHut
+class NBodySolverMultiPole
 {
 public:
     std::vector<LineSegment2D> lineSegments;
     Buffer* boxBuffer = new Buffer();
     int showLevel = 0;
 
-    NBodySolverBarnesHut()
+    NBodySolverMultiPole()
     {
     }
 
@@ -28,7 +28,7 @@ public:
         //timeBefore = glfwGetTime();
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
-            (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], theta);
+            (*forces)[i] = getMultiPoleAcc(total, &root, (*embeddedPoints)[i], theta);
         }
         //std::cout << "time it took for force calculations: " << glfwGetTime() - timeBefore << std::endl;
 
@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    glm::vec2 getBarnesHutAcc(float* total, QuadTree* node, EmbeddedPoint particle, float theta)
+    glm::vec2 getMultiPoleAcc(float* total, QuadTree* node, EmbeddedPoint particle, float theta)
     {
         glm::vec2 acc(0.0f);
 
@@ -79,7 +79,7 @@ private:
         {
             for (QuadTree* octTree : node->children)
             {
-                acc += getBarnesHutAcc(total, octTree, particle, theta);
+                acc += getMultiPoleAcc(total, octTree, particle, theta);
             }
         }
 

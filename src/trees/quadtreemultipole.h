@@ -9,7 +9,7 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
-class QuadTree
+class QuadTreeMultiPole
 {
 public:
 	int maxChildren;
@@ -23,9 +23,9 @@ public:
 
 	std::vector<int> occupants;
 
-	std::vector<QuadTree*> children; // maybe change to no a pointer
+	std::vector<QuadTreeMultiPole*> children; // maybe change to no a pointer
 
-	QuadTree(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -51,7 +51,7 @@ public:
 		std::pair<float, glm::vec2> childMassPosition = createTree();
 	}
 
-	QuadTree(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -101,12 +101,12 @@ public:
 				}
 			}
 
-			if (HH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HH, glm::vec2(middleX, middleY),               glm::vec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y),        glm::vec2(highestCorner.x, middleY))); }
-			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY),        glm::vec2(middleX, highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
+			if (HH.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, HH, glm::vec2(middleX, middleY), glm::vec2(highestCorner.x, highestCorner.y))); }
+			if (HL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y), glm::vec2(highestCorner.x, middleY))); }
+			if (LH.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY), glm::vec2(middleX, highestCorner.y))); }
+			if (LL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
 
-			for (QuadTree* octTree : children)
+			for (QuadTreeMultiPole* octTree : children)
 			{
 				std::pair<float, glm::vec2> childMassPosition = octTree->createTree();
 				totalMass += childMassPosition.first;
@@ -163,12 +163,12 @@ public:
 				color = glm::vec3(1.0f, 1.0f, 1.0f);
 			}
 
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(highestCorner.x, lowestCorner.y),  color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(lowestCorner.x, highestCorner.y),  color, color, level));
+			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(highestCorner.x, lowestCorner.y), color, color, level));
+			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(lowestCorner.x, highestCorner.y), color, color, level));
 			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(lowestCorner.x, lowestCorner.y),   color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y),  glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
+			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
 			//lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, highestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y),  glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
+			lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
 			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(lowestCorner.x, highestCorner.y),  color, color, level));
 			//lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y),  glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
 			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y),  glm::vec2(lowestCorner.x, highestCorner.y),  color, color, level));
@@ -178,13 +178,13 @@ public:
 		}
 
 
-		for (QuadTree* octTree : children)
+		for (QuadTreeMultiPole* octTree : children)
 		{
 			octTree->getLineSegments(lineSegments, level + 1, showLevel);
 		}
 	}
 
-	~QuadTree()
+	~QuadTreeMultiPole()
 	{
 
 	}

@@ -14,6 +14,7 @@
 #include <numbers>
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
+#include "nbodysolvers/nBodySolverMultiPole.h"
 
 class TSNE
 {
