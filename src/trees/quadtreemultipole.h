@@ -15,8 +15,11 @@ public:
 	int maxChildren;
 	std::vector<EmbeddedPoint>* allParticles;
 
-	float totalMass;
 	glm::vec2 centreOfMass;
+
+	float totalMass;
+	glm::vec2 dipole;
+	glm::mat2 quadrupole;
 
 	glm::vec2 lowestCorner;
 	glm::vec2 highestCorner;
@@ -129,6 +132,14 @@ public:
 			}
 
 			centreOfMass /= totalMass;
+
+			quadrupole = glm::mat2(0.0f);
+			dipole = glm::vec2(0.0f);
+			for (int i = 0; i < occupants.size(); i++)
+			{
+				//glm::vec2 relativeCoord = ;
+			}
+
 
 			return std::make_pair(totalMass, centreOfMass);
 		}

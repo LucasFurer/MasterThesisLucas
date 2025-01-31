@@ -29,6 +29,7 @@ public:
     std::vector<glm::vec2> repulsForce;
 
     NBodySolverBarnesHut nBodySolverBarnesHut;
+    NBodySolverMultiPole nBodySolverMultiPole;
 
     float learnRate;
     float accelerationRate;
@@ -203,9 +204,11 @@ private:
         //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
 
-        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
         //NBodySolverBarnesHut nBodySolverBarnesHut;
         //NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.5f);
+
+        nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
         
         /*
         std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
@@ -239,10 +242,12 @@ private:
 
         for (int k = 0; k < Pmatrix.outerSize(); ++k) { // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) {
-                glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
+                //glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
+                glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
                 float distance = glm::length(diff);
 
-                attractForce[it.col()] += (float)it.value() * (diff / (1.0f + distance));
+                //attractForce[it.col()] += (float)it.value() * (diff / (1.0f + distance));
+                attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
             }
         }
         /*
