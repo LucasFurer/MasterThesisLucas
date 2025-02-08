@@ -31,6 +31,7 @@
 #include "tsne.h"
 #include "common.h"
 #include <fstream>
+#include <filesystem>
 
 //std::cout << std::format("{}", std::numbers::pi_v<double>);
 
@@ -148,11 +149,21 @@ int main(void)
     scenes[2] = &quadScene;
     */
 
+    
     //NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
+    
     TSNE tsne;
+    
     glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
+
+    #ifdef _WIN32
     Shader shaderTsne("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
     Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
+    #endif
+    #ifdef linux
+    Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
+    Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
+    #endif
 
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
@@ -168,8 +179,6 @@ int main(void)
 
     float lastTimePressed = 0.0f;
     float lastFrameUpdate = 0.0f;
-
-    
 
     // render loop
     // -----------
@@ -187,8 +196,6 @@ int main(void)
         ImGui::NewFrame();
 
         float timeBeginFrame = glfwGetTime();
-        // initial
-
 
         tsne.timeStep();
 
@@ -209,6 +216,9 @@ int main(void)
         {
             scenes[0]->camera->perspective = false;
         }
+        
+
+
         /*
         if (timeBeginFrame - lastTimePressed > 0.2f)
         {
@@ -259,30 +269,31 @@ int main(void)
         std::string frame = "frames: ";
         std::string frameOutput = frame + frameString;
         
+        
         ImGui::Begin("options");
         ImGui::Text(frameOutput.c_str());
         //static float myVariable = 0.0f;
         //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
 
         ImGui::SliderInt("orthographic <-> perspective", &per, 0, 1);
-        /*
-        ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
-        if (visSelect == 0)
-        { 
-            ImGui::SliderInt("Barnes&Hut <-> naive: ", &gravType, 0, 1);
-            if (gravType == 0)
-            {
-                ImGui::SliderInt("show tree level", &simulation.showLevel, 0, 10);
-            }
-        }
-        */
+        
+        //ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
+        //if (visSelect == 0)
+        //{ 
+        //    ImGui::SliderInt("Barnes&Hut <-> naive: ", &gravType, 0, 1);
+        //    if (gravType == 0)
+        //    {
+        //        ImGui::SliderInt("show tree level", &simulation.showLevel, 0, 10);
+        //    }
+        //}
+        
         ImGui::SliderInt("show tree level", &tsne.nBodySolverBarnesHut.showLevel, 0, 10);
 
         ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+        
 
         // final
         glfwSwapBuffers(window);
@@ -296,6 +307,12 @@ int main(void)
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    
+
+    tsne.cleanup();
+    shaderTsne.cleanup();
+    shaderLine2D.cleanup();
+
     glfwTerminate();
     return 0;
 }
@@ -339,7 +356,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
         glfwSetWindowShouldClose(window, true);
+    }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         scenes[0]->camera->processKeyboard(GLFW_KEY_W, deltaTime);

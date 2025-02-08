@@ -15,6 +15,9 @@
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
+#include <filesystem>
+#include <iostream>
+#include <random>
 
 class TSNE
 {
@@ -45,37 +48,27 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
-        learnRate = 1000.0f;
+        learnRate = 100.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 99999.0f;
+        timeStepsPerSec = 1000.0f;
         lastTimeUpdated = 0.0f;
 
-
-        std::string labelsPath = "data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin";
-        labels = Loader::loadLabels(labelsPath);
         
+        #ifdef _WIN32
+        std::string labelsPath = "data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin";
         std::string fileName = "data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
-        Pmatrix = Loader::loadPmatrix(fileName);
+        #endif
+        #ifdef linux
+        std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+        #endif
 
-        /*
-        std::ifstream file(fileName);
-        if (file.is_open())
-        {
-            Eigen::loadMarket(Pmatrix, fileName);
-            std::cout << "Matrix loaded successfully!" << std::endl;
-            //Pmatrix.coeff(i, j)
-            //Pmatrix.rows()
-            //Pmatrix.cols()
-        }
-        else
-        {
-            std::cerr << "Failed to open " + fileName + " file!" << std::endl;
-        }
-        */
+        labels = Loader::loadLabels(labelsPath.string());
+        Pmatrix = Loader::loadPmatrix(fileName.string());
 
         //Qmatrix.resize(dataAmount);
         //for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
@@ -94,11 +87,14 @@ public:
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
             float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+
+            
             while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
             {
                 randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
                 randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
             }
+            
 
             glm::vec2 pos = glm::vec2(
                 powf(sizeParam * randX, 1.0f),
@@ -112,16 +108,18 @@ public:
             embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
         }
 
-        //nBodySolverBarnesHut = new NBodySolverBarnesHut;
         embeddedBuffer = new Buffer(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt, GL_DYNAMIC_DRAW);
 	}
 	
 	~TSNE()
 	{
-        delete embeddedBuffer;
-        //maybe do this delete embeddedBuffer
-        //actually why would i even have dynamic buffer?
+
 	}
+
+    void cleanup()
+    {
+        embeddedBuffer->cleanup();
+    }
     
     void timeStep()
     {
@@ -200,35 +198,12 @@ private:
     {
         float QijTotal = 0.0f;
 
-
-        //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
 
-        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
-        //NBodySolverBarnesHut nBodySolverBarnesHut;
-        //NBodySolverBarnesHut::solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.5f);
+        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
-        
-        /*
-        std::fill(repulsForce.begin(), repulsForce.end(), glm::vec2(0.0f, 0.0f));
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)//might be useless
-                {
-                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                    float distance = glm::length(diff);
-
-                    float Qij = 1.0f / (1.0f + distance);
-                    QijTotal += Qij;
-
-                    repulsForce[i] += Qij * (1.0f / (1.0f + distance)) * diff;
-                }
-            }
-        }
-        */
+        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

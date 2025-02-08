@@ -138,6 +138,13 @@ public:
 
 	~Buffer()
 	{
+		//if (VAO != 0) { glDeleteVertexArrays(1, &VAO); }
+		//if (VBO != 0) { glDeleteBuffers(1, &VBO); }
+		//if (EBO != 0) { glDeleteBuffers(1, &EBO); }
+	}
+
+	void cleanup()
+	{
 		if (VAO != 0) { glDeleteVertexArrays(1, &VAO); }
 		if (VBO != 0) { glDeleteBuffers(1, &VBO); }
 		if (EBO != 0) { glDeleteBuffers(1, &EBO); }
