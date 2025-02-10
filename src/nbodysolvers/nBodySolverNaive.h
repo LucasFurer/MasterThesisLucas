@@ -23,7 +23,7 @@ public:
                     float Qij = 1.0f / (1.0f + distance);
                     *total += Qij;
 
-                    (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * diff;
+                    (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
                 }
             }
         }

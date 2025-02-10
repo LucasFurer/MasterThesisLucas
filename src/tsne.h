@@ -28,6 +28,8 @@ public:
     std::vector<glm::vec2> attractForce;
     std::vector<glm::vec2> repulsForce;
 
+    std::vector<glm::vec2> errorCompare;
+
     NBodySolverBarnesHut nBodySolverBarnesHut;
     NBodySolverMultiPole nBodySolverMultiPole;
 
@@ -51,7 +53,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 99999.0f;
+        timeStepsPerSec = 9999.0f;
         lastTimeUpdated = 0.0f;
 
 
@@ -88,6 +90,8 @@ public:
         embeddedDerivative.resize(dataAmount);
         attractForce.resize(dataAmount);
         repulsForce.resize(dataAmount);
+
+        errorCompare.resize(dataAmount);
 
         float sizeParam = 2.0f;
         for (int i = 0; i < dataAmount; i++)
@@ -183,6 +187,8 @@ private:
             }
         }
         */
+
+        //std::cout << checkError() << std::endl;
         
         updateRepulsive();
         
@@ -193,7 +199,39 @@ private:
         {
             embeddedDerivative[i] = attractForce[i] - repulsForce[i];
         }
-        
+    }
+
+    float checkError()
+    {
+        float QijTotalNaive = 0.0f;
+        float QijTotalCompare = 0.0f;
+
+        NBodySolverNaive::solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
+
+        //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
+        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.3f);
+        nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
+
+        //for (int i = 0; i < embeddedPoints.size(); i++)
+        //{
+        //    errorCompare[i] *= (1.0f / QijTotal);
+        //}
+
+        //for (int i = 0; i < embeddedPoints.size(); i++)
+        //{
+        //    errorCompare[i] = attractForce[i] - repulsForce[i];
+        //}
+
+        //-----------------------------------------------------------------------------------
+
+        float error = 0.0f;
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            error += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
+        }
+        error /= embeddedPoints.size();
+
+        return error;
     }
 
     void updateRepulsive()

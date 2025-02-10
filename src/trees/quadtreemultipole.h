@@ -51,7 +51,7 @@ public:
 		lowestCorner = setLowestCorner;
 		highestCorner = setHighestCorner;
 
-		std::pair<float, glm::vec2> childMassPosition = createTree();
+		std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = createTree();
 	}
 
 	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
@@ -65,7 +65,7 @@ public:
 		occupants = initOccupants;
 	}
 
-	std::pair<float, glm::vec2> createTree()
+	std::tuple<glm::vec2, float, glm::vec2, glm::mat2> createTree()
 	{
 		if (occupants.size() > maxChildren)
 		{
@@ -111,14 +111,33 @@ public:
 
 			for (QuadTreeMultiPole* octTree : children)
 			{
-				std::pair<float, glm::vec2> childMassPosition = octTree->createTree();
-				totalMass += childMassPosition.first;
-				centreOfMass += childMassPosition.first * childMassPosition.second;
+				std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = octTree->createTree();
+				totalMass += std::get<1>(childPositionMassDiQuad);
+				//totalMass += childPositionMassDiQuad.first;
+				centreOfMass += std::get<1>(childPositionMassDiQuad) * std::get<0>(childPositionMassDiQuad);
+				//centreOfMass += childMassPosition.first * childMassPosition.second;
 			}
 
 			centreOfMass /= totalMass;
 
-			return std::make_pair(totalMass, centreOfMass);
+			quadrupole = glm::mat2(0.0f);
+			dipole = glm::vec2(0.0f);
+			for (QuadTreeMultiPole* octTree : children)
+			{
+				// calculate moment as though the child node was a point
+				glm::vec2 relativeCoord = octTree->centreOfMass - centreOfMass;
+				dipole += octTree->totalMass * relativeCoord;
+				quadrupole += octTree->totalMass * glm::outerProduct(relativeCoord, relativeCoord);
+
+				// add moment of child node
+				dipole += octTree->dipole;
+				quadrupole += octTree->quadrupole;
+			}
+
+			//dipole /= totalMass;
+			//quadrupole /= totalMass;
+
+			return std::make_tuple(centreOfMass, totalMass, dipole, quadrupole);
 		}
 		else
 		{
@@ -137,11 +156,15 @@ public:
 			dipole = glm::vec2(0.0f);
 			for (int i = 0; i < occupants.size(); i++)
 			{
-				//glm::vec2 relativeCoord = ;
+				glm::vec2 relativeCoord = (*allParticles)[occupants[i]].position - centreOfMass;
+				dipole += relativeCoord; // * mass which is always 1
+				quadrupole += glm::outerProduct(relativeCoord, relativeCoord); // * mass which is always 1
 			}
 
+			//dipole /= totalMass;
+			//quadrupole /= totalMass;
 
-			return std::make_pair(totalMass, centreOfMass);
+			return std::make_tuple(centreOfMass, totalMass, dipole, quadrupole);
 		}
 	}
 
