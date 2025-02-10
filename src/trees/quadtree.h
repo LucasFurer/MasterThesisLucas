@@ -106,9 +106,11 @@ public:
 			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY),        glm::vec2(middleX, highestCorner.y))); }
 			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
 
-			for (QuadTree* octTree : children)
+			totalMass = 0.0f;
+			centreOfMass = glm::vec2(0.0f);
+			for (QuadTree* quadTree : children)
 			{
-				std::pair<float, glm::vec2> childMassPosition = octTree->createTree();
+				std::pair<float, glm::vec2> childMassPosition = quadTree->createTree();
 				totalMass += childMassPosition.first;
 				centreOfMass += childMassPosition.first * childMassPosition.second;
 			}
@@ -119,6 +121,8 @@ public:
 		}
 		else
 		{
+			totalMass = 0.0f;
+			centreOfMass = glm::vec2(0.0f);
 			//std::cout << "leaf" << std::endl;
 			for (int i = 0; i < occupants.size(); i++)
 			{
@@ -186,7 +190,10 @@ public:
 
 	~QuadTree()
 	{
-
+		for (QuadTree* quadTree : children)
+		{
+			delete quadTree;
+		}
 	}
 
 private:

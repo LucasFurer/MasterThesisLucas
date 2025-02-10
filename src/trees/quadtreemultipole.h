@@ -108,7 +108,9 @@ public:
 			if (HL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y), glm::vec2(highestCorner.x, middleY))); }
 			if (LH.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY), glm::vec2(middleX, highestCorner.y))); }
 			if (LL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
-
+			
+			totalMass = 0.0f;
+			centreOfMass = glm::vec2(0.0f);
 			for (QuadTreeMultiPole* octTree : children)
 			{
 				std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = octTree->createTree();
@@ -141,6 +143,8 @@ public:
 		}
 		else
 		{
+			totalMass = 0.0f;
+			centreOfMass = glm::vec2(0.0f);
 			//std::cout << "leaf" << std::endl;
 			for (int i = 0; i < occupants.size(); i++)
 			{

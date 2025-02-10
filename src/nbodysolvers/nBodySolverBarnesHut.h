@@ -22,7 +22,7 @@ public:
         //std::cout << "time it took for zeroing forces array: " << glfwGetTime() - timeBefore << std::endl;
 
         //timeBefore = glfwGetTime();
-        QuadTree root = QuadTree(maxChildren, embeddedPoints);
+        QuadTree root(maxChildren, embeddedPoints);
         //std::cout << "time it took for tree construction: " << glfwGetTime() - timeBefore << std::endl;
 
         //timeBefore = glfwGetTime();
