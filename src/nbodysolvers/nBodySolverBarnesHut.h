@@ -49,16 +49,23 @@ private:
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 cubeCentre = ((node->highestCorner + node->lowestCorner) / 2.0f);
 
-        //glm::vec2 nodeDiff = node->centreOfMass - particle.position; // change this
         glm::vec2 nodeDiff = particle.position - node->centreOfMass; // change this
         float parCentreDistance = glm::length(nodeDiff);
+
         //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
+            /*
             float Qij = node->totalMass * (1.0f / (1.0f + parCentreDistance));
             *total += Qij;
 
-            acc += -Qij * (1.0f / (1.0f + parCentreDistance)) * glm::normalize(nodeDiff);
+            acc += -Qij * (1.0f / (1.0f + parCentreDistance)) * (1.0f / (1.0f + parCentreDistance)) * nodeDiff;
+            */
+
+            float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
+            *total += node->totalMass * oneOverDistance;
+
+            acc += - node->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
         }
         else if (node->children.size() <= 1)
         {
@@ -66,14 +73,20 @@ private:
             {
                 if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
                 {
-                    //glm::vec2 diff = (*node->allParticles)[i].position - particle.position;
                     glm::vec2 diff = particle.position - (*node->allParticles)[i].position;
                     float distance = glm::length(diff);
 
+                    /*
                     float Qij = 1.0f / (1.0f + distance);
                     *total += Qij;
 
-                    acc += -Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
+                    acc += -Qij * (1.0f / (1.0f + distance)) * (1.0f / (1.0f + distance)) * diff;
+                    */
+
+                    float oneOverDistance = 1.0f / (1.0f + distance);
+                    *total += 1.0f * oneOverDistance;
+
+                    acc += - 1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
                 }
             }
         }

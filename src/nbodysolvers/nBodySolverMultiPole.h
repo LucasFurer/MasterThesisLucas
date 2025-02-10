@@ -56,6 +56,31 @@ private:
         //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
+            nodeDiff;
+
+            //double _r = sqrt(r2 + softening2);
+            //double prefact = -G/(_r*_r*_r)*node->m;
+
+            //double qprefact = G/(_r*_r*_r*_r*_r);
+            //particles[pt].ax += qprefact*(dx*node->mxx + dy*node->mxy + dz*node->mxz); 
+            //particles[pt].ay += qprefact*(dx*node->mxy + dy*node->myy + dz*node->myz); 
+            //particles[pt].az += qprefact*(dx*node->mxz + dy*node->myz + dz*node->mzz); 
+            //double mrr     = dx*dx*node->mxx     + dy*dy*node->myy     + dz*dz*node->mzz
+            //        + 2.*dx*dy*node->mxy     + 2.*dx*dz*node->mxz     + 2.*dy*dz*node->myz; 
+            //qprefact *= -5.0/(2.0*_r*_r)*mrr;
+            //particles[pt].ax += (qprefact + prefact) * dx; 
+            //particles[pt].ay += (qprefact + prefact) * dy; 
+            //particles[pt].az += (qprefact + prefact) * dz; 
+
+
+
+
+
+
+
+
+
+
             float Qij = node->totalMass * (1.0f / (1.0f + parCentreDistance));
             *total += Qij;
 
