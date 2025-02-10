@@ -2,6 +2,8 @@
 #define LOADER_H
 
 #include <unsupported/Eigen/SparseExtra>
+//#include <Eigen/Sparse>
+//#include <unsupported/Eigen/src/SparseExtra/MarketIO.h>
 
 class Loader
 {
@@ -62,8 +64,11 @@ public:
         }
         else
         {
-            std::cerr << "Failed to open " + path + " file!" << std::endl;
+            std::cerr << "Failed to open " + (std::string)path + " file!" << std::endl;
         }
+
+        Eigen::SparseMatrix<double> test;//remove this
+        return test;
     }
 
 private:

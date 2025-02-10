@@ -26,6 +26,7 @@ public:
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath)
     {
+        
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
         std::string fragmentCode;
@@ -83,6 +84,7 @@ public:
         // delete the shaders as they're linked into our program now and no longer necessary
         glDeleteShader(vertex);
         glDeleteShader(fragment);
+        
     }
     // use/activate the shader
     void use()
@@ -116,6 +118,10 @@ public:
     }
 
     ~Shader()
+    {
+        //glDeleteProgram(ID);
+    }
+    void cleanup()
     {
         glDeleteProgram(ID);
     }
