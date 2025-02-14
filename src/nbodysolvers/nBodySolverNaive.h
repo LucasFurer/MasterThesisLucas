@@ -17,6 +17,7 @@ public:
             {
                 if (i != j)//might be useless
                 {
+                    /*
                     glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
                     float distance = glm::length(diff);
 
@@ -24,6 +25,15 @@ public:
                     *total += Qij;
 
                     (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
+                    */
+
+                    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
+                    float distance = glm::length(diff);
+
+                    float oneOverDistance = 1.0f / (1.0f + distance);
+                    *total += 1.0f * oneOverDistance;
+
+                    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
                 }
             }
         }

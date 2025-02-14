@@ -136,6 +136,7 @@ public:
 				quadrupole += octTree->quadrupole;
 			}
 
+			//std::cout << glm::to_string(quadrupole) << std::endl;
 			//dipole /= totalMass;
 			//quadrupole /= totalMass;
 

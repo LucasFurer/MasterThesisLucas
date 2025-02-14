@@ -50,13 +50,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
-        learnRate = 10000.0f;
-        accelerationRate = 0.5f;
+        learnRate = 100.0f;
+        accelerationRate = 0.0f;
 
-        timeStepsPerSec = 9999.0f;
+        timeStepsPerSec = 100.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -190,7 +190,7 @@ private:
         }
         */
 
-        //std::cout << checkError() << std::endl;
+        std::cout << checkError() << std::endl;
         
         updateRepulsive();
         
@@ -211,8 +211,8 @@ private:
         NBodySolverNaive::solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
         //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.3f);
-        nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
+        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.9f);
+        nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.9f);
 
         //for (int i = 0; i < embeddedPoints.size(); i++)
         //{
@@ -243,9 +243,9 @@ private:
         //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
 
-        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
+        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
