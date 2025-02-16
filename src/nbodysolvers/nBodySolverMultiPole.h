@@ -69,23 +69,29 @@ private:
             float qprefact = 1.0f / (_r * _r * _r * _r * _r);
             //std::cout << "initial qprefact: " << qprefact << std::endl;
             //qprefact = 0.0f;
-
+            
             //[0][0] = mxx
             //[1][1] = myy
             //[1][0] = mxy
             //[0][1] = myx
+            float mxx = node->quadrupole[0][0];
+            float myy = node->quadrupole[1][1];
+            float mxy = node->quadrupole[1][0];
+            float myx = node->quadrupole[0][1];
+
             //particles[pt].ax += qprefact*(dx*node->mxx + dy*node->mxy + dz*node->mxz); 
             //particles[pt].ay += qprefact*(dx*node->mxy + dy*node->myy + dz*node->myz); 
             //particles[pt].az += qprefact*(dx*node->mxz + dy*node->myz + dz*node->mzz); 
-            acc.x += qprefact * (nodeDiff.x*node->quadrupole[0][0] + nodeDiff.y*node->quadrupole[1][0]);
-            acc.y += qprefact * (nodeDiff.x*node->quadrupole[1][0] + nodeDiff.y*node->quadrupole[1][1]);
+            acc.x += qprefact * (nodeDiff.x * mxx + nodeDiff.y * mxy);
+            acc.y += qprefact * (nodeDiff.x * mxy + nodeDiff.y * myy);
             //double mrr     = dx*dx*node->mxx     + dy*dy*node->myy     + dz*dz*node->mzz
             //        + 2.*dx*dy*node->mxy     + 2.*dx*dz*node->mxz     + 2.*dy*dz*node->myz; 
-            float mrr = (nodeDiff.x * nodeDiff.x * node->quadrupole[0][0]) + (nodeDiff.y * nodeDiff.y * node->quadrupole[1][1]) +
-                        (2.0f * nodeDiff.x * nodeDiff.y * node->quadrupole[1][0]);
+            float mrr = (nodeDiff.x * nodeDiff.x * mxx) + (nodeDiff.y * nodeDiff.y * myy) +
+                        (2.0f * nodeDiff.x * nodeDiff.y * mxy);
 
             //qprefact *= -5.0/(2.0*_r*_r)*mrr;
-            qprefact *= (-5.0f) / (2.0f * _r * _r) * mrr; // might be wrong
+            qprefact *= (3.0f) / (2.0f * _r * _r) * mrr; // might be wrong
+            //qprefact = 0.0f;
 
             
             //std::cout << "current accx: " << acc.x << std::endl;

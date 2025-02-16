@@ -15,6 +15,7 @@
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
+#include "nbodysolvers/nBodySolverFMM.h"
 #include <filesystem>
 #include <iostream>
 #include <random>
@@ -35,6 +36,7 @@ public:
 
     NBodySolverBarnesHut nBodySolverBarnesHut;
     NBodySolverMultiPole nBodySolverMultiPole;
+    NBodySolverFMM nBodySolverFMM;
 
     float learnRate;
     float accelerationRate;
@@ -50,11 +52,11 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
-        learnRate = 100.0f;
-        accelerationRate = 0.0f;
+        learnRate = 1000.0f;
+        accelerationRate = 0.5f;
 
         timeStepsPerSec = 100.0f;
 
@@ -190,7 +192,7 @@ private:
         }
         */
 
-        std::cout << checkError() << std::endl;
+        //std::cout << checkError() << std::endl;
         
         updateRepulsive();
         
@@ -211,8 +213,8 @@ private:
         NBodySolverNaive::solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
         //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.9f);
-        nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.9f);
+        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
+        nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
 
         //for (int i = 0; i < embeddedPoints.size(); i++)
         //{
@@ -242,10 +244,11 @@ private:
 
         //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
+        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
-        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f);
+        nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

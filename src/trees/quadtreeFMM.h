@@ -9,26 +9,28 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
-class QuadTreeMultiPole
+class QuadTreeFMM
 {
 public:
 	int maxChildren;
 	std::vector<EmbeddedPoint>* allParticles;
 
-	glm::vec2 centreOfMass;
+	glm::vec2 centreOfMass = glm::vec2(0.0f);
 
-	float totalMass;
-	glm::vec2 dipole;
-	glm::mat2 quadrupole;
+	float totalMass = 0.0f;
+	glm::vec2 dipole = glm::vec2(0.0f);
+	glm::mat2 quadrupole = glm::mat2(0.0f);
 
-	glm::vec2 lowestCorner;
-	glm::vec2 highestCorner;
+	glm::vec2 accumulatedForce = glm::vec2(0.0f);
+
+	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
+	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
 
 	std::vector<int> occupants;
 
-	std::vector<QuadTreeMultiPole*> children; // maybe change to no a pointer
+	std::vector<QuadTreeFMM*> children; // maybe change to no a pointer
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
+	QuadTreeFMM(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -36,9 +38,11 @@ public:
 		glm::vec2 setLowestCorner(std::numeric_limits<float>::infinity());
 		glm::vec2 setHighestCorner(-std::numeric_limits<float>::infinity());
 
+		occupants.resize(allParticles->size());
 		for (int i = 0; i < allParticles->size(); i++)
 		{
-			occupants.push_back(i);
+			//occupants.push_back(i);
+			occupants[i] = i;
 
 			setLowestCorner = glm::min(setLowestCorner, (*allParticles)[i].position);
 			setHighestCorner = glm::max(setHighestCorner, (*allParticles)[i].position);
@@ -54,7 +58,7 @@ public:
 		std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = createTree();
 	}
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeFMM(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -104,14 +108,14 @@ public:
 				}
 			}
 
-			if (HH.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, HH, glm::vec2(middleX, middleY), glm::vec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y), glm::vec2(highestCorner.x, middleY))); }
-			if (LH.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY), glm::vec2(middleX, highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTreeMultiPole(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
-			
+			if (HH.size() != 0) { children.push_back(new QuadTreeFMM(maxChildren, allParticles, HH, glm::vec2(middleX, middleY), glm::vec2(highestCorner.x, highestCorner.y))); }
+			if (HL.size() != 0) { children.push_back(new QuadTreeFMM(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y), glm::vec2(highestCorner.x, middleY))); }
+			if (LH.size() != 0) { children.push_back(new QuadTreeFMM(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY), glm::vec2(middleX, highestCorner.y))); }
+			if (LL.size() != 0) { children.push_back(new QuadTreeFMM(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
+
 			totalMass = 0.0f;
 			centreOfMass = glm::vec2(0.0f);
-			for (QuadTreeMultiPole* octTree : children)
+			for (QuadTreeFMM* octTree : children)
 			{
 				std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = octTree->createTree();
 				totalMass += std::get<1>(childPositionMassDiQuad);
@@ -124,7 +128,7 @@ public:
 
 			quadrupole = glm::mat2(0.0f);
 			dipole = glm::vec2(0.0f);
-			for (QuadTreeMultiPole* octTree : children)
+			for (QuadTreeFMM* octTree : children)
 			{
 				/*
 				// calculate moment as though the child node was a point
@@ -137,9 +141,9 @@ public:
 				quadrupole += octTree->quadrupole;
 				*/
 
-				
+
 				//double d_m = d->m; this is child mass
-				
+
 				//double qx = d->mx - node->mx; this is relative coord
 				//double qy = d->my - node->my;
 				//double qz = d->mz - node->mz;
@@ -158,8 +162,8 @@ public:
 			}
 
 			//node->mzz = -node->mxx - node->myy;
-			 
-			
+
+
 			//if ()
 			//std::cout << glm::to_string(quadrupole) << std::endl;
 			//dipole /= totalMass;
@@ -242,13 +246,13 @@ public:
 		}
 
 
-		for (QuadTreeMultiPole* octTree : children)
+		for (QuadTreeFMM* octTree : children)
 		{
 			octTree->getLineSegments(lineSegments, level + 1, showLevel);
 		}
 	}
 
-	~QuadTreeMultiPole()
+	~QuadTreeFMM()
 	{
 
 	}
