@@ -126,7 +126,7 @@ public:
 			dipole = glm::vec2(0.0f);
 			for (QuadTreeMultiPole* octTree : children)
 			{
-				/*
+				
 				// calculate moment as though the child node was a point
 				glm::vec2 relativeCoord = octTree->centreOfMass - centreOfMass;
 				dipole += octTree->totalMass * relativeCoord;
@@ -135,9 +135,9 @@ public:
 				// add moment of child node
 				dipole += octTree->dipole;
 				quadrupole += octTree->quadrupole;
-				*/
-
 				
+
+				/*
 				//double d_m = d->m; this is child mass
 				
 				//double qx = d->mx - node->mx; this is relative coord
@@ -155,6 +155,7 @@ public:
 				//node->myy += d->myy + d_m * (3. * qy * qy - qr2);
 				quadrupole[1][1] += octTree->quadrupole[1][1] + octTree->totalMass * (3.0f * relativeCoord.y * relativeCoord.y - qr2);
 				//node->myz += d->myz + d_m * 3. * qy * qz;
+				*/
 			}
 
 			//node->mzz = -node->mxx - node->myy;
@@ -190,6 +191,8 @@ public:
 				dipole += relativeCoord; // * mass which is always 1
 				quadrupole += glm::outerProduct(relativeCoord, relativeCoord); // * mass which is always 1
 			}
+
+
 
 			//dipole /= totalMass;
 			//quadrupole /= totalMass;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Core>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include "../trees/quadtreemultipole.h"
 
 class NBodySolverMultiPole
@@ -23,6 +25,10 @@ public:
 
         //timeBefore = glfwGetTime();
         QuadTreeMultiPole root = QuadTreeMultiPole(maxChildren, embeddedPoints);
+        //std::cout << "total mass: " << root.totalMass << std::endl;
+        //std::cout << "center of mass: " << glm::to_string(root.centreOfMass) << std::endl;
+        //std::cout << "dipole: " << glm::to_string(root.dipole) << std::endl;
+        //std::cout << "quadrupole: " << glm::to_string(root.quadrupole) << std::endl;
         //std::cout << "time it took for tree construction: " << glfwGetTime() - timeBefore << std::endl;
 
         //timeBefore = glfwGetTime();
@@ -44,6 +50,8 @@ public:
 private:
     glm::vec2 getMultiPoleAcc(float* total, QuadTreeMultiPole* node, EmbeddedPoint particle, float theta)
     {
+        float softening = 0.1f; // should be 1.0f for t-SNE
+
         glm::vec2 acc(0.0f);
 
         float l = node->highestCorner.x - node->lowestCorner.x;
@@ -56,8 +64,7 @@ private:
         //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
-            //std::cout << "-----------------------------------------" << std::endl;
-
+            /*
             //double _r = sqrt(r2 + softening2);
             float _r = glm::length(nodeDiff) + 1.0f;
 
@@ -90,16 +97,8 @@ private:
                         (2.0f * nodeDiff.x * nodeDiff.y * mxy);
 
             //qprefact *= -5.0/(2.0*_r*_r)*mrr;
-            qprefact *= (3.0f) / (2.0f * _r * _r) * mrr; // might be wrong
+            qprefact *= (-5.0f) / (2.0f * _r * _r) * mrr; // might be wrong
             //qprefact = 0.0f;
-
-            
-            //std::cout << "current accx: " << acc.x << std::endl;
-            //std::cout << "current accy: " << acc.y << std::endl;
-            //std::cout << "current mrr: " << mrr << std::endl;
-            //std::cout << "current quad: " << glm::to_string(node->quadrupole) << std::endl;
-            //std::cout << "current prefact: " << prefact << std::endl;
-            //std::cout << "current qprefact: " << qprefact << std::endl;
 
             //particles[pt].ax += (qprefact + prefact) * dx; 
             //particles[pt].ay += (qprefact + prefact) * dy; 
@@ -109,21 +108,97 @@ private:
             
 
 
-            /*
+            
             //particles[pt].ax += prefact*dx; 
             //particles[pt].ay += prefact*dy; 
             //particles[pt].az += prefact*dz; 
             acc.x += prefact * nodeDiff.x;
             acc.y += prefact * nodeDiff.y;
-            */
+            
 
             *total += node->totalMass * (1.0f / _r);
+            */
+
+            /*
+            Eigen::Tensor<float, 2> A(2, 2);
+            Eigen::Tensor<float, 3> B(2, 2, 2);
+
+            // Initialize A
+            A.setValues({ {1, 2}, {3, 4} });
+
+            // Initialize B
+            B.setValues({ {{1, 2}, {3, 4}}, {{5, 6}, {7, 8}} });
+
+            // Define the contraction pairs
+            Eigen::array<Eigen::IndexPair<int>, 2> contract_dims = {
+                Eigen::IndexPair<int>(0, 0),  // Contract A's 1st dim with B's 1st dim
+                Eigen::IndexPair<int>(1, 1)   // Contract A's 2nd dim with B's 2nd dim
+            };
+
+            // Perform the contraction
+            Eigen::Tensor<float, 1> C = A.contract(B, contract_dims);
+
+            // Print result
+            std::cout << "C: " << C << std::endl;
+            */
+
+            glm::vec2 R = node->centreOfMass - particle.position;
+            float r = glm::length(R) + softening;
+
+            //float g0 = 1.0f / r;
+            float g1 = - 1.0f / (r * r * r);
+            float g2 = 3.0f / (r * r * r * r * r);
+            float g3 = - 15.0f / (r * r * r * r * r * r * r);
+
+            //Eigen::Tensor<float, 1> Q0(2);
+            float Q0 = node->totalMass;
+            glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
+
+            glm::vec2 Q1 = node->dipole; 
+            glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y, 
+                                     g2 * R.y * R.x, g1 + g2 * R.y * R.y);
 
 
-            //float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
-            //*total += node->totalMass * oneOverDistance;
+            Eigen::Tensor<float, 2> Q2(2, 2);
+            Eigen::Tensor<float, 3> D3(2, 2, 2);
 
-            //acc += - node->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
+            Q2.setValues({ {node->quadrupole[0][0], node->quadrupole[1][0]}, 
+                           {node->quadrupole[0][1], node->quadrupole[1][1]} });
+            
+            D3.setValues({ {{g2*(R.x+R.x+R.x) + g3*R.x*R.x*R.x, g2*(R.y) + g3*R.y*R.x*R.x}, 
+                            {g2*(R.y) + g3*R.y*R.x*R.x,         g2*(R.x) + g3*R.y*R.y*R.x}}, 
+                
+                           {{g2*(R.y) + g3*R.x*R.x*R.y, g2*(R.x) + g3*R.y*R.y*R.x}, 
+                            {g2*(R.x) + g3*R.y*R.y*R.x, g2*(R.y+R.y+R.y) + g3*R.y*R.y*R.y}} });
+            
+
+
+
+
+            /*
+            // Define the contraction pairs
+            Eigen::array<Eigen::IndexPair<int>, 2> contract_dims = {
+                Eigen::IndexPair<int>(0, 0),
+                Eigen::IndexPair<int>(1, 1)
+            };
+
+            Eigen::Tensor<float, 1> Q2D3 = Q2.contract(D3, contract_dims);
+            */
+
+            glm::vec2 Q2D3 = contract(Q2, D3);
+
+            //acc += -(Q0 * D1 + Q1 * D2 + glm::vec2(Q2D3(0), Q2D3(1)));
+            acc += -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
+            //acc += -(Q0 * D1);
+
+
+            *total += node->totalMass * (1.0f / r);
+            /*
+            float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
+            *total += node->totalMass * oneOverDistance;
+
+            acc += - node->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
+            */
         }
         else if (node->children.size() <= 1)
         {
@@ -134,7 +209,7 @@ private:
                     glm::vec2 diff = particle.position - (*node->allParticles)[i].position;
                     float distance = glm::length(diff);
 
-                    float oneOverDistance = 1.0f / (1.0f + distance);
+                    float oneOverDistance = 1.0f / (softening + distance);
                     *total += 1.0f * oneOverDistance;
 
                     acc += - 1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
@@ -153,6 +228,23 @@ private:
     }
 
 
+    glm::vec2 contract(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
+    {
+        glm::vec2 result(0.0f);
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    result[k] += Q2(i,j) * D3(i,j,k);
+                }
+            }
+        }
+        
+        return result;
+    }
 
 
 };

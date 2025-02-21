@@ -44,6 +44,8 @@ public:
 private:
     glm::vec2 getBarnesHutAcc(float* total, QuadTree* node, EmbeddedPoint particle, float theta)
     {
+        float softening = 0.1f; // should be 1.0f for t-SNE
+
         glm::vec2 acc(0.0f);
 
         float l = node->highestCorner.x - node->lowestCorner.x;
@@ -62,7 +64,7 @@ private:
             acc += -Qij * (1.0f / (1.0f + parCentreDistance)) * (1.0f / (1.0f + parCentreDistance)) * nodeDiff;
             */
 
-            float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
+            float oneOverDistance = (1.0f / (softening + parCentreDistance));
             *total += node->totalMass * oneOverDistance;
 
             acc += - node->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
@@ -83,7 +85,7 @@ private:
                     acc += -Qij * (1.0f / (1.0f + distance)) * (1.0f / (1.0f + distance)) * diff;
                     */
 
-                    float oneOverDistance = 1.0f / (1.0f + distance);
+                    float oneOverDistance = 1.0f / (softening + distance);
                     *total += 1.0f * oneOverDistance;
 
                     acc += - 1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;

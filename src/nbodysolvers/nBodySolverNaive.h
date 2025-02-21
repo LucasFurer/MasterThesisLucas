@@ -27,10 +27,12 @@ public:
                     (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
                     */
 
+                    float softening = 0.1f; // should be 1.0f for t-SNE
+
                     glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
                     float distance = glm::length(diff);
 
-                    float oneOverDistance = 1.0f / (1.0f + distance);
+                    float oneOverDistance = 1.0f / (softening + distance);
                     *total += 1.0f * oneOverDistance;
 
                     (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;

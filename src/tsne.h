@@ -52,7 +52,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
@@ -192,7 +192,7 @@ private:
         }
         */
 
-        //std::cout << checkError() << std::endl;
+        std::cout << checkError() << std::endl;
         
         updateRepulsive();
         
@@ -242,13 +242,13 @@ private:
     {
         float QijTotal = 0.0f;
 
-        //NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        NBodySolverNaive::solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
         //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
         //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
-        nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
+        //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.5f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
