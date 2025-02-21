@@ -50,7 +50,7 @@ public:
 private:
     glm::vec2 getMultiPoleAcc(float* total, QuadTreeMultiPole* node, EmbeddedPoint particle, float theta)
     {
-        float softening = 0.1f; // should be 1.0f for t-SNE
+        float softening = 1.0f; // should be 1.0f for t-SNE
 
         glm::vec2 acc(0.0f);
 
