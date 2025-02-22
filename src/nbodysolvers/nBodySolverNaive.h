@@ -1,12 +1,24 @@
 #pragma once
 
 #include "../trees/quadtree.h"
+#include <functional>
 
 class NBodySolverNaive
 {
 public:
+    std::function<void(float*, std::vector<EmbeddedPoint>*, int, int, std::vector<glm::vec2>*)> kernel;
 
-    static void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<EmbeddedPoint>* embeddedPoints)
+    NBodySolverNaive() 
+    {
+
+    }
+
+    NBodySolverNaive(std::function<void(float*, std::vector<EmbeddedPoint>*, int, int, std::vector<glm::vec2>*)> initKernel)
+    {
+        kernel = initKernel;
+    }
+
+    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<EmbeddedPoint>* embeddedPoints)
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
         *total = 0.0f;
@@ -27,7 +39,12 @@ public:
                     (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
                     */
 
-                    float softening = 0.1f; // should be 1.0f for t-SNE
+                    if (kernel) {
+                        kernel(total, embeddedPoints, i, j, forces);
+                    }
+
+                    /*
+                    float softening = 1.0f; // should be 1.0f for t-SNE
 
                     glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
                     float distance = glm::length(diff);
@@ -36,10 +53,38 @@ public:
                     *total += 1.0f * oneOverDistance;
 
                     (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
+                    */
                 }
             }
         }
     }
 
 private:
+    /*
+    void kernal(float* accumulator, std::vector<EmbeddedPoint>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
+    {
+        float softening = 1.0f; // should be 1.0f for t-SNE
+
+        glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
+        float distance = glm::length(diff);
+
+        float oneOverDistance = 1.0f / (softening + distance);
+        *accumulator += 1.0f * oneOverDistance;
+
+        (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
+    }
+    */
 };
+
+void TSNEnaiveKernal(float* accumulator, std::vector<EmbeddedPoint>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
+
+    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
+    float distance = glm::length(diff);
+
+    float oneOverDistance = 1.0f / (softening + distance);
+    *accumulator += 1.0f * oneOverDistance;
+
+    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
+}

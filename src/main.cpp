@@ -1,5 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
-//#define E 2.71828182845904523536;
+#define E 2.71828182845904523536
 
 
 #include <glad/glad.h>
@@ -29,27 +29,19 @@
 #include "visquad.h"
 #include "scene.h"
 #include "tsne.h"
+#include "gravitysim.h"
 #include "common.h"
 #include <fstream>
 #include <filesystem>
 
 //std::cout << std::format("{}", std::numbers::pi_v<double>);
 
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
 
 unsigned int screenWidth = 1920;
 unsigned int screenHeight = 1080;
 
-Scene* scenes[1];
-float lastX = 400;
-float lastY = 300;
-bool firstMouse = true;
-
-glm::vec3 lightPos(-4.0f, 2.0f, -1.5f);
+std::vector<Scene*> scenes;
 
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
@@ -87,8 +79,6 @@ int main(void)
     glfwMaximizeWindow(window);
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
     glfwSwapInterval(0);//unlimited frames!!!
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -116,6 +106,7 @@ int main(void)
 
     // global stuff
     // ---------------------------------------
+
     /*
     NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
     glm::mat4 particleModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -148,10 +139,9 @@ int main(void)
     scenes[1] = &nbodyParticleScene;
     scenes[2] = &quadScene;
     */
-
-    
     //NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
     
+    // t-SNE --------------------------------------------------------------------------------------------------------------------------
     TSNE tsne;
     
     glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -173,7 +163,12 @@ int main(void)
 
     Scene tsneScene(&cameraTsne, tsneRenderables, 2 * sizeof(Renderable));
 
-    scenes[0] = &tsneScene;
+    scenes.push_back(&tsneScene);
+
+    // gravity --------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 
 
@@ -187,7 +182,14 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         // initial
-        processInput(window);
+        scenes[0]->camera->processInput(window, deltaTime);
+
+        glfwSetWindowUserPointer(window, scenes[0]->camera);
+        glfwSetCursorPosCallback(window, Camera::mouse_callback);
+        glfwSetScrollCallback(window, Camera::scroll_callback);
+
+        //glfwSetScrollCallback(window, scroll_callback);
+        //processInput(window);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -198,7 +200,7 @@ int main(void)
         float timeBeginFrame = glfwGetTime();
 
         tsne.timeStep();
-
+        
         auto [left, right, down, up] = tsne.getEdges();
         scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
         scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
@@ -206,7 +208,7 @@ int main(void)
         //std::cout << "vertical size:   " << up - down << std::endl;
 
         //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
-
+        
         scenes[0]->Render();
 
         
@@ -320,7 +322,6 @@ int main(void)
 }
 
 
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     screenWidth = width;
@@ -328,56 +329,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, screenWidth, screenHeight);
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-
-    if (firstMouse) // initially set to true
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
-    lastX = xpos;
-    lastY = ypos;
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        scenes[std::max(2 * visSelect, gravType)]->camera->processMouseMovement(xoffset, yoffset);
-    }
-}
-
+/*
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     scenes[std::max(2 * visSelect, gravType)]->camera->processMouseScroll(static_cast<float>(yoffset));
 }
-
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_W, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_W, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_S, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_S, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_A, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_A, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_D, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_D, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_LEFT_SHIFT, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_LEFT_SHIFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-        scenes[0]->camera->processKeyboard(GLFW_KEY_LEFT_CONTROL, deltaTime);
-        //scenes[std::max(2 * visSelect, gravType)]->camera->processKeyboard(GLFW_KEY_LEFT_CONTROL, deltaTime);
-}
+*/
