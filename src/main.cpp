@@ -46,9 +46,10 @@ std::vector<Scene*> scenes;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
+int sceneSelect = 1;
 //std::string gravType = "barnesHut";
-int gravType = 0;
-int visSelect = 0;
+//int gravType = 0;
+//int visSelect = 0;
 int frameCounter = 0;
 int frameCounted = 0;
 
@@ -166,10 +167,31 @@ int main(void)
     scenes.push_back(&tsneScene);
 
     // gravity --------------------------------------------------------------------------------------------------------------------------
+    GravitySim gravitySim(1000);
+
+    glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
+
+    #ifdef _WIN32
+    Shader shaderGravity("shaders/shaderPos2Dvel2Dcol3D.vs", "shaders/shaderPos2Dvel2Dcol3D.fs");
+    //Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
+    #endif
+    #ifdef linux
+    Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
+    //Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
+    #endif
+
+    Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
+    //Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
+    Renderable* gravityRenderables = new Renderable[1]{ gravityRenderablePoints };
+
+    Camera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+
+    Scene gravityScene(&cameraGravity, gravityRenderables, 1 * sizeof(Renderable));
+
+    scenes.push_back(&gravityScene);
 
 
-
-
+    //scene creation done ----------------------------------------------------------------------------------------------------------------
 
 
     float lastTimePressed = 0.0f;
@@ -182,9 +204,9 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         // initial
-        scenes[0]->camera->processInput(window, deltaTime);
+        scenes[sceneSelect]->camera->processInput(window, deltaTime);
 
-        glfwSetWindowUserPointer(window, scenes[0]->camera);
+        glfwSetWindowUserPointer(window, scenes[sceneSelect]->camera);
         glfwSetCursorPosCallback(window, Camera::mouse_callback);
         glfwSetScrollCallback(window, Camera::scroll_callback);
 
@@ -199,17 +221,27 @@ int main(void)
 
         float timeBeginFrame = glfwGetTime();
 
-        tsne.timeStep();
-        
-        auto [left, right, down, up] = tsne.getEdges();
-        scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
-        scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-        //std::cout << "horizontal size: " << right - left << std::endl;
-        //std::cout << "vertical size:   " << up - down << std::endl;
 
-        //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
         
-        scenes[0]->Render();
+        if (sceneSelect == 0)
+        {
+            tsne.timeStep();
+
+            auto [left, right, down, up] = tsne.getEdges();
+            scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
+            scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+            //std::cout << "horizontal size: " << right - left << std::endl;
+            //std::cout << "vertical size:   " << up - down << std::endl;
+
+            //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
+        }
+        else
+        {
+            gravitySim.timeStep();
+        }
+
+        
+        scenes[sceneSelect]->Render();
 
         
         if (per == 1)
@@ -314,6 +346,8 @@ int main(void)
     
 
     tsne.cleanup();
+    gravitySim.cleanup();
+    shaderGravity.cleanup();
     shaderTsne.cleanup();
     shaderLine2D.cleanup();
 

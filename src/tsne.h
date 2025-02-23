@@ -34,9 +34,9 @@ public:
 
     std::vector<glm::vec2> errorCompare;
 
-    NBodySolverNaive nBodySolverNaive;
-    NBodySolverBarnesHut nBodySolverBarnesHut;
-    NBodySolverMultiPole nBodySolverMultiPole;
+    NBodySolverNaive<EmbeddedPoint> nBodySolverNaive;
+    NBodySolverBarnesHut<EmbeddedPoint> nBodySolverBarnesHut;
+    NBodySolverMultiPole<EmbeddedPoint> nBodySolverMultiPole;
     NBodySolverFMM nBodySolverFMM;
 
     float learnRate;
@@ -65,8 +65,6 @@ public:
 
         
         #ifdef _WIN32
-        //std::string labelsPath = "data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin";
-        //std::string fileName = "data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx";
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         #endif
@@ -81,7 +79,6 @@ public:
         //Qmatrix.resize(dataAmount);
         //for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
 
-
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
         embeddedPointsPrevPrev.resize(dataAmount);
@@ -93,7 +90,9 @@ public:
         errorCompare.resize(dataAmount);
 
 
-        nBodySolverNaive = NBodySolverNaive(&TSNEnaiveKernal);
+        nBodySolverNaive = NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
+        nBodySolverBarnesHut = NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal);
+        nBodySolverMultiPole = NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal);
 
 
         srand(1952732);
@@ -128,7 +127,7 @@ public:
 	
 	~TSNE()
 	{
-
+        // delete embeddedBuffer?
 	}
 
     void cleanup()

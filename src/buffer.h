@@ -11,7 +11,8 @@ enum DataType
 	pos3DCol3D,
 	pos3DUV2D,
 	pos2DCol3D,
-	pos2DlabelInt
+	pos2DlabelInt,
+	pos2Dvel2Dcol3Dmass
 };
 
 class Buffer
@@ -47,7 +48,8 @@ public:
 		createVertexBuffer(vertices, verticesSize, dataType, bufferType);
 	}
 
-	Buffer(EmbeddedPoint* data, int dataAmount, DataType dataType, GLenum bufferType)
+	template <typename T>
+	Buffer(T* data, int dataAmount, DataType dataType, GLenum bufferType)
 	{
 		//this is the new system
 		glGenBuffers(1, &VBO);
@@ -106,14 +108,29 @@ public:
 		}
 	}
 
-	void updateBufferNew(EmbeddedPoint* data, int dataAmount, DataType dataType)
+	template <typename T>
+	void updateBufferNew(T* data, int dataAmount, DataType dataType)
 	{
-		std::size_t dataSize = dataAmount * sizeof(EmbeddedPoint);
+		std::size_t dataSize = dataAmount * sizeof(T);
 
 		switch (dataType)
 		{
 		case pos2DlabelInt:
 		
+			if (elementAmount != dataAmount)
+			{
+				std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			}
+
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+			glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, data);
+
+			break;
+
+		case pos2Dvel2Dcol3Dmass:
+
 			if (elementAmount != dataAmount)
 			{
 				std::cout << "tried to update a buffer with a different size of data" << std::endl;
@@ -227,7 +244,8 @@ public:
 		}
 	}
 
-	void createVertexBufferNew(EmbeddedPoint* data, int dataAmount, DataType dataType, GLenum bufferType)
+	template <typename T>
+	void createVertexBufferNew(T* data, int dataAmount, DataType dataType, GLenum bufferType)
 	{
 		elementAmount = dataAmount;
 
@@ -235,7 +253,7 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		//std::size_t dataSize = dataAmount * (2 * sizeof(float) + sizeof(int));
-		std::size_t dataSize = dataAmount * sizeof(EmbeddedPoint);
+		std::size_t dataSize = dataAmount * sizeof(T);
 		glBufferData(GL_ARRAY_BUFFER, dataSize, data, bufferType);
 
 		switch (dataType)
@@ -245,6 +263,16 @@ public:
 			glEnableVertexAttribArray(0);
 			glVertexAttribIPointer(1, 1, GL_INT, 3 * sizeof(float), (void*)(2 * sizeof(float)));
 			glEnableVertexAttribArray(1);
+			break;
+		case pos2Dvel2Dcol3Dmass:
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(2 * sizeof(float)));
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
+			glEnableVertexAttribArray(2);
+			glVertexAttribIPointer(3, 1, GL_INT, 8 * sizeof(float), (void*)(7 * sizeof(float)));
+			glEnableVertexAttribArray(3);
 			break;
 		default:
 			std::cout << "invalid BufferType given" << std::endl;

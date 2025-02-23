@@ -5,7 +5,6 @@ out vec4 FragColor;
 in vec3 FragPos;
 in vec3 FragVel;
 in vec3 FragCol;
-in int FragMass;
 
 void main()
 {

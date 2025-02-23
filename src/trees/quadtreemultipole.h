@@ -9,11 +9,12 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
+template <typename T>
 class QuadTreeMultiPole
 {
 public:
 	int maxChildren;
-	std::vector<EmbeddedPoint>* allParticles;
+	std::vector<T>* allParticles;
 
 	glm::vec2 centreOfMass;
 
@@ -28,7 +29,7 @@ public:
 
 	std::vector<QuadTreeMultiPole*> children; // maybe change to no a pointer
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -54,7 +55,7 @@ public:
 		std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = createTree();
 	}
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;

@@ -201,7 +201,8 @@ public:
     {
         Camera* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
 
-        cam->Zoom -= (float)yoffset;
+        //cam->Zoom -= (float)yoffset;
+        cam->Zoom *= ((-(float)yoffset / 20.0f) + 1.0f);
         //if (Zoom < 1.0f)
         //    Zoom = 1.0f;
         //if (Zoom > 45.0f)
