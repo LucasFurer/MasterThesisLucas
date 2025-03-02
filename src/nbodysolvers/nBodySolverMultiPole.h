@@ -26,7 +26,6 @@ public:
         kernelParticleParticle = initKernelParticleParticle;
     }
 
-    template <typename T>
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints, int maxChildren, float theta)
     {
         //std::cout << "start the barnes hut solver" << std::endl;

@@ -51,7 +51,7 @@ public:
                 sizeParam * randY
             );
 
-            float initVelMag = 0.1f;
+            float initVelMag = 15.0f;
             glm::vec2 vel = glm::vec2(
                 initVelMag * ((float)rand() / RAND_MAX) - (initVelMag/2.0f),
                 initVelMag * ((float)rand() / RAND_MAX) - (initVelMag/2.0f)
@@ -81,15 +81,15 @@ public:
             lastTimeUpdated = glfwGetTime();
 
             
-            std::tuple errorResult = checkError();
-            std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-            std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-            std::cout << "------------------------------------------------------" << std::endl;
+            //std::tuple errorResult = checkError();
+            //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
+            //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
+            //std::cout << "------------------------------------------------------" << std::endl;
 
 
             float noAccumulator = 0.0f;
-            nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
-            //nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+            //nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
+            nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
             //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
             //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
 

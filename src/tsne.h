@@ -53,7 +53,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
@@ -195,10 +195,10 @@ private:
             }
         }
         */
-        std::tuple errorResult = checkError();
-        std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-        std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-        std::cout << "------------------------------------------------------" << std::endl;
+        //std::tuple errorResult = checkError();
+        //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
+        //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
+        //std::cout << "------------------------------------------------------" << std::endl;
         
         updateRepulsive();
         
@@ -258,9 +258,9 @@ private:
     {
         float QijTotal = 0.0f;
 
-        nBodySolverNaive.solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        //nBodySolverNaive.solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
         //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 

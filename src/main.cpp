@@ -46,7 +46,7 @@ std::vector<Scene*> scenes;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int sceneSelect = 1;
+int sceneSelect = 0;
 //std::string gravType = "barnesHut";
 //int gravType = 0;
 //int visSelect = 0;
@@ -167,7 +167,7 @@ int main(void)
     scenes.push_back(&tsneScene);
 
     // gravity --------------------------------------------------------------------------------------------------------------------------
-    GravitySim gravitySim(1000);
+    GravitySim gravitySim(10000);
 
     glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
 
@@ -176,7 +176,7 @@ int main(void)
     //Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
     #endif
     #ifdef linux
-    Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
+    Shader shaderGravity((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
     //Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
@@ -205,13 +205,10 @@ int main(void)
     {
         // initial
         scenes[sceneSelect]->camera->processInput(window, deltaTime);
-
         glfwSetWindowUserPointer(window, scenes[sceneSelect]->camera);
         glfwSetCursorPosCallback(window, Camera::mouse_callback);
         glfwSetScrollCallback(window, Camera::scroll_callback);
 
-        //glfwSetScrollCallback(window, scroll_callback);
-        //processInput(window);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -323,7 +320,7 @@ int main(void)
         //    }
         //}
         
-        ImGui::SliderInt("show tree level", &tsne.nBodySolverBarnesHut.showLevel, 0, 10);
+        //ImGui::SliderInt("show tree level", &tsne.nBodySolverBarnesHut.showLevel, 0, 10);
 
         ImGui::End();
 
@@ -362,10 +359,3 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     screenHeight = height;
     glViewport(0, 0, screenWidth, screenHeight);
 }
-
-/*
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    scenes[std::max(2 * visSelect, gravType)]->camera->processMouseScroll(static_cast<float>(yoffset));
-}
-*/
