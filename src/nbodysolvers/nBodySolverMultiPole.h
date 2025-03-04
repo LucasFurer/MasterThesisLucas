@@ -150,7 +150,7 @@ private:
 };
 
 
-glm::vec2 contract(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
+glm::vec2 contractTensor(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
 {
     glm::vec2 result(0.0f);
 
@@ -168,47 +168,85 @@ glm::vec2 contract(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
     return result;
 }
 
+glm::vec2 contractVector(glm::mat2 Q2, std::vector<std::vector<std::vector<float>>>* D3)
+{
+    glm::vec2 result(0.0f);
+
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            for (int k = 0; k < 2; k++)
+            {
+                result[k] += Q2[i][j] * (*D3)[i][j][k];
+            }
+        }
+    }
+
+    return result;
+}
+
+glm::vec2 contractArray(glm::mat2 Q2, std::array<std::array<std::array<float, 2>, 2>, 2>& D3)
+{
+    glm::vec2 result(0.0f);
+
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            for (int k = 0; k < 2; k++)
+            {
+                result[k] += Q2[i][j] * D3[i][j][k];
+            }
+        }
+    }
+
+    return result;
+}
+
+
+
 glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, QuadTreeMultiPole<EmbeddedPoint>* j)
 {
     float softening = 1.0f; // should be 1.0f for t-SNE
 
     glm::vec2 R = j->centreOfMass - i.position;
     float r = glm::length(R) + softening;
+    
+    //float g0 = -log(r);
+    float g1 = -1.0f / (r * r);
+    float g2 = 2.0f / (r * r * r * r);
+    float g3 = -8.0f / (r * r * r * r * r * r);
 
-    //float g0 = 1.0f / r;
-    float g1 = -1.0f / (r * r * r);
-    float g2 = 3.0f / (r * r * r * r * r);
-    float g3 = -15.0f / (r * r * r * r * r * r * r);
 
     float Q0 = j->totalMass;
     glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
 
     glm::vec2 Q1 = j->dipole;
     glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
-        g2 * R.y * R.x, g1 + g2 * R.y * R.y);
+                             g2 * R.y * R.x, g1 + g2 * R.y * R.y);
 
 
-    Eigen::Tensor<float, 2> Q2(2, 2);
-    Eigen::Tensor<float, 3> D3(2, 2, 2);
+    std::array<std::array<std::array<float, 2>, 2>, 2> D3;
 
-    Q2.setValues({ {j->quadrupole[0][0], j->quadrupole[1][0]},
-                   {j->quadrupole[0][1], j->quadrupole[1][1]} });
+    D3[0][0][0] = g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x;
+    D3[1][0][0] = g2 * (R.y) + g3 * R.y * R.x * R.x;
+    D3[0][1][0] = g2 * (R.y) + g3 * R.x * R.x * R.y;
+    D3[1][1][0] = g2 * (R.x) + g3 * R.y * R.y * R.x;
 
-    D3.setValues({ {{g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.y * R.x * R.x},
-                    {g2 * (R.y) + g3 * R.y * R.x * R.x,         g2 * (R.x) + g3 * R.y * R.y * R.x}},
+    D3[0][0][1] = g2 * (R.y) + g3 * R.x * R.x * R.y;
+    D3[1][0][1] = g2 * (R.x) + g3 * R.y * R.x * R.y;
+    D3[0][1][1] = g2 * (R.x) + g3 * R.x * R.y * R.y;
+    D3[1][1][1] = g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y;
 
-                   {{g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.y * R.y * R.x},
-                    {g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y}} });
+    glm::vec2 Q2D3 = contractArray(j->quadrupole, D3);
 
-    glm::vec2 Q2D3 = contract(Q2, D3);
+
 
     *accumulator += j->totalMass * (1.0f / r);
 
-    //acc += -(Q0 * D1 + Q1 * D2 + glm::vec2(Q2D3(0), Q2D3(1)));
-    return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
-    //acc += -(Q0 * D1);
-
-    
+    //return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
+    return -(Q0 * D1 + 0.5f * Q2D3);
 }
 
 glm::vec2 TSNEmultiPoleParticleParticleKernal(float* accumulator, EmbeddedPoint i, EmbeddedPoint j)
@@ -221,7 +259,7 @@ glm::vec2 TSNEmultiPoleParticleParticleKernal(float* accumulator, EmbeddedPoint 
     float oneOverDistance = 1.0f / (softening + distance);
     *accumulator += 1.0f * oneOverDistance;
 
-    return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+    return -1.0f * oneOverDistance * oneOverDistance * diff;
 }
 
 
@@ -258,7 +296,7 @@ glm::vec2 GRAVITYmultiPoleParticleNodeKernal(float* accumulator, Particle2D i, Q
                    {{g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.y * R.y * R.x},
                     {g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y}} });
 
-    glm::vec2 Q2D3 = contract(Q2, D3);
+    glm::vec2 Q2D3 = contractTensor(Q2, D3);
 
     //acc += -(Q0 * D1 + Q1 * D2 + glm::vec2(Q2D3(0), Q2D3(1)));
     return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);

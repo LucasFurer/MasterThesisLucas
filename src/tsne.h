@@ -195,10 +195,10 @@ private:
             }
         }
         */
-        //std::tuple errorResult = checkError();
-        //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-        //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-        //std::cout << "------------------------------------------------------" << std::endl;
+        std::tuple errorResult = checkError();
+        std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
+        std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
+        std::cout << "------------------------------------------------------" << std::endl;
         
         updateRepulsive();
         

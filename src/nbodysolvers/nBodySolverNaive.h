@@ -76,7 +76,7 @@ void TSNEnaiveKernal(float* accumulator, std::vector<EmbeddedPoint>* embeddedPoi
     float oneOverDistance = 1.0f / (softening + distance);
     *accumulator += 1.0f * oneOverDistance;
 
-    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
+    (*forces)[i] += oneOverDistance * oneOverDistance * diff;
 }
 
 void GRAVITYnaiveKernal(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)

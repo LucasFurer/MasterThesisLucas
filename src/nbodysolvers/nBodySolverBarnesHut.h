@@ -134,7 +134,7 @@ glm::vec2 TSNEbarnesHutParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
     float oneOverDistance = (1.0f / (softening + parCentreDistance));
     *accumulator += j->totalMass * oneOverDistance;
 
-    return -j->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
+    return -j->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
 }
 
 glm::vec2 TSNEbarnesHutParticleParticleKernal(float* accumulator, EmbeddedPoint i, EmbeddedPoint j)
@@ -147,7 +147,7 @@ glm::vec2 TSNEbarnesHutParticleParticleKernal(float* accumulator, EmbeddedPoint 
     float oneOverDistance = 1.0f / (softening + distance);
     *accumulator += 1.0f * oneOverDistance;
 
-    return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+    return -1.0f * oneOverDistance * oneOverDistance * diff;
 }
 
 
