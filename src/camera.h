@@ -5,6 +5,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
@@ -158,6 +162,8 @@ public:
 
     static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     {
+        ImGui_ImplGlfw_CursorPosCallback(window, xposIn, yposIn);
+
         Camera* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
 
         float xpos = static_cast<float>(xposIn);

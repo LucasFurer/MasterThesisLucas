@@ -175,11 +175,14 @@ public:
 
 	void getLineSegments(std::vector<LineSegment2D>& lineSegments, int level, int showLevel)
 	{
-		if (level == showLevel)
+		if (level == showLevel || showLevel == -1)
 		{
 			glm::vec3 color;
 
 			switch (showLevel) {
+			case -1:
+				color = glm::vec3(1.0f, 1.0f, 1.0f);
+				break;
 			case 0:
 				color = glm::vec3(1.0f, 0.0f, 0.0f);
 				break;

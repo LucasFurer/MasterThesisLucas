@@ -49,6 +49,8 @@ public:
     Eigen::SparseMatrix<double> Pmatrix;
     //std::vector<std::vector<float>> Qmatrix;
     float Qsum;
+
+    int follow = 1;
     
 	TSNE()
 	{

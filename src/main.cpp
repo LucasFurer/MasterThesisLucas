@@ -226,13 +226,16 @@ int main(void)
         {
             tsne.timeStep();
 
-            auto [left, right, down, up] = tsne.getEdges();
-            scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
-            scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-            //std::cout << "horizontal size: " << right - left << std::endl;
-            //std::cout << "vertical size:   " << up - down << std::endl;
+            if (tsne.follow == 1)
+            {
+                auto [left, right, down, up] = tsne.getEdges();
+                scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
+                scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+                //std::cout << "horizontal size: " << right - left << std::endl;
+                //std::cout << "vertical size:   " << up - down << std::endl;
 
-            //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
+                //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
+            }
         }
         else
         {
@@ -310,7 +313,7 @@ int main(void)
         //static float myVariable = 0.0f;
         //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
 
-        ImGui::SliderInt("orthographic <-> perspective", &per, 0, 1);
+        //ImGui::SliderInt("orthographic <-> perspective", &per, 0, 1);
         
         //ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
         //if (visSelect == 0)
@@ -322,7 +325,9 @@ int main(void)
         //    }
         //}
         
-        //ImGui::SliderInt("show tree level", &tsne.nBodySolverBarnesHut.showLevel, 0, 10);
+        ImGui::SliderInt("show tree level", &tsne.nBodySolverFMM.showLevel, -1, 10);
+
+        ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
         ImGui::End();
 
