@@ -17,7 +17,7 @@ public:
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
-        QuadTreeFMM root = QuadTreeFMM(maxChildren, embeddedPoints);
+        QuadTreeFMM root(maxChildren, embeddedPoints);
 
 
         getFMMAcc(total, forces, &root, &root, theta);
@@ -37,30 +37,27 @@ private:
     {
         float Lpassive = passiveNode->highestCorner.x - passiveNode->lowestCorner.x;
         float Lactive = activeNode->highestCorner.x - activeNode->lowestCorner.x;
-        //glm::vec2 cubeCentre = ((node->highestCorner + node->lowestCorner) / 2.0f);
 
-        //glm::vec2 nodeDiff = node->centreOfMass - particle.position; // change this
-        glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass; // change this
+        glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass;
         float parCentreDistance = glm::length(nodeDiff);
 
-        
+     
         if ((Lpassive + Lactive) / parCentreDistance < theta)
         {
-            // [ppassive_node, apassive_node] : = nodepassive
-            // [pactive_node, mactive_node] : = nodeactive
-
-            //apassive_node <- apassive_node + GRAVITY(pactive_node, mactive_node, ppassive_node)
 
             float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
             *total += passiveNode->occupants.size() * activeNode->totalMass * oneOverDistance;
 
-            passiveNode->accumulatedForce += -activeNode->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
+            passiveNode->accumulatedForce += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+
         }
         else if (passiveNode->children.size() == 0)
         {
             for (int i = 0; i < passiveNode->occupants.size(); i++)
             {
+
                 (*forces)[i] += getBarnesHutAcc(total, activeNode, (*passiveNode->allParticles)[passiveNode->occupants[i]], theta);
+
             }
         }
         else if (activeNode->children.size() == 0)
@@ -81,7 +78,9 @@ private:
             {
                 for (QuadTreeFMM* octTreeFMMActiveChild : activeNode->children) // each childactive in nodeactive do
                 {
+
                     getFMMAcc(total, forces, octTreeFMMPassiveChild, octTreeFMMActiveChild, theta);
+
                 }
             }
         }
@@ -99,14 +98,15 @@ private:
         glm::vec2 nodeDiff = particle.position - node->centreOfMass; // change this
         float parCentreDistance = glm::length(nodeDiff);
 
-        //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
-        //if ((node->highestCorner.x - node->lowestCorner.x) / parCentreDistance < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+
         if (l / parCentreDistance < theta)
         {
+
             float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
             *total += node->totalMass * oneOverDistance;
 
-            acc += -node->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
+            acc += -node->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+
         }
         else if (node->children.size() <= 1)
         {
@@ -114,13 +114,15 @@ private:
             {
                 if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
                 {
+
                     glm::vec2 diff = particle.position - (*node->allParticles)[i].position;
                     float distance = glm::length(diff);
 
                     float oneOverDistance = 1.0f / (1.0f + distance);
                     *total += 1.0f * oneOverDistance;
 
-                    acc += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+                    acc += -1.0f * oneOverDistance * oneOverDistance * diff;
+
                 }
             }
         }

@@ -107,7 +107,7 @@ int main(void)
 
     // global stuff
     // ---------------------------------------
-
+    {
     /*
     NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
     glm::mat4 particleModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -141,6 +141,7 @@ int main(void)
     scenes[2] = &quadScene;
     */
     //NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
+    }
     
     // t-SNE --------------------------------------------------------------------------------------------------------------------------
     TSNE tsne;
@@ -157,7 +158,8 @@ int main(void)
     #endif
 
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
-    Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
+    //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
+    Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverFMM.boxBuffer, &shaderLine2D, nullptr);
     Renderable* tsneRenderables = new Renderable[2]{ tsneRenderablePoints, tsneRenderableLines };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);

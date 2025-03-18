@@ -150,6 +150,13 @@ private:
 };
 
 
+
+
+
+
+
+
+
 glm::vec2 contractTensor(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
 {
     glm::vec2 result(0.0f);
@@ -161,24 +168,6 @@ glm::vec2 contractTensor(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
             for (int k = 0; k < 2; k++)
             {
                 result[k] += Q2(i, j) * D3(i, j, k);
-            }
-        }
-    }
-
-    return result;
-}
-
-glm::vec2 contractVector(glm::mat2 Q2, std::vector<std::vector<std::vector<float>>>* D3)
-{
-    glm::vec2 result(0.0f);
-
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < 2; j++)
-        {
-            for (int k = 0; k < 2; k++)
-            {
-                result[k] += Q2[i][j] * (*D3)[i][j][k];
             }
         }
     }
@@ -228,15 +217,14 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
 
 
     std::array<std::array<std::array<float, 2>, 2>, 2> D3;
-
     D3[0][0][0] = g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x;
-    D3[1][0][0] = g2 * (R.y) + g3 * R.y * R.x * R.x;
-    D3[0][1][0] = g2 * (R.y) + g3 * R.x * R.x * R.y;
-    D3[1][1][0] = g2 * (R.x) + g3 * R.y * R.y * R.x;
+    D3[1][0][0] = g2 * (R.y)             + g3 * R.y * R.x * R.x;
+    D3[0][1][0] = g2 * (R.y)             + g3 * R.x * R.x * R.y;
+    D3[1][1][0] = g2 * (R.x)             + g3 * R.y * R.y * R.x;
 
-    D3[0][0][1] = g2 * (R.y) + g3 * R.x * R.x * R.y;
-    D3[1][0][1] = g2 * (R.x) + g3 * R.y * R.x * R.y;
-    D3[0][1][1] = g2 * (R.x) + g3 * R.x * R.y * R.y;
+    D3[0][0][1] = g2 * (R.y)             + g3 * R.x * R.x * R.y;
+    D3[1][0][1] = g2 * (R.x)             + g3 * R.y * R.x * R.y;
+    D3[0][1][1] = g2 * (R.x)             + g3 * R.x * R.y * R.y;
     D3[1][1][1] = g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y;
 
     glm::vec2 Q2D3 = contractArray(j->quadrupole, D3);
