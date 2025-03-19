@@ -9,6 +9,8 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
+//#include <Fastor/Fastor.h>
+
 template <typename T>
 class QuadTreeMultiPole
 {

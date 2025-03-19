@@ -198,10 +198,10 @@ private:
         }
         */
 
-        //std::tuple errorResult = checkError();
-        //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-        //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-        //std::cout << "------------------------------------------------------" << std::endl;
+        std::tuple errorResult = checkError();
+        std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
+        std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
+        std::cout << "------------------------------------------------------" << std::endl;
         
         updateRepulsive();
         
@@ -265,9 +265,9 @@ private:
         
         //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
+        nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
-        nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.4f);
+        //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.4f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

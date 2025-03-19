@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include "../trees/quadtreemultipole.h"
+#include <Fastor/Fastor.h>
 
 template <typename T>
 class NBodySolverMultiPole
@@ -215,7 +216,7 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
     glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
                              g2 * R.y * R.x, g1 + g2 * R.y * R.y);
 
-
+    /*
     std::array<std::array<std::array<float, 2>, 2>, 2> D3;
     D3[0][0][0] = g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x;
     D3[1][0][0] = g2 * (R.y)             + g3 * R.y * R.x * R.x;
@@ -229,12 +230,29 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
 
     glm::vec2 Q2D3 = contractArray(j->quadrupole, D3);
 
+    //return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
+    //return -(Q0 * D1 + 0.5f * Q2D3);
+    */
+
+
+    Fastor::Tensor<float, 2, 2, 2> D3{ 
+                                        { { g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.x * R.x * R.y }, { g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x)             + g3 * R.x * R.y * R.y } },
+                                        { { g2 * (R.y)             + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
+                                     };
+
+    Fastor::Tensor<float, 2, 2> Q2{
+                                     { j->quadrupole[0][0], j->quadrupole[0][1] }, 
+                                     { j->quadrupole[1][0], j->quadrupole[1][1] } 
+                                  };
+
+    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(Q2, D3);
+
 
 
     *accumulator += j->totalMass * (1.0f / r);
 
-    //return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
-    return -(Q0 * D1 + 0.5f * Q2D3);
+
+    return -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)) );
 }
 
 glm::vec2 TSNEmultiPoleParticleParticleKernal(float* accumulator, EmbeddedPoint i, EmbeddedPoint j)
