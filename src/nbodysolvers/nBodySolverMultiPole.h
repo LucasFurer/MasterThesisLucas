@@ -234,18 +234,17 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
     //return -(Q0 * D1 + 0.5f * Q2D3);
     */
 
-
-    Fastor::Tensor<float, 2, 2, 2> D3{ 
+    Fastor::Tensor<float, 2, 2, 2> D3{
                                         { { g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.x * R.x * R.y }, { g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x)             + g3 * R.x * R.y * R.y } },
                                         { { g2 * (R.y)             + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
                                      };
-
+    /*
     Fastor::Tensor<float, 2, 2> Q2{
                                      { j->quadrupole[0][0], j->quadrupole[0][1] }, 
                                      { j->quadrupole[1][0], j->quadrupole[1][1] } 
                                   };
-
-    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(Q2, D3);
+*/
+    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(j->quadrupole, D3);
 
 
 
@@ -293,15 +292,16 @@ glm::vec2 GRAVITYmultiPoleParticleNodeKernal(float* accumulator, Particle2D i, Q
     Eigen::Tensor<float, 2> Q2(2, 2);
     Eigen::Tensor<float, 3> D3(2, 2, 2);
 
-    Q2.setValues({ {j->quadrupole[0][0], j->quadrupole[1][0]},
-                   {j->quadrupole[0][1], j->quadrupole[1][1]} });
-
+    
+    Q2.setValues({ {j->quadrupole(0,0), j->quadrupole(1,0)},
+                   {j->quadrupole(0,1), j->quadrupole(1,1)} });
+                   
     D3.setValues({ {{g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.y * R.x * R.x},
                     {g2 * (R.y) + g3 * R.y * R.x * R.x,         g2 * (R.x) + g3 * R.y * R.y * R.x}},
 
                    {{g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.y * R.y * R.x},
                     {g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y}} });
-
+    
     glm::vec2 Q2D3 = contractTensor(Q2, D3);
 
     //acc += -(Q0 * D1 + Q1 * D2 + glm::vec2(Q2D3(0), Q2D3(1)));

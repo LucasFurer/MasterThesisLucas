@@ -14,6 +14,7 @@
 #include <numbers>
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
+#include "nbodysolvers/nBodySolverBarnesHutReverse.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
 #include "nbodysolvers/nBodySolverFMM.h"
 #include <filesystem>
@@ -36,6 +37,7 @@ public:
 
     NBodySolverNaive<EmbeddedPoint> nBodySolverNaive;
     NBodySolverBarnesHut<EmbeddedPoint> nBodySolverBarnesHut;
+    NBodySolverBarnesHutReverse<EmbeddedPoint> nBodySolverBarnesHutReverse;
     NBodySolverMultiPole<EmbeddedPoint> nBodySolverMultiPole;
     NBodySolverFMM nBodySolverFMM;
 
@@ -51,6 +53,8 @@ public:
     float Qsum;
 
     int follow = 1;
+    float totalError = 0.0f;
+    int timeCounter = 0;
     
 	TSNE()
 	{
@@ -94,6 +98,7 @@ public:
 
         nBodySolverNaive = NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
         nBodySolverBarnesHut = NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal);
+        nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal);
         nBodySolverMultiPole = NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal);
 
 
@@ -139,6 +144,7 @@ public:
     
     void timeStep()
     {
+        timeCounter++;
         if (glfwGetTime() - lastTimeUpdated >= 1.0f / timeStepsPerSec)
         {
             lastTimeUpdated = glfwGetTime();
@@ -198,10 +204,10 @@ private:
         }
         */
 
-        std::tuple errorResult = checkError();
-        std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-        std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-        std::cout << "------------------------------------------------------" << std::endl;
+        //std::tuple errorResult = checkError();
+        //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
+        //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
+        //std::cout << "------------------------------------------------------" << std::endl;
         
         updateRepulsive();
         
@@ -237,7 +243,7 @@ private:
         //-----------------------------------------------------------------------------------
 
         float QijTotalCompare = 0.0f;
-        nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
+        nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.80f);
         float error1 = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -263,9 +269,11 @@ private:
 
         //nBodySolverNaive.solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.9f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
+        nBodySolverBarnesHutReverse.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
+
+        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
         //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.4f);
 

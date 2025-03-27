@@ -56,7 +56,7 @@ private:
             for (int i = 0; i < passiveNode->occupants.size(); i++)
             {
 
-                (*forces)[i] += getBarnesHutAcc(total, activeNode, (*passiveNode->allParticles)[passiveNode->occupants[i]], theta);
+                (*forces)[i] += getBarnesHutAccActiveTree(total, activeNode, (*passiveNode->allParticles)[passiveNode->occupants[i]], theta);
 
             }
         }
@@ -88,7 +88,7 @@ private:
     }
 
 
-    glm::vec2 getBarnesHutAcc(float* total, QuadTreeFMM* node, EmbeddedPoint particle, float theta)
+    glm::vec2 getBarnesHutAccActiveTree(float* total, QuadTreeFMM* node, EmbeddedPoint particle, float theta)
     {
         glm::vec2 acc(0.0f);
 
@@ -130,11 +130,13 @@ private:
         {
             for (QuadTreeFMM* octTree : node->children)
             {
-                acc += getBarnesHutAcc(total, octTree, particle, theta);
+                acc += getBarnesHutAccActiveTree(total, octTree, particle, theta);
             }
         }
 
         return acc;
     }
+
+
     
 };
