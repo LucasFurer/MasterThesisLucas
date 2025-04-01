@@ -21,7 +21,9 @@ public:
 	glm::vec2 dipole = glm::vec2(0.0f);
 	glm::mat2 quadrupole = glm::mat2(0.0f);
 
-	glm::vec2 accumulatedForce = glm::vec2(0.0f);
+	glm::vec2 dphi = glm::vec2(0.0f);
+	Fastor::Tensor<float, 2, 2> dphi2{};
+	Fastor::Tensor<float, 2, 2, 2> dphi3{};
 
 	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
 	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
@@ -154,13 +156,14 @@ public:
 		}
 	}
 
+	
 	void applyForces(std::vector<glm::vec2>* forces)
 	{
 		if (children.size() != 0)
 		{
 			for (QuadTreeFMM* child : children)
 			{
-				child->accumulatedForce += accumulatedForce;
+				child->dphi += dphi;
 				child->applyForces(forces);
 			}
 		}
@@ -168,10 +171,11 @@ public:
 		{
 			for (int i : occupants)
 			{
-				(*forces)[i] += accumulatedForce;
+				(*forces)[i] += dphi;
 			}
 		}
 	}
+	
 
 	void getLineSegments(std::vector<LineSegment2D>& lineSegments, int level, int showLevel)
 	{
