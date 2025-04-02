@@ -2,6 +2,7 @@
 
 #include "../trees/quadtreeFMM.h"
 
+template <typename T>
 class NBodySolverFMM
 {
 public:
@@ -9,11 +10,30 @@ public:
     Buffer* boxBuffer = new Buffer();
     int showLevel = 0;
 
+    std::function<void(float*, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNodeNode;
+    std::function<glm::vec2(float*, T, QuadTreeFMM<T>*)> kernelParticleNode;
+    std::function<void(float*, QuadTreeFMM<T>*, T)> kernelNodeParticle;
+    std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
+
+    NBodySolverFMM
+    (
+        std::function<void(float*, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> initKernelNodeNode,
+        std::function<glm::vec2(float*, T, QuadTreeFMM<T>*)> initKernelParticleNode,
+        std::function<void(float*, QuadTreeFMM<T>*, T)> initKernelNodeParticle,
+        std::function<glm::vec2(float*, T, T)> initKernelParticleParticle
+    )
+    {
+        kernelNodeNode = initKernelNodeNode;
+        kernelParticleNode = initKernelParticleNode;
+        kernelNodeParticle = initKernelNodeParticle;
+        kernelParticleParticle = initKernelParticleParticle;
+    }
+
     NBodySolverFMM()
     {
     }
     
-    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<EmbeddedPoint>* embeddedPoints, int maxChildren, float theta)
+    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints, int maxChildren, float theta)
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
@@ -33,7 +53,7 @@ public:
     }
     
 private:   
-    void getFMMAcc(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM* passiveNode, QuadTreeFMM* activeNode, float theta)
+    void getFMMAcc(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* passiveNode, QuadTreeFMM<T>* activeNode, float theta)
     {
         float Lpassive = passiveNode->highestCorner.x - passiveNode->lowestCorner.x;
         float Lactive = activeNode->highestCorner.x - activeNode->lowestCorner.x;
@@ -45,10 +65,7 @@ private:
         if ((Lpassive + Lactive) / parCentreDistance < theta)
         {
 
-            float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
-            *total += passiveNode->occupants.size() * activeNode->totalMass * oneOverDistance;
-
-            passiveNode->dphi += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+            kernelNodeNode(total, passiveNode, activeNode);
 
         }
         else if (passiveNode->children.size() == 0)
@@ -71,9 +88,9 @@ private:
         }
         else
         {
-            for (QuadTreeFMM* octTreeFMMPassiveChild : passiveNode->children) // each childpassive in nodepassive do
+            for (QuadTreeFMM<T>* octTreeFMMPassiveChild : passiveNode->children) // each childpassive in nodepassive do
             {
-                for (QuadTreeFMM* octTreeFMMActiveChild : activeNode->children) // each childactive in nodeactive do
+                for (QuadTreeFMM<T>* octTreeFMMActiveChild : activeNode->children) // each childactive in nodeactive do
                 {
 
                     getFMMAcc(total, forces, octTreeFMMPassiveChild, octTreeFMMActiveChild, theta);
@@ -85,9 +102,9 @@ private:
     }
 
 
-    void getBarnesHutAccActiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM* node, int particleIndex, float theta)
+    void getBarnesHutAccActiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* node, int particleIndex, float theta)
     {
-        EmbeddedPoint particle = (*node->allParticles)[particleIndex];
+        T particle = (*node->allParticles)[particleIndex];
 
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 cubeCentre = ((node->highestCorner + node->lowestCorner) / 2.0f);
@@ -99,10 +116,7 @@ private:
         if (l / parCentreDistance < theta)
         {
 
-            float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
-            *total += node->totalMass * oneOverDistance;
-
-            (*forces)[particleIndex] += -node->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+            (*forces)[particleIndex] += TSNEFMMParticleNodeKernal(total, particle, node);
 
         }
         else if (node->children.size() <= 1)
@@ -112,50 +126,32 @@ private:
                 if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
                 {
 
-                    glm::vec2 diff = particle.position - (*node->allParticles)[i].position;
-                    float distance = glm::length(diff);
-
-                    float oneOverDistance = 1.0f / (1.0f + distance);
-                    *total += 1.0f * oneOverDistance;
-
-                    (*forces)[particleIndex] += -1.0f * oneOverDistance * oneOverDistance * diff;
+                    (*forces)[particleIndex] += kernelParticleParticle(total, particle, (*node->allParticles)[i]);
 
                 }
             }
         }
         else
         {
-            for (QuadTreeFMM* octTree : node->children)
+            for (QuadTreeFMM<T>* octTree : node->children)
             {
                 getBarnesHutAccActiveTree(total, forces, octTree, particleIndex, theta);
             }
         }
     }
     
-    void getBarnesHutAccPassiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM* node, int particleIndex, float theta)
+    void getBarnesHutAccPassiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* node, int particleIndex, float theta)
     {
-        EmbeddedPoint particle = (*node->allParticles)[particleIndex];
+        T particle = (*node->allParticles)[particleIndex];
 
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 nodeDiff = particle.position - node->centreOfMass;
 
 
-
-        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(nodeDiff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        if (l / glm::length(nodeDiff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
 
-            //node->dphi += kernelParticleNode(total, particle, node);
-            float softening = 1.0f; // should be 1.0f for t-SNE
-
-            glm::vec2 nodeDiff = node->centreOfMass - particle.position; // change this
-            float parCentreDistance = glm::length(nodeDiff);
-
-            float oneOverDistance = (1.0f / (softening + parCentreDistance));
-            *total += node->totalMass * oneOverDistance;
-
-            glm::vec2 result = -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
-
-            node->dphi += result;
+            kernelNodeParticle(total, node, particle);
 
         }
         else if (node->children.size() <= 1)
@@ -165,25 +161,14 @@ private:
                 if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
                 {
 
-                    //(*forces)[i] += kernelParticleParticle(total, particle, (*node->allParticles)[i]);
-                    float softening = 1.0f; // should be 1.0f for t-SNE
-
-                    glm::vec2 diff = (*node->allParticles)[i].position - particle.position;
-                    float distance = glm::length(diff);
-
-                    float oneOverDistance = 1.0f / (softening + distance);
-                    *total += 1.0f * oneOverDistance;
-
-                    glm::vec2 result = -1.0f * oneOverDistance * oneOverDistance * diff;
-
-                    (*forces)[i] += result;
-
+                    (*forces)[i] += kernelParticleParticle(total, (*node->allParticles)[i], particle);
+                    
                 }
             }
         }
         else
         {
-            for (QuadTreeFMM* childQuadTree : node->children)
+            for (QuadTreeFMM<T>* childQuadTree : node->children)
             {
 
                 getBarnesHutAccPassiveTree(total, forces, childQuadTree, particleIndex, theta);
@@ -194,3 +179,54 @@ private:
     }
     
 };
+
+
+
+void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
+{
+    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass;
+    float parCentreDistance = glm::length(nodeDiff);
+
+    float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
+    *accumulator += passiveNode->occupants.size() * activeNode->totalMass * oneOverDistance;
+
+    passiveNode->dphi += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+}
+
+
+glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
+{
+    glm::vec2 nodeDiff = passiveParticle.position - activeNode->centreOfMass; // change this
+    float parCentreDistance = glm::length(nodeDiff);
+
+    float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
+    *accumulator += activeNode->totalMass * oneOverDistance;
+
+    return -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
+}
+
+
+void TSNEFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
+
+    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeParticle.position; // change this
+    float parCentreDistance = glm::length(nodeDiff);
+
+    float oneOverDistance = (1.0f / (softening + parCentreDistance));
+    *accumulator += passiveNode->totalMass * oneOverDistance;
+
+    passiveNode->dphi += -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
+}
+
+
+glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
+{
+    glm::vec2 diff = passiveParticle.position - activeParticle.position;
+    float distance = glm::length(diff);
+
+    float oneOverDistance = 1.0f / (1.0f + distance);
+    *accumulator += 1.0f * oneOverDistance;
+
+    return -1.0f * oneOverDistance * oneOverDistance * diff;
+}

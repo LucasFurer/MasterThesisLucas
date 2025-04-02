@@ -9,11 +9,12 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
+template <typename T>
 class QuadTreeFMM
 {
 public:
 	int maxChildren;
-	std::vector<EmbeddedPoint>* allParticles;
+	std::vector<T>* allParticles;
 
 	glm::vec2 centreOfMass = glm::vec2(0.0f);
 
@@ -32,7 +33,7 @@ public:
 
 	std::vector<QuadTreeFMM*> children; // maybe change to no a pointer
 
-	QuadTreeFMM(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles)
+	QuadTreeFMM(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -57,7 +58,7 @@ public:
 		//quadrupole = std::get<3>(childPositionMassDiQuad);
 	}
 
-	QuadTreeFMM(int initMaxChildren, std::vector<EmbeddedPoint>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeFMM(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;

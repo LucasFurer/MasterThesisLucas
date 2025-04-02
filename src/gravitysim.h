@@ -19,7 +19,7 @@ public:
     NBodySolverNaive<Particle2D> nBodySolverNaive;
     NBodySolverBarnesHut<Particle2D> nBodySolverBarnesHut;
     NBodySolverMultiPole<Particle2D> nBodySolverMultiPole;
-    NBodySolverFMM nBodySolverFMM;
+    NBodySolverFMM<Particle2D> nBodySolverFMM;
 
 	GravitySim(int particleAmount)
 	{
