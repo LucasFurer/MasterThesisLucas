@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../trees/quadtreeFMM.h"
+#include <Fastor/Fastor.h>
 
 template <typename T>
 class NBodySolverFMM
@@ -116,7 +117,7 @@ private:
         if (l / parCentreDistance < theta)
         {
 
-            (*forces)[particleIndex] += TSNEFMMParticleNodeKernal(total, particle, node);
+            (*forces)[particleIndex] += kernelParticleNode(total, particle, node);
 
         }
         else if (node->children.size() <= 1)
@@ -182,7 +183,7 @@ private:
 
 
 
-void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
+void TSNEFMMNodeNodeKernalNaive(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
 {
     glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass;
     float parCentreDistance = glm::length(nodeDiff);
@@ -192,9 +193,48 @@ void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passi
 
     passiveNode->dphi += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
 }
+/*
+void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
 
+    glm::vec2 R = activeNode->centreOfMass - passiveNode->centreOfMass;
+    float r = glm::length(R) + softening;
 
-glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
+    float g1 = -1.0f / (r * r);
+    float g2 = 2.0f / (r * r * r * r);
+    float g3 = -8.0f / (r * r * r * r * r * r);
+
+    float Q0 = activeNode->totalMass;
+    glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
+
+    glm::vec2 Q1 = activeNode->dipole;
+    Fastor::Tensor<float, 2, 2> D2{
+        {g1 + g2 * R.x * R.y, g2 * R.x * R.y},
+        {g2 * R.y * R.x, g1 + g2 * R.y * R.y}
+    };
+
+    Fastor::Tensor<float, 2, 2, 2> D3{
+                                        { { g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.x * R.x * R.y }, { g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.x * R.y * R.y } },
+                                        { { g2 * (R.y) + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
+    };
+
+    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
+
+    *accumulator += activeNode->totalMass * (1.0f / r);
+
+    //return -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
+
+    passiveNode->dphi += Q0 * D1;
+
+    passiveNode->dphi2 += -Q0 * D2;
+
+    passiveNode->dphi += 0.5f * Q2D3;
+    passiveNode->dphi3 += Q0 * D3;
+}
+*/
+
+glm::vec2 TSNEFMMParticleNodeKernalNaive(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
 {
     glm::vec2 nodeDiff = passiveParticle.position - activeNode->centreOfMass; // change this
     float parCentreDistance = glm::length(nodeDiff);
@@ -204,8 +244,49 @@ glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passivePar
 
     return -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
 }
+glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
+
+    glm::vec2 R = activeNode->centreOfMass - passiveParticle.position;
+    float r = glm::length(R) + softening;
+
+    float g1 = -1.0f / (r * r);
+    float g2 = 2.0f / (r * r * r * r);
+    float g3 = -8.0f / (r * r * r * r * r * r);
+
+    float Q0 = activeNode->totalMass;
+    glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
+
+    glm::vec2 Q1 = activeNode->dipole;
+    glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
+        g2 * R.y * R.x, g1 + g2 * R.y * R.y);
+
+    Fastor::Tensor<float, 2, 2, 2> D3{
+                                        { { g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.x * R.x * R.y }, { g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.x * R.y * R.y } },
+                                        { { g2 * (R.y) + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
+    };
+    
+    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
+
+    *accumulator += activeNode->totalMass * (1.0f / r);
+
+    return -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
+}
 
 
+void TSNEFMMNodeParticleKernalNaive(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
+
+    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeParticle.position; // change this
+    float parCentreDistance = glm::length(nodeDiff);
+
+    float oneOverDistance = (1.0f / (softening + parCentreDistance));
+    *accumulator += passiveNode->totalMass * oneOverDistance;
+
+    passiveNode->dphi += -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
+}
 void TSNEFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
 {
     float softening = 1.0f; // should be 1.0f for t-SNE
@@ -220,7 +301,7 @@ void TSNEFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* p
 }
 
 
-glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
+glm::vec2 TSNEFMMParticleParticleKernalNaive(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
 {
     glm::vec2 diff = passiveParticle.position - activeParticle.position;
     float distance = glm::length(diff);
@@ -229,4 +310,16 @@ glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiv
     *accumulator += 1.0f * oneOverDistance;
 
     return -1.0f * oneOverDistance * oneOverDistance * diff;
+}
+glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
+{
+    float softening = 1.0f; // should be 1.0f for t-SNE
+
+    glm::vec2 R = activeParticle.position - passiveParticle.position;
+    float r = glm::length(R) + softening;
+
+    float g1 = -1.0f / (r * r);
+    *accumulator += 1.0f / r;
+
+    return -1.0f * g1 * R;
 }

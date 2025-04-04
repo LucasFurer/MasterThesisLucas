@@ -20,7 +20,8 @@ public:
 
 	float totalMass = 0.0f;
 	glm::vec2 dipole = glm::vec2(0.0f);
-	glm::mat2 quadrupole = glm::mat2(0.0f);
+	//glm::mat2 quadrupole = glm::mat2(0.0f);
+	Fastor::Tensor<float, 2, 2> quadrupole{};
 
 	glm::vec2 dphi = glm::vec2(0.0f);
 	Fastor::Tensor<float, 2, 2> dphi2{};
@@ -51,7 +52,7 @@ public:
 		highestCorner.x = lowestCorner.x + largestDifference + 0.0001f;
 		highestCorner.y = lowestCorner.y + largestDifference + 0.0001f;
 
-		std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = createTree();
+		std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = createTree();
 		//centreOfMass = std::get<0>(childPositionMassDiQuad); this is already set in the method
 		//totalMass = std::get<1>(childPositionMassDiQuad);
 		//dipole = std::get<2>(childPositionMassDiQuad);
@@ -69,7 +70,7 @@ public:
 		occupants = initOccupants;
 	}
 
-	std::tuple<glm::vec2, float, glm::vec2, glm::mat2> createTree()
+	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree()
 	{
 		if (occupants.size() > maxChildren)
 		{
@@ -115,7 +116,7 @@ public:
 
 			for (QuadTreeFMM* octTree : children)
 			{
-				std::tuple<glm::vec2, float, glm::vec2, glm::mat2> childPositionMassDiQuad = octTree->createTree();
+				std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = octTree->createTree();
 				totalMass += std::get<1>(childPositionMassDiQuad);
 				centreOfMass += std::get<1>(childPositionMassDiQuad) * std::get<0>(childPositionMassDiQuad);
 			}
@@ -127,7 +128,14 @@ public:
 				// calculate moment as though the child node was a point
 				glm::vec2 relativeCoord = octTree->centreOfMass - centreOfMass;
 				dipole += octTree->totalMass * relativeCoord;
-				quadrupole += octTree->totalMass * glm::outerProduct(relativeCoord, relativeCoord);
+
+				Fastor::Tensor<float, 2, 2> outer_product;
+				outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+				outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+				outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+				outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+				quadrupole += octTree->totalMass * outer_product;
+				//quadrupole += octTree->totalMass * glm::outerProduct(relativeCoord, relativeCoord);
 
 				// add moment of child node
 				dipole += octTree->dipole;
@@ -150,7 +158,14 @@ public:
 			{
 				glm::vec2 relativeCoord = (*allParticles)[occupants[i]].position - centreOfMass;
 				dipole += relativeCoord; // * mass which is always 1
-				quadrupole += glm::outerProduct(relativeCoord, relativeCoord); // * mass which is always 1
+
+				Fastor::Tensor<float, 2, 2> outer_product;
+				outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+				outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+				outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+				outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+				quadrupole += outer_product;
+				//quadrupole += glm::outerProduct(relativeCoord, relativeCoord); // * mass which is always 1
 			}
 
 			return std::make_tuple(centreOfMass, totalMass, dipole, quadrupole);
@@ -165,6 +180,8 @@ public:
 			for (QuadTreeFMM* child : children)
 			{
 				child->dphi += dphi;
+				child->dphi2 += dphi2;
+				child->dphi3 += dphi3;
 				child->applyForces(forces);
 			}
 		}
@@ -172,6 +189,18 @@ public:
 		{
 			for (int i : occupants)
 			{
+				/*
+				glm::vec2 dphiP = dphi;
+
+				glm::vec2 dxyz = (*allParticles)[i].position - centreOfMass;
+
+
+				dphiP += einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyz, dphi2);
+
+				dphiP += 0.5f * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyz,
+					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(dxyz, dphi3);
+				
+				*/
 				(*forces)[i] += dphi;
 			}
 		}
