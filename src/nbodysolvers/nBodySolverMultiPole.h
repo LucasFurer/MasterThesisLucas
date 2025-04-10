@@ -201,11 +201,15 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
     float softening = 1.0f; // should be 1.0f for t-SNE
 
     glm::vec2 R = j->centreOfMass - i.position;
-    float r = glm::length(R) + softening;
+    float Rlen = glm::length(R);
+    float r = Rlen + softening;
     
     //float g0 = -log(r);
+    //float g1 = -1.0f / (r * r); // should be positive actually?
     float g1 = -1.0f / (r * r);
+    //float g2 = 2.0f / (r * r * r * r); // should be positive actually?
     float g2 = 2.0f / (r * r * r * r);
+    //float g3 = -8.0f / (r * r * r * r * r * r); // should be positive actually?
     float g3 = -8.0f / (r * r * r * r * r * r);
 
 

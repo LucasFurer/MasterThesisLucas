@@ -9,6 +9,8 @@
 #include <iostream>
 #include "../particles/embeddedPoint.h"
 
+#include <Fastor/Fastor.h>
+
 template <typename T>
 class QuadTreeFMM
 {
@@ -180,8 +182,8 @@ public:
 			for (QuadTreeFMM* child : children)
 			{
 				child->dphi += dphi;
-				child->dphi2 += dphi2;
-				child->dphi3 += dphi3;
+				//child->dphi2 += dphi2;
+				//child->dphi3 += dphi3;
 				child->applyForces(forces);
 			}
 		}
@@ -190,18 +192,26 @@ public:
 			for (int i : occupants)
 			{
 				/*
-				glm::vec2 dphiP = dphi;
-
 				glm::vec2 dxyz = (*allParticles)[i].position - centreOfMass;
+				Fastor::Tensor<float, 2> dxyzT { dxyz.x, dxyz.y };
+
+				Fastor::Tensor<float, 2> dphiP { dphi.x, dphi.y };
 
 
-				dphiP += einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyz, dphi2);
 
-				dphiP += 0.5f * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyz,
-					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(dxyz, dphi3);
+				dphiP += einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyzT, dphi2);
+
+				dphiP += 0.5f * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyzT,
+					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(dxyzT, dphi3));
 				
+				
+				//(*forces)[i] += glm::vec2(dphiP(0), dphiP(1)); // might be -glm::vec2(dphiP(0), dphiP(1))
+				(*forces)[i] += -glm::vec2(dphiP(0), dphiP(1)); // might be -glm::vec2(dphiP(0), dphiP(1))
 				*/
+
 				(*forces)[i] += dphi;
+
+				//(*forces)[i] += dphi;
 			}
 		}
 	}
@@ -260,10 +270,7 @@ public:
 		}
 	}
 
-	~QuadTreeFMM()
-	{
-
-	}
+	~QuadTreeFMM() {}
 
 private:
 };

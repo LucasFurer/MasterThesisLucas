@@ -100,7 +100,7 @@ public:
         nBodySolverBarnesHut = NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal);
         nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal);
         nBodySolverMultiPole = NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal);
-        nBodySolverFMM = NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal);
+        nBodySolverFMM = NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernalNaive);
 
 
         srand(1952732);
@@ -250,7 +250,7 @@ private:
         error1 /= embeddedPoints.size();
 
         QijTotalCompare = 0.0f;
-        nBodySolverFMM.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.3f);
+        nBodySolverFMM.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.5f);
         //nBodySolverBarnesHutReverse.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.15f);
         //nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.4f);
         float error2 = 0.0f;
@@ -273,13 +273,13 @@ private:
 
         //nBodySolverNaive.solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
         //nBodySolverBarnesHutReverse.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
 
         //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
 
-        //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
+        nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

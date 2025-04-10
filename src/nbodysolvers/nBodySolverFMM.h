@@ -30,9 +30,7 @@ public:
         kernelParticleParticle = initKernelParticleParticle;
     }
 
-    NBodySolverFMM()
-    {
-    }
+    NBodySolverFMM() {}
     
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints, int maxChildren, float theta)
     {
@@ -101,7 +99,6 @@ private:
         }
 
     }
-
 
     void getBarnesHutAccActiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* node, int particleIndex, float theta)
     {
@@ -191,9 +188,9 @@ void TSNEFMMNodeNodeKernalNaive(float* accumulator, QuadTreeFMM<EmbeddedPoint>* 
     float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
     *accumulator += passiveNode->occupants.size() * activeNode->totalMass * oneOverDistance;
 
+
     passiveNode->dphi += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
 }
-/*
 void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
 {
     float softening = 1.0f; // should be 1.0f for t-SNE
@@ -224,15 +221,18 @@ void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passi
     *accumulator += activeNode->totalMass * (1.0f / r);
 
     //return -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
+    passiveNode->dphi += -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
 
+    /*
     passiveNode->dphi += Q0 * D1;
 
     passiveNode->dphi2 += -Q0 * D2;
 
-    passiveNode->dphi += 0.5f * Q2D3;
+    passiveNode->dphi += 0.5f * glm::vec2(Q2D3(0), Q2D3(1));
     passiveNode->dphi3 += Q0 * D3;
+    */
 }
-*/
+
 
 glm::vec2 TSNEFMMParticleNodeKernalNaive(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
 {
