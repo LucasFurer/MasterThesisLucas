@@ -46,7 +46,7 @@ std::vector<Scene*> scenes;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int sceneSelect = 0;
+int sceneSelect = 1;
 //std::string gravType = "barnesHut";
 //int gravType = 0;
 //int visSelect = 0;

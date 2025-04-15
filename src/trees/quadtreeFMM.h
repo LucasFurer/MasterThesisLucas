@@ -22,12 +22,13 @@ public:
 
 	float totalMass = 0.0f;
 	glm::vec2 dipole = glm::vec2(0.0f);
-	//glm::mat2 quadrupole = glm::mat2(0.0f);
 	Fastor::Tensor<float, 2, 2> quadrupole{};
 
-	glm::vec2 dphi = glm::vec2(0.0f);
-	Fastor::Tensor<float, 2, 2> dphi2{};
-	Fastor::Tensor<float, 2, 2, 2> dphi3{};
+	glm::vec2 tempAccAcc = glm::vec2(0.0f); // delete this one C has been fully implemented
+	//float C0 = 0.0f;
+	Fastor::Tensor<float, 2> C1{};
+	Fastor::Tensor<float, 2, 2> C2{};
+	Fastor::Tensor<float, 2, 2, 2> C3{};
 
 	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
 	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
@@ -129,6 +130,7 @@ public:
 			{
 				// calculate moment as though the child node was a point
 				glm::vec2 relativeCoord = octTree->centreOfMass - centreOfMass;
+				//glm::vec2 relativeCoord = centreOfMass - octTree->centreOfMass;
 				dipole += octTree->totalMass * relativeCoord;
 
 				Fastor::Tensor<float, 2, 2> outer_product;
@@ -159,6 +161,7 @@ public:
 			for (int i = 0; i < occupants.size(); i++)
 			{
 				glm::vec2 relativeCoord = (*allParticles)[occupants[i]].position - centreOfMass;
+				//glm::vec2 relativeCoord = centreOfMass - (*allParticles)[occupants[i]].position;
 				dipole += relativeCoord; // * mass which is always 1
 
 				Fastor::Tensor<float, 2, 2> outer_product;
@@ -181,9 +184,59 @@ public:
 		{
 			for (QuadTreeFMM* child : children)
 			{
-				child->dphi += dphi;
-				//child->dphi2 += dphi2;
-				//child->dphi3 += dphi3;
+				// prework
+				glm::vec2 oldZ = centreOfMass;
+				glm::vec2 newZ = child->centreOfMass;
+				Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y }; // dhenen
+				//Fastor::Tensor<float, 2> diff1 = { newZ.x - oldZ.x, newZ.y - oldZ.y }; // gadget4
+				Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+				Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+
+				// translate C^n to new center of child
+				/*
+				float newC0 = C0 + 
+							  einsum<Fastor::Index<0>, Fastor::Index<0>>(diff1, C1)(0) +
+							  (1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1>>(diff2, C2)(0) +
+							  (1.0f / 6.0f) * einsum<Fastor::Index<0, 1, 2>, Fastor::Index<0, 1, 2>>(diff3, C3)(0);
+				
+
+				Fastor::Tensor<float, 2> newC1 = C1 +
+												 einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+												 (1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
+
+				//Fastor::Tensor<float, 2> newC1 = C1 +
+				//								 einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+				//								 (1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+				
+				Fastor::Tensor<float, 2, 2> newC2 = C2 + 
+													einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
+
+				Fastor::Tensor<float, 2, 2, 2> newC3 = C3;
+				*/
+
+				//Fastor::Tensor<float, 2> newC1 = C1 +
+				//	einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+				//	(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
+
+				Fastor::Tensor<float, 2> newC1 = C1 +
+												 einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+												 (1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+
+				Fastor::Tensor<float, 2, 2> newC2 = C2 +
+					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
+
+				Fastor::Tensor<float, 2, 2, 2> newC3 = C3;
+
+				// add translated C^n to child C^n
+				child->C1 += newC1;
+				//child->C1 += C1;
+				child->C2 += newC2;
+				//child->C2 += C2;
+				child->C3 += newC3;
+				//child->C3 += C3;
+				child->tempAccAcc += tempAccAcc;
+
+				// try to apply forces for the child node
 				child->applyForces(forces);
 			}
 		}
@@ -191,27 +244,43 @@ public:
 		{
 			for (int i : occupants)
 			{
-				/*
-				glm::vec2 dxyz = (*allParticles)[i].position - centreOfMass;
-				Fastor::Tensor<float, 2> dxyzT { dxyz.x, dxyz.y };
+				// prework
+				glm::vec2 x = (*allParticles)[i].position;
+				glm::vec2 Z0 = centreOfMass;
+				Fastor::Tensor<float, 2> diff1 = { x.x - Z0.x, x.y - Z0.y }; // dhenen
+				//Fastor::Tensor<float, 2> diff1 = { Z0.x - x.x, Z0.y - x.y }; // gadget4
+				Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+				Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-				Fastor::Tensor<float, 2> dphiP { dphi.x, dphi.y };
+				// evaluate C^n at occupants position then add to occupant acceleration // might be wrong!!!!!!!!!!!
+				//Fastor::Tensor<float, 2> temp = einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2);
+				//std::cout << "how large is this: " << temp << std::endl;
+				Fastor::Tensor<float, 2> acceleration = C1 + 
+														einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+														//(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
+														(1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					
+				(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
+				//(*forces)[i] += -glm::vec2(C1(0), C1(1));
 
 
+				(*forces)[i] += tempAccAcc; // delete this once C^N has been fully implemented 
+			}
+		}
+	}
 
-				dphiP += einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyzT, dphi2);
+	void divideC()
+	{
+		//C0 = C0 / totalMass;
+		C1 = C1 / totalMass;
+		C2 = C2 / totalMass;
+		C3 = C3 / totalMass;
 
-				dphiP += 0.5f * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(dxyzT,
-					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(dxyzT, dphi3));
-				
-				
-				//(*forces)[i] += glm::vec2(dphiP(0), dphiP(1)); // might be -glm::vec2(dphiP(0), dphiP(1))
-				(*forces)[i] += -glm::vec2(dphiP(0), dphiP(1)); // might be -glm::vec2(dphiP(0), dphiP(1))
-				*/
-
-				(*forces)[i] += dphi;
-
-				//(*forces)[i] += dphi;
+		if (children.size() != 0)
+		{
+			for (QuadTreeFMM* child : children)
+			{
+				child->divideC();
 			}
 		}
 	}

@@ -3,6 +3,10 @@
 #include "particles/particle3D.h"
 #include "buffer.h"
 #include "nbodysolvers/nBodySolverNaive.h"
+#include "nbodysolvers/nBodySolverBarnesHut.h"
+#include "nbodysolvers/nBodySolverBarnesHutReverse.h"
+#include "nbodysolvers/nBodySolverMultiPole.h"
+#include "nbodysolvers/nBodySolverFMM.h"
 
 class GravitySim
 {
@@ -30,9 +34,10 @@ public:
         nBodySolverNaive = NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
         nBodySolverBarnesHut = NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal);
         nBodySolverMultiPole = NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal);
+        nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernalNaive);
 
         srand(1952731);
-        float sizeParam = 200.0f;
+        float sizeParam = 2000.0f;
         for (int i = 0; i < particleAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
@@ -80,18 +85,13 @@ public:
         {
             lastTimeUpdated = glfwGetTime();
 
-            
-            //std::tuple errorResult = checkError();
-            //std::cout << "difference in error: " << std::get<0>(errorResult) << std::endl;
-            //std::cout << "ratio of error:      " << std::get<1>(errorResult) << std::endl;
-            //std::cout << "------------------------------------------------------" << std::endl;
-
+            checkError();
 
             float noAccumulator = 0.0f;
             //nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
-            nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+            //nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
             //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
-            //nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
+            nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f);
 
             /*
             std::cout << "=================================================================" << std::endl;
@@ -116,7 +116,7 @@ public:
     }
 
 private:
-    std::tuple<float, float> checkError()
+    void checkError()
     {
         float noAccumulator = 0.0f;
 
@@ -130,7 +130,8 @@ private:
         }
         error1 /= particles.size();
 
-        nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.15f);
+        //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.15f);
+        nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.6f);
         float error2 = 0.0f;
         for (int i = 0; i < particles.size(); i++)
         {
@@ -138,7 +139,11 @@ private:
         }
         error2 /= particles.size();
 
-        return std::make_tuple(error1 - error2, error1 / error2);
+
+
+        std::cout << "difference in error: " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
+        std::cout << "ratio of error:      " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
+        std::cout << "------------------------------------------------------" << std::endl;
     }
 
 };
