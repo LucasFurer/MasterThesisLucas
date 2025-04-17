@@ -70,21 +70,64 @@ private:
         }
         else if (passiveNode->children.size() == 0)
         {
-            for (int passiveNodeParticleIndex : passiveNode->occupants)
+
+            
+            if (activeNode->children.size() == 0) // naive
             {
-
-                getBarnesHutAccActiveTree(total, forces, activeNode, passiveNodeParticleIndex, theta);
-
+                for (int ip : passiveNode->occupants)
+                {
+                    for (int ia : activeNode->occupants)
+                    {
+                        (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
+                    }
+                }
             }
+            else // split
+            {
+                for (QuadTreeFMM<T>* child : activeNode->children)
+                {
+                    getFMMAcc(total, forces, passiveNode, child, theta);
+                }
+            }
+            
+            
+            //for (int passiveNodeParticleIndex : passiveNode->occupants)
+            //{
+
+            //    getBarnesHutAccActiveTree(total, forces, activeNode, passiveNodeParticleIndex, theta);
+
+            //}
+            
         }
         else if (activeNode->children.size() == 0)
         {
+
+
+            //if (passiveNode->children.size() == 0) // naive
+            //{
+            //    for (int ip : passiveNode->occupants)
+            //    {
+            //        for (int ia : activeNode->occupants)
+            //        {
+            //            (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
+            //        }
+            //    }
+            //}
+            //else // split
+            //{
+            //    for (QuadTreeFMM<T>* child : passiveNode->children)
+            //    {
+            //        getFMMAcc(total, forces, child, activeNode, theta);
+            //    }
+            //}
+            
             for (int activeNodeParticleIndex : activeNode->occupants)
             {
 
                 getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
 
             }
+            
         }
         else
         {
@@ -391,7 +434,6 @@ void GRAVITYFMMNodeNodeKernalNaive(float* accumulator, QuadTreeFMM<Particle2D>* 
 }
 void GRAVITYFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<Particle2D>* passiveNode, QuadTreeFMM<Particle2D>* activeNode)
 {
-    
     // prework
     float softening = 0.1f;
 
@@ -539,34 +581,42 @@ glm::vec2 GRAVITYFMMParticleNodeKernalNaive(float* accumulator, Particle2D passi
     float oneOverDistance = (1.0f / (distance + softening));
     return -activeNode->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * diff;
 }
-glm::vec2 GRAVITYFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
+glm::vec2 GRAVITYFMMParticleNodeKernal(float* accumulator, Particle2D passiveParticle, QuadTreeFMM<Particle2D>* activeNode)
 {
-    float softening = 1.0f; // should be 1.0f for t-SNE
 
-    glm::vec2 R = activeNode->centreOfMass - passiveParticle.position;
-    float r = glm::length(R) + softening;
+    float softening = 0.1f;
 
-    float g1 = -1.0f / (r * r);
-    float g2 = 2.0f / (r * r * r * r);
-    float g3 = -8.0f / (r * r * r * r * r * r);
+    glm::vec2 R = passiveParticle.position - activeNode->centreOfMass;
+    float r = glm::length(R);
+    float rS = r + softening;
 
-    float Q0 = activeNode->totalMass;
-    glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
+    float D1 = -1.0f / (rS * rS * rS);
+    float D2 = 3.0f / (rS * rS * rS * rS * rS);
+    float D3 = -15.0f / (rS * rS * rS * rS * rS * rS * rS);
 
-    glm::vec2 Q1 = activeNode->dipole;
-    glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
-        g2 * R.y * R.x, g1 + g2 * R.y * R.y);
+    //float MA0 = 1.0f;//passiveNode->totalMass;
+    float MB0 = activeNode->totalMass;
+    Fastor::Tensor<float, 2, 2> MB2 = activeNode->quadrupole;
+    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
 
-    Fastor::Tensor<float, 2, 2, 2> D3{
-                                        { { g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.x * R.x * R.y }, { g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.x * R.y * R.y } },
-                                        { { g2 * (R.y) + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
+    // calculate the C^m
+    //float C0 = MB0 * (D0 +
+    //                  0.5f * (MB2Tilde(0,0) + MB2Tilde(1, 1)) * D1 +
+    //                  0.5f * (R.x*R.x*MB2Tilde(0,0) + R.x*R.y*MB2Tilde(0, 1) + R.y*R.x*MB2Tilde(1, 0) + R.y*R.y*MB2Tilde(1, 1)) * D2);
+
+
+    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
-
-    *accumulator += activeNode->totalMass * (1.0f / r);
-
-    return -(Q0 * D1 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
+    return glm::vec2(C1(0), C1(1));
 }
 
 
@@ -579,21 +629,106 @@ void GRAVITYFMMNodeParticleKernalNaive(float* accumulator, QuadTreeFMM<Particle2
     float oneOverDistance = (1.0f / (distance + softening));
     passiveNode->tempAccAcc += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
 }
-void GRAVITYFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
+void GRAVITYFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<Particle2D>* passiveNode, Particle2D activeParticle)
 {
-    float softening = 1.0f; // should be 1.0f for t-SNE
+    //float softening = 0.1f;
+    //glm::vec2 diff = passiveNode->centreOfMass - activeParticle.position;
+    //float distance = glm::length(diff);
 
-    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeParticle.position; // change this
-    float parCentreDistance = glm::length(nodeDiff);
+    //float oneOverDistance = (1.0f / (distance + softening));
+    //passiveNode->tempAccAcc += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
 
-    float oneOverDistance = (1.0f / (softening + parCentreDistance));
-    *accumulator += passiveNode->totalMass * oneOverDistance;
 
-    passiveNode->tempAccAcc += -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
+    // prework
+    float softening = 0.1f;
+
+    glm::vec2 R = passiveNode->centreOfMass - activeParticle.position; // dhenen
+    //glm::vec2 R = activeNode->centreOfMass - passiveNode->centreOfMass; // gadget4
+    float r = glm::length(R);
+    float rS = r + softening;
+
+    //float D0 = log(rS);
+    float D1 = -1.0f / (rS * rS * rS);
+    float D2 = 3.0f / (rS * rS * rS * rS * rS);
+    float D3 = -15.0f / (rS * rS * rS * rS * rS * rS * rS);
+
+    float MA0 = passiveNode->totalMass;
+    float MB0 = 1.0f; //activeNode->totalMass;
+    Fastor::Tensor<float, 2, 2> MB2{}; // = activeNode->quadrupole;
+    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+
+    // calculate the C^m
+
+    //float C0 = MB0 * (D0 +
+    //                  0.5f * (MB2Tilde(0,0) + MB2Tilde(1, 1)) * D1 +
+    //                  0.5f * (R.x*R.x*MB2Tilde(0,0) + R.x*R.y*MB2Tilde(0, 1) + R.y*R.x*MB2Tilde(1, 0) + R.y*R.y*MB2Tilde(1, 1)) * D2);
+
+
+    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        MB0 * (R.x * (D1 + 0.5f*(MB2TildeSum1)*D2 + 0.5f*(MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5f*(MB2TildeSum1)*D2 + 0.5f*(MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    Fastor::Tensor<float, 2, 2> C2 =
+    {
+        {
+            MB0 * (D1 + R.x * R.x * D2),
+            MB0 * (R.x * R.y * D2)
+        },
+        {
+            MB0 * (R.y * R.x * D2),
+            MB0 * (D1 + R.y * R.y * D2)
+        }
+    };
+
+    Fastor::Tensor<float, 2, 2, 2> C3 =
+    {
+        {
+            {
+                MB0 * ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
+                MB0 * ((R.y) * D2             + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
+            },
+            {
+                MB0 * ((R.y) * D2             + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
+                MB0 * ((R.x) * D2             + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
+            }
+        },
+        {
+            {
+                MB0 * ((R.y) * D2             + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
+                MB0 * ((R.x) * D2             + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
+            },
+            {
+                MB0 * ((R.x) * D2             + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
+                MB0 * ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
+            }
+        }
+    };
+
+
+    //C0 *= MA0;
+    //C1 *= MA0;
+    //C2 *= MA0;
+    //C3 *= MA0;
+
+
+
+
+
+    //passiveNode->C0 += C0;
+    passiveNode->C1 += C1;
+    passiveNode->C2 += C2;
+    passiveNode->C3 += C3;
 }
 
 
-glm::vec2 GRAVITYFMMParticleParticleKernalNaive(float* accumulator, Particle2D passiveParticle, Particle2D activeParticle)
+glm::vec2 GRAVITYFMMParticleParticleKernal(float* accumulator, Particle2D passiveParticle, Particle2D activeParticle)
 {
     float softening = 0.1f;
     glm::vec2 diff = passiveParticle.position - activeParticle.position;
@@ -601,16 +736,4 @@ glm::vec2 GRAVITYFMMParticleParticleKernalNaive(float* accumulator, Particle2D p
 
     float oneOverDistance = 1.0f / (distance + softening);
     return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-}
-glm::vec2 GRAVITYFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
-{
-    float softening = 1.0f; // should be 1.0f for t-SNE
-
-    glm::vec2 R = activeParticle.position - passiveParticle.position;
-    float r = glm::length(R) + softening;
-
-    float g1 = -1.0f / (r * r);
-    *accumulator += 1.0f / r;
-
-    return -1.0f * g1 * R;
 }

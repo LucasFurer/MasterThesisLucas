@@ -273,55 +273,104 @@ glm::vec2 TSNEmultiPoleParticleParticleKernal(float* accumulator, EmbeddedPoint 
 
 
 
-glm::vec2 GRAVITYmultiPoleParticleNodeKernal(float* accumulator, Particle2D i, QuadTreeMultiPole<Particle2D>* j)
+glm::vec2 GRAVITYmultiPoleParticleNodeKernal(float* accumulator, Particle2D passiveParticle, QuadTreeMultiPole<Particle2D>* activeNode)
 {
-    float softening = 0.1f; // should be 1.0f for t-SNE
+    //float softening = 0.1f; // should be 1.0f for t-SNE
 
-    glm::vec2 R = j->centreOfMass - i.position;
-    float r = glm::length(R) + softening;
+    //glm::vec2 R = i.position - j->centreOfMass;
+    //float r = glm::length(R);
+    //float rS = r + softening;
 
-    //float g0 = 1.0f / r;
-    float g1 = -1.0f / (r * r * r);
-    float g2 = 3.0f / (r * r * r * r * r);
-    float g3 = -15.0f / (r * r * r * r * r * r * r);
+    ////float g0 = 1.0f / r;
+    //float g1 = -1.0f / (rS * rS * rS);
+    //float g2 = 3.0f / (rS * rS * rS * rS * rS);
+    //float g3 = -15.0f / (rS * rS * rS * rS * rS * rS * rS);
 
-    float Q0 = j->totalMass;
-    glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
+    //float Q0 = j->totalMass;
+    //glm::vec2 D1 = glm::vec2(g1 * R.x, g1 * R.y);
 
-    glm::vec2 Q1 = j->dipole;
-    glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
-        g2 * R.y * R.x, g1 + g2 * R.y * R.y);
+    //glm::vec2 Q1 = j->dipole;
+    //glm::mat2 D2 = glm::mat2(g1 + g2 * R.x * R.y, g2 * R.x * R.y,
+    //                         g2 * R.y * R.x, g1 + g2 * R.y * R.y);
+
+    //               
+    //Fastor::Tensor<float, 2, 2, 2> D3
+    //{
+    //    { 
+    //        { 
+    //            g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, 
+    //            g2 * (R.y) + g3 * R.x * R.x * R.y 
+    //        }, 
+    //        { 
+    //            g2 * (R.y) + g3 * R.x * R.x * R.y, 
+    //            g2 * (R.x) + g3 * R.x * R.y * R.y 
+    //        } 
+    //    },
+    //    { 
+    //        { 
+    //            g2 * (R.y) + g3 * R.y * R.x * R.x, 
+    //            g2 * (R.x) + g3 * R.y * R.x * R.y 
+    //        }, 
+    //        { 
+    //            g2 * (R.x) + g3 * R.y * R.y * R.x,
+    //            g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y 
+    //        } 
+    //    }
+    //};
+    //
+    //Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(j->quadrupole, D3);
+
+    //return (Q0 * D1 + Q1 * D2 + 0.5f * glm::vec2(Q2D3(0), Q2D3(1)));
 
 
-    Eigen::Tensor<float, 2> Q2(2, 2);
-    Eigen::Tensor<float, 3> D3(2, 2, 2);
 
+    float softening = 0.1f;
+
+    glm::vec2 R = passiveParticle.position - activeNode->centreOfMass;
+    float r = glm::length(R);
+    float rS = r + softening;
+
+    float D1 = -1.0f / (rS * rS * rS);
+    float D2 = 3.0f / (rS * rS * rS * rS * rS);
+    float D3 = -15.0f / (rS * rS * rS * rS * rS * rS * rS);
+
+    //float MA0 = 1.0f;//passiveNode->totalMass;
+    float MB0 = activeNode->totalMass;
+    Fastor::Tensor<float, 2, 2> MB2 = activeNode->quadrupole;
+    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+
+    // calculate the C^m
+    //float C0 = MB0 * (D0 +
+    //                  0.5f * (MB2Tilde(0,0) + MB2Tilde(1, 1)) * D1 +
+    //                  0.5f * (R.x*R.x*MB2Tilde(0,0) + R.x*R.y*MB2Tilde(0, 1) + R.y*R.x*MB2Tilde(1, 0) + R.y*R.y*MB2Tilde(1, 1)) * D2);
+
+
+    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    return glm::vec2(C1(0), C1(1));
     
-    Q2.setValues({ {j->quadrupole(0,0), j->quadrupole(1,0)},
-                   {j->quadrupole(0,1), j->quadrupole(1,1)} });
-                   
-    D3.setValues({ {{g2 * (R.x + R.x + R.x) + g3 * R.x * R.x * R.x, g2 * (R.y) + g3 * R.y * R.x * R.x},
-                    {g2 * (R.y) + g3 * R.y * R.x * R.x,         g2 * (R.x) + g3 * R.y * R.y * R.x}},
-
-                   {{g2 * (R.y) + g3 * R.x * R.x * R.y, g2 * (R.x) + g3 * R.y * R.y * R.x},
-                    {g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y}} });
-    
-    glm::vec2 Q2D3 = contractTensor(Q2, D3);
-
-    //acc += -(Q0 * D1 + Q1 * D2 + glm::vec2(Q2D3(0), Q2D3(1)));
-    return -(Q0 * D1 + Q1 * D2 + 0.5f * Q2D3);
-    //acc += -(Q0 * D1);
 }
 
 glm::vec2 GRAVITYmultiPoleParticleParticleKernal(float* accumulator, Particle2D i, Particle2D j)
 {
     float softening = 0.1f; // should be 1.0f for t-SNE
 
-    glm::vec2 diff = i.position - j.position;
-    float distance = glm::length(diff);
+    glm::vec2 R = i.position - j.position;
+    float r = glm::length(R);
+    float rS = r + softening;
 
-    float oneOverDistance = 1.0f / (softening + distance);
 
-    return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+    float oneOverDistance = 1.0f / (rS);
+
+    return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * R;
 }
 

@@ -30,6 +30,7 @@
 #include "scene.h"
 #include "tsne.h"
 #include "gravitysim.h"
+#include "nBodyScenarios.h"
 #include "common.h"
 #include <fstream>
 #include <filesystem>
@@ -169,7 +170,7 @@ int main(void)
     scenes.push_back(&tsneScene);
 
     // gravity --------------------------------------------------------------------------------------------------------------------------
-    GravitySim gravitySim(10000);
+    GravitySim gravitySim(1000);
 
     glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
 
@@ -192,6 +193,10 @@ int main(void)
 
     scenes.push_back(&gravityScene);
 
+    // one time graph creation -----------------------------------------------------------------------------------------------------------
+
+    NBodyScenarios nBodyScenarios;
+    nBodyScenarios.ErrorTimestep();
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------
 

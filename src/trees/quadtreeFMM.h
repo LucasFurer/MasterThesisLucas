@@ -253,15 +253,14 @@ public:
 				Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
 				// evaluate C^n at occupants position then add to occupant acceleration // might be wrong!!!!!!!!!!!
-				//Fastor::Tensor<float, 2> temp = einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2);
-				//std::cout << "how large is this: " << temp << std::endl;
 				Fastor::Tensor<float, 2> acceleration = C1 + 
 														einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
 														//(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
 														(1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 					
+				//(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
 				(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
-				//(*forces)[i] += -glm::vec2(C1(0), C1(1));
+				
 
 
 				(*forces)[i] += tempAccAcc; // delete this once C^N has been fully implemented 

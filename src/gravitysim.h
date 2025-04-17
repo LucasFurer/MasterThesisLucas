@@ -6,6 +6,7 @@
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverse.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
+#include "nbodysolvers/nBodySolverBarnesHutReverseMultiPole.h"
 #include "nbodysolvers/nBodySolverFMM.h"
 
 class GravitySim
@@ -17,12 +18,14 @@ public:
 	Buffer* particlesBuffer;
 
     float stepSize = 0.1f;
-    float timeStepsPerSec = 100000.0f;
+    float timeStepsPerSec = 30.0f;
     float lastTimeUpdated = 0.0f;
 
     NBodySolverNaive<Particle2D> nBodySolverNaive;
     NBodySolverBarnesHut<Particle2D> nBodySolverBarnesHut;
+    NBodySolverBarnesHutReverse<Particle2D> nBodySolverBarnesHutReverse;
     NBodySolverMultiPole<Particle2D> nBodySolverMultiPole;
+    NBodySolverBarnesHutReverseMultiPole<Particle2D> nBodySolverBarnesHutReverseMultiPole;
     NBodySolverFMM<Particle2D> nBodySolverFMM;
 
 	GravitySim(int particleAmount)
@@ -33,16 +36,18 @@ public:
 
         nBodySolverNaive = NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
         nBodySolverBarnesHut = NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal);
+        nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal);
         nBodySolverMultiPole = NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal);
-        nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernalNaive);
+        nBodySolverBarnesHutReverseMultiPole = NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal);
+        nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal);
 
         srand(1952731);
-        float sizeParam = 2000.0f;
+        float sizeParam = 200.0f;
+        float velParam = 1.0f;
         for (int i = 0; i < particleAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
             float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-
 
             while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
             {
@@ -50,16 +55,25 @@ public:
                 randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
             }
 
-
             glm::vec2 pos = glm::vec2(
                 sizeParam * randX,
                 sizeParam * randY
             );
 
-            float initVelMag = 15.0f;
+
+            //float initVelMag = 15.0f;
+            float randXV = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            float randYV = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+
+            while (powf(randXV, 2.0f) + powf(randYV, 2.0f) > 1.0f)
+            {
+                randXV = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                randYV = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            }
+
             glm::vec2 vel = glm::vec2(
-                initVelMag * ((float)rand() / RAND_MAX) - (initVelMag/2.0f),
-                initVelMag * ((float)rand() / RAND_MAX) - (initVelMag/2.0f)
+                velParam * randXV,
+                velParam * randYV
             );
 
             particles[i] = Particle2D(pos, vel, glm::vec3(1.0f), 1.0f);
@@ -91,7 +105,8 @@ public:
             //nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
             //nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
             //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
-            nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f);
+            nBodySolverBarnesHutReverseMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+            //nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f);
 
             /*
             std::cout << "=================================================================" << std::endl;
@@ -122,7 +137,8 @@ private:
 
         nBodySolverNaive.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
 
-        nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+        //nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+        nBodySolverBarnesHutReverse.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
         float error1 = 0.0f;
         for (int i = 0; i < particles.size(); i++)
         {
@@ -130,8 +146,9 @@ private:
         }
         error1 /= particles.size();
 
-        //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.15f);
-        nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.6f);
+        //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+        nBodySolverBarnesHutReverseMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+        //nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.6f);
         float error2 = 0.0f;
         for (int i = 0; i < particles.size(); i++)
         {
