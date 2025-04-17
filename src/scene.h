@@ -11,50 +11,34 @@ class Scene
 {
 public:
 	Camera* camera;
-	glm::mat4 view;
-	glm::mat4 projection;
-	//unsigned int* screenWidth;
-	//unsigned int* screenHeight;
-	Renderable* renderables;
-	std::size_t renderablesSize;
+	std::vector<Renderable> renderables;
 
 	Scene()
 	{
 	}
 
-	Scene(Camera* initCamera, Renderable* initRenderables, std::size_t initRenderablesSize)
+	Scene(Camera* initCamera, std::vector<Renderable> initRenderables)
 	{
 		camera = initCamera;
-		view = initCamera->getViewMatrix();
-		//screenWidth = screenWidthReference;
-		//screenHeight = screenHeightReference;
-		projection = glm::ortho(0.0f, 1920.0f, 0.0f, 1080.0f, 1.0f, 1000.0f);
-		//projection = glm::perspective(glm::radians(initCamera->Zoom), (float)*screenWidthReference / (float)*screenHeightReference, 0.01f, 1000.0f);
 		renderables = initRenderables;
-		renderablesSize = initRenderablesSize;
 	}
 
 	~Scene()
 	{
-		delete[] renderables;
+
 	}
 
 	void Render()
 	{
-		for (int i = 0; i < renderablesSize / sizeof(Renderable); i++)
+		for (int i = 0; i < renderables.size(); i++)
 		{
 			renderables[i].shader->use();
 
 			switch (renderables[i].renderType)
 			{
 			case GL_POINTS:
-				view = camera->getViewMatrix();
-				renderables[i].shader->setMat4("view", view);
-
-				projection = camera->getProjectionMatrix();
-				//projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
-				renderables[i].shader->setMat4("projection", projection);
-
+				renderables[i].shader->setMat4("view", camera->getViewMatrix());
+				renderables[i].shader->setMat4("projection", camera->getProjectionMatrix());
 				renderables[i].shader->setMat4("model", renderables[i].model);
 
 				renderables[i].buffer->BindVAO();
@@ -62,26 +46,23 @@ public:
 				glDrawArrays(GL_POINTS, 0, renderables[i].buffer->elementAmount);
 				break;
 			case GL_LINES:
-				view = camera->getViewMatrix();
-				renderables[i].shader->setMat4("view", view);
-
-				projection = camera->getProjectionMatrix();
-				//projection = glm::perspective(glm::radians(camera->Zoom), (float)*screenWidth / (float)*screenHeight, 0.01f, 1000.0f);
-				renderables[i].shader->setMat4("projection", projection);
-
+				renderables[i].shader->setMat4("view", camera->getViewMatrix());
+				renderables[i].shader->setMat4("projection", camera->getProjectionMatrix());
 				renderables[i].shader->setMat4("model", renderables[i].model);
 
 				renderables[i].buffer->BindVAO();
+
 				glDrawArrays(GL_LINES, 0, renderables[i].buffer->elementAmount);
-				//glDrawArrays(GL_LINES, 0, simulation.lineSegments.size() * 2);
 				break;
 			case GL_TRIANGLES:
 				renderables[i].shader->setInt("planeTexture", 0);
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, renderables[i].texture->TEX);
-				renderables[i].shader->use();
+
+				//renderables[i].shader->use();
 
 				renderables[i].buffer->BindVAO();
+				
 				glDrawElements(GL_TRIANGLES, renderables[i].buffer->elementAmount, GL_UNSIGNED_INT, 0);
 				break;
 			default:

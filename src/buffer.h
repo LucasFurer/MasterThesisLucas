@@ -31,7 +31,7 @@ public:
 		elementAmount = 0;
 	}
 
-	Buffer(float vertices[], std::size_t verticesSize, unsigned int indices[], std::size_t indicesSize, DataType dataType, GLenum bufferType)
+	Buffer(float vertices[], std::size_t verticesSize, unsigned int indices[], std::size_t indicesSize, DataType dataType, GLenum bufferType) // deprecated
 	{
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
@@ -40,7 +40,7 @@ public:
 		createElementBuffer(vertices, verticesSize, indices, indicesSize, dataType, bufferType);
 	}
 
-	Buffer(float vertices[], std::size_t verticesSize, DataType dataType, GLenum bufferType)
+	Buffer(float vertices[], std::size_t verticesSize, DataType dataType, GLenum bufferType) // deprecated
 	{
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
@@ -51,7 +51,6 @@ public:
 	template <typename T>
 	Buffer(T* data, int dataAmount, DataType dataType, GLenum bufferType)
 	{
-		//this is the new system
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
 

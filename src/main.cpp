@@ -161,11 +161,11 @@ int main(void)
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
     Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverFMM.boxBuffer, &shaderLine2D, nullptr);
-    Renderable* tsneRenderables = new Renderable[2]{ tsneRenderablePoints, tsneRenderableLines };
+    std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene tsneScene(&cameraTsne, tsneRenderables, 2 * sizeof(Renderable));
+    Scene tsneScene(&cameraTsne, tsneRenderables);
 
     scenes.push_back(&tsneScene);
 
@@ -184,19 +184,19 @@ int main(void)
     #endif
 
     Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
-    //Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
-    Renderable* gravityRenderables = new Renderable[1]{ gravityRenderablePoints };
+    Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolverFMM.boxBuffer, &shaderLine2D, nullptr);
+    std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines };
 
     Camera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene gravityScene(&cameraGravity, gravityRenderables, 1 * sizeof(Renderable));
+    Scene gravityScene(&cameraGravity, gravityRenderables);
 
     scenes.push_back(&gravityScene);
 
     // one time graph creation -----------------------------------------------------------------------------------------------------------
 
-    NBodyScenarios nBodyScenarios;
-    nBodyScenarios.ErrorTimestep();
+    //NBodyScenarios nBodyScenarios;
+    //nBodyScenarios.ErrorTimestep();
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------
 
@@ -224,6 +224,25 @@ int main(void)
         ImGui::NewFrame();
 
         float timeBeginFrame = glfwGetTime();
+        // initial
+
+
+        frameCounter++;
+        if (glfwGetTime() - lastFrameUpdate > 1.0f)
+        {
+            lastFrameUpdate = glfwGetTime();
+            frameCounted = frameCounter;
+            frameCounter = 0;
+        }
+
+        ImGui::Begin("options");
+
+        std::string frameOutput = "frames: " + std::to_string(frameCounted);
+        ImGui::Text(frameOutput.c_str());
+
+        ImGui::SliderInt("show tree level", &gravitySim.nBodySolverFMM.showLevel, -1, 10);
+
+        ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
 
         
@@ -252,93 +271,16 @@ int main(void)
 
         
         if (per == 1)
-        {
             scenes[0]->camera->perspective = true;
-        }
         else
-        {
             scenes[0]->camera->perspective = false;
-        }
         
 
 
-        /*
-        if (timeBeginFrame - lastTimePressed > 0.2f)
-        {
-            if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-                simulation.showLevel += 1;
-            if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-                simulation.showLevel -= 1;
-
-            lastTimePressed = timeBeginFrame;
-        }
-
-        if (visSelect == 0)
-        { 
-            if (gravType == 0)
-            {
-                simulation.setAccelerationType(barnesHut);
-                simulation.simulate();
-                //std::cout << simulation.lineSegments.size() * 2 << std::endl;
-                scenes[0]->Render();
-            }
-            else
-            {
-                simulation.setAccelerationType(naive);
-                simulation.simulate();
-
-                scenes[1]->Render();
-            }
-        }
-        else
-        {
-            potSimulation.updateVisual();
-            scenes[2]->Render();
-        }
-        */
-
-        
-
-
-        frameCounter++;
-        if (glfwGetTime() - lastFrameUpdate > 1.0f)
-        {
-            lastFrameUpdate = glfwGetTime();
-            frameCounted = frameCounter;
-            frameCounter = 0;
-        }
-
-        std::string frameString = std::to_string(frameCounted);
-        std::string frame = "frames: ";
-        std::string frameOutput = frame + frameString;
-        
-        
-        ImGui::Begin("options");
-        ImGui::Text(frameOutput.c_str());
-        //static float myVariable = 0.0f;
-        //ImGui::SliderFloat("My Variable", &myVariable, 0.0f, 1.0f);
-
-        //ImGui::SliderInt("orthographic <-> perspective", &per, 0, 1);
-        
-        //ImGui::SliderInt("gravitySim <-> potentialSolver", &visSelect, 0, 1);
-        //if (visSelect == 0)
-        //{ 
-        //    ImGui::SliderInt("Barnes&Hut <-> naive: ", &gravType, 0, 1);
-        //    if (gravType == 0)
-        //    {
-        //        ImGui::SliderInt("show tree level", &simulation.showLevel, 0, 10);
-        //    }
-        //}
-        
-        ImGui::SliderInt("show tree level", &tsne.nBodySolverFMM.showLevel, -1, 10);
-
-        ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
         ImGui::End();
-
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        
 
         // final
         glfwSwapBuffers(window);

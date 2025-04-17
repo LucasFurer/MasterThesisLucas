@@ -18,7 +18,7 @@ public:
 	Buffer* particlesBuffer;
 
     float stepSize = 0.1f;
-    float timeStepsPerSec = 30.0f;
+    float timeStepsPerSec = 300000000.0f;
     float lastTimeUpdated = 0.0f;
 
     NBodySolverNaive<Particle2D> nBodySolverNaive;
@@ -99,14 +99,14 @@ public:
         {
             lastTimeUpdated = glfwGetTime();
 
-            checkError();
+            //checkError();
 
             float noAccumulator = 0.0f;
             //nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
             //nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
             //nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
-            nBodySolverBarnesHutReverseMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
-            //nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f);
+            //nBodySolverBarnesHutReverseMultiPole.solveNbody(&noAccumulator, &accelerations, &particles, 10, 1.0f);
+            nBodySolverFMM.solveNbody(&noAccumulator, &accelerations, &particles, 10, 0.8f);
 
             /*
             std::cout << "=================================================================" << std::endl;
