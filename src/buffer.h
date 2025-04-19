@@ -54,7 +54,7 @@ public:
 	*/
 
 	template <typename T>
-	Buffer(std::vector<T> toBuffer, std::vector<unsigned int> indices, DataType dataType, GLenum bufferType) // deprecated
+	Buffer(const std::vector<T>& toBuffer, std::vector<unsigned int> indices, DataType dataType, GLenum bufferType) // deprecated
 	{
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
@@ -65,7 +65,7 @@ public:
 	}
 
 	template <typename T>
-	Buffer(std::vector<T>& toBuffer, DataType dataType, GLenum bufferType)
+	Buffer(const std::vector<T>& toBuffer, DataType dataType, GLenum bufferType)
 	{
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
@@ -143,7 +143,7 @@ public:
 	*/
 
 	template <typename T>
-	void updateBuffer(std::vector<T>& toBuffer, DataType dataType)
+	void updateBuffer(const std::vector<T>& toBuffer, DataType dataType)
 	{
 		std::size_t dataSize = toBuffer.size() * sizeof(T);
 
@@ -296,7 +296,7 @@ public:
 	*/
 
 	template <typename T>
-	void createElementBuffer(std::vector<T>& toBuffer, std::vector<unsigned int>& indices, DataType dataType, GLenum bufferType)
+	void createElementBuffer(const std::vector<T>& toBuffer, std::vector<unsigned int>& indices, DataType dataType, GLenum bufferType)
 	{
 		elementAmount = indices.size();
 
@@ -337,7 +337,7 @@ public:
 	}
 
 	template <typename T>
-	void createVertexBuffer(std::vector<T>& toBuffer, DataType dataType, GLenum bufferType)
+	void createVertexBuffer(const std::vector<T>& toBuffer, DataType dataType, GLenum bufferType)
 	{
 		elementAmount = toBuffer.size();
 

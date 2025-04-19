@@ -2,7 +2,7 @@
 
 #include "../trees/quadTreeBarnesHutReverseMultiPole.h"
 #include "../particles/particle2D.h"
-#include "nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
 class NBodySolverBarnesHutReverseMultiPole : public NBodySolver<T>

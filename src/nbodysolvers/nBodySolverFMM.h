@@ -2,7 +2,7 @@
 
 #include "../trees/quadtreeFMM.h"
 #include <Fastor/Fastor.h>
-#include "nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
 class NBodySolverFMM : public NBodySolver<T>

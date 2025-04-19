@@ -2,7 +2,7 @@
 
 #include "../trees/quadtree.h"
 #include <functional>
-#include "nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
 class NBodySolverNaive : public NBodySolver<T>

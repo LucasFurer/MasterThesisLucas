@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../trees/quadTreeBarnesHutReverse.h"
-#include "nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
 class NBodySolverBarnesHutReverse : public NBodySolver<T>

@@ -4,7 +4,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include "../trees/quadtreemultipole.h"
 #include <Fastor/Fastor.h>
-#include "nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
 class NBodySolverMultiPole : public NBodySolver<T>
