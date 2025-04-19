@@ -158,9 +158,9 @@ int main(void)
     Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
+    tsne.nBodySelect = 5;
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
-    //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverBarnesHut.boxBuffer, &shaderLine2D, nullptr);
-    Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolverFMM.boxBuffer, &shaderLine2D, nullptr);
+    Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
@@ -183,8 +183,9 @@ int main(void)
     //Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
+    gravitySim.nBodySelect = 4;
     Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
-    Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolverFMM.boxBuffer, &shaderLine2D, nullptr);
+    Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines };
 
     Camera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
@@ -240,14 +241,12 @@ int main(void)
         std::string frameOutput = "frames: " + std::to_string(frameCounted);
         ImGui::Text(frameOutput.c_str());
 
-        ImGui::SliderInt("show tree level", &gravitySim.nBodySolverFMM.showLevel, -1, 10);
-
-        ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
-
-
         
         if (sceneSelect == 0)
         {
+            ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
+            ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
+
             tsne.timeStep();
 
             if (tsne.follow == 1)
@@ -263,17 +262,26 @@ int main(void)
         }
         else
         {
+            ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
+
             gravitySim.timeStep();
         }
 
-        
-        scenes[sceneSelect]->Render();
 
-        
+
+
+
         if (per == 1)
             scenes[0]->camera->perspective = true;
         else
             scenes[0]->camera->perspective = false;
+        
+
+
+        scenes[sceneSelect]->Render();
+
+        
+
         
 
 

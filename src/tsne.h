@@ -15,6 +15,7 @@
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverse.h"
+#include "nbodysolvers/nBodySolverBarnesHutReverseMultiPole.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
 #include "nbodysolvers/nBodySolverFMM.h"
 #include <filesystem>
@@ -35,11 +36,8 @@ public:
 
     std::vector<glm::vec2> errorCompare;
 
-    NBodySolverNaive<EmbeddedPoint> nBodySolverNaive;
-    NBodySolverBarnesHut<EmbeddedPoint> nBodySolverBarnesHut;
-    NBodySolverBarnesHutReverse<EmbeddedPoint> nBodySolverBarnesHutReverse;
-    NBodySolverMultiPole<EmbeddedPoint> nBodySolverMultiPole;
-    NBodySolverFMM<EmbeddedPoint> nBodySolverFMM;
+    std::vector<NBodySolver<EmbeddedPoint>*> nBodySolvers;
+    int nBodySelect = 0;
 
     float learnRate;
     float accelerationRate;
@@ -96,12 +94,12 @@ public:
         errorCompare.resize(dataAmount);
 
 
-        nBodySolverNaive = NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
-        nBodySolverBarnesHut = NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal);
-        nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal);
-        nBodySolverMultiPole = NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal);
-        nBodySolverFMM = NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernalNaive);
-
+        nBodySolvers.push_back(new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal));
+        nBodySolvers.push_back(new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal,                                                   10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal,                              10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal,                                                   10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal,   10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal,                 10, 1.0f));
 
         srand(1952732);
         float sizeParam = 2.0f;
@@ -130,17 +128,25 @@ public:
             embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
         }
 
-        embeddedBuffer = new Buffer(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
 	}
 	
 	~TSNE()
 	{
-        // delete embeddedBuffer?
+        for (NBodySolver<EmbeddedPoint>* nBodySolverPointer : nBodySolvers)
+        {
+            delete nBodySolverPointer;
+        }
 	}
 
     void cleanup()
     {
         embeddedBuffer->cleanup();
+
+        for (NBodySolver<EmbeddedPoint>* nBodySolver : nBodySolvers)
+        {
+            nBodySolver->boxBuffer->cleanup();
+        }
     }
     
     void timeStep()
@@ -160,7 +166,7 @@ public:
                 embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             }
 
-            embeddedBuffer->updateBufferNew(embeddedPoints.data(), embeddedPoints.size(), pos2DlabelInt);
+            embeddedBuffer->updateBuffer(embeddedPoints, pos2DlabelInt);
         }
     }
 
@@ -222,7 +228,7 @@ private:
     {
         float QijTotalNaive = 0.0f;
         
-        nBodySolverNaive.solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
+        nBodySolvers[0]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
         //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
         //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
@@ -241,7 +247,7 @@ private:
         //-----------------------------------------------------------------------------------
 
         float QijTotalCompare = 0.0f;
-        nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
+        nBodySolvers[1]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
         float error1 = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -250,9 +256,9 @@ private:
         error1 /= embeddedPoints.size();
 
         QijTotalCompare = 0.0f;
-        nBodySolverFMM.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.5f);
-        //nBodySolverBarnesHutReverse.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 0.15f);
-        //nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.4f);
+        nBodySolvers[5]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);//, 10, 0.5f
+        //nBodySolvers[2]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 0.15f
+        //nBodySolvers[3]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 1.4f
         float error2 = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -271,15 +277,15 @@ private:
     {
         float QijTotal = 0.0f;
 
-        //nBodySolverNaive.solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        //nBodySolvers[0]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
         
-        //nBodySolverBarnesHut.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f); // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
+        //nBodySolvers[1]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 1.0f // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
 
-        //nBodySolverBarnesHutReverse.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
+        //nBodySolvers[2]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 0.8f
 
-        //nBodySolverMultiPole.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 1.0f);
+        //nBodySolvers[3]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 1.0f
 
-        nBodySolverFMM.solveNbody(&QijTotal, &repulsForce, &embeddedPoints, 10, 0.8f);
+        nBodySolvers[5]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);//, 10, 0.8f
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

@@ -21,27 +21,42 @@ public:
     float timeStepsPerSec = 30.0f;
     float lastTimeUpdated = 0.0f;
 
-    NBodySolverNaive<Particle2D> nBodySolverNaive = NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
-    NBodySolverBarnesHut<Particle2D> nBodySolverBarnesHut = NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal);
-    NBodySolverBarnesHutReverse<Particle2D> nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal);
-    NBodySolverMultiPole<Particle2D> nBodySolverMultiPole = NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal);
-    NBodySolverBarnesHutReverseMultiPole<Particle2D> nBodySolverBarnesHutReverseMultiPole = NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal);
-    //NBodySolverFMM<Particle2D> nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal);
-    NBodySolverFMM<Particle2D> nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal);
+    //NBodySolverNaive<Particle2D> nBodySolverNaive = NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
+    //NBodySolverBarnesHut<Particle2D> nBodySolverBarnesHut = NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal);
+    //NBodySolverBarnesHutReverse<Particle2D> nBodySolverBarnesHutReverse = NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal);
+    //NBodySolverMultiPole<Particle2D> nBodySolverMultiPole = NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal);
+    //NBodySolverBarnesHutReverseMultiPole<Particle2D> nBodySolverBarnesHutReverseMultiPole = NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal);
+    ////NBodySolverFMM<Particle2D> nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal);
+    //NBodySolverFMM<Particle2D> nBodySolverFMM = NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
+
+    std::vector<NBodySolver<Particle2D>*> nBodySolvers;
 
     NBodyScenarios()
     {
-
+        nBodySolvers.push_back(new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal));
+        nBodySolvers.push_back(new NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal, 10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal, 10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal, 10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f));
+        nBodySolvers.push_back(new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f));
     }
 
     ~NBodyScenarios()
     {
-        // delete embeddedBuffer?
+        for (NBodySolver<Particle2D>* nBodySolverPointer : nBodySolvers)
+        {
+            delete nBodySolverPointer;
+        }
     }
 
     void cleanup()
     {
         particlesBuffer->cleanup();
+
+        for (NBodySolver<Particle2D>* nBodySolver : nBodySolvers)
+        {
+            nBodySolver->boxBuffer->cleanup();
+        }
     }
 
 
@@ -70,34 +85,34 @@ public:
         {
             //lastTimeUpdated = glfwGetTime();
             // correct solution up to machine precision
-            nBodySolverNaive.solveNbody(&noAccumulator, &accelerations, &particles);
+            nBodySolvers[0]->solveNbody(&noAccumulator, &accelerations, &particles);
 
             // calculate the result of every approximation technique and find the error by comparing to naive
-            nBodySolverBarnesHut.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles, 10, 1.0f);
+            nBodySolvers[1]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBH[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBH[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBH[t] /= particles.size();
             
-            nBodySolverMultiPole.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles, 10, 1.0f);
+            nBodySolvers[3]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHMultipole[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHMultipole[t] /= particles.size();
 
-            nBodySolverBarnesHutReverse.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles, 10, 1.0f);
+            nBodySolvers[2]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHReverse[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHReverse[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHReverse[t] /= particles.size();
 
-            nBodySolverBarnesHutReverseMultiPole.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles, 10, 1.0f);
+            nBodySolvers[4]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHReverseMultipole[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHReverseMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHReverseMultipole[t] /= particles.size();
 
-            nBodySolverFMM.solveNbody(&noAccumulator, &accelerationsErrorTest, &particles, 10, 1.0f);
+            nBodySolvers[5]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
             timeFMM[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorFMM[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
@@ -110,7 +125,7 @@ public:
             for (int i = 0; i < particles.size(); i++)
                 particles[i].position += stepSize * particles[i].speed;
 
-            particlesBuffer->updateBufferNew(particles.data(), particles.size(), pos2Dvel2Dcol3Dmass);
+            particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
         }
 
         // write results to csv files
@@ -277,6 +292,6 @@ private:
             particles[i] = Particle2D(pos, vel, glm::vec3(1.0f), 1.0f);
         }
 
-        particlesBuffer = new Buffer(particles.data(), particles.size(), pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
+        particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
     }
 };

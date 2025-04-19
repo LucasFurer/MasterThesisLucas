@@ -1,6 +1,6 @@
 #ifndef NBODYSIM_H
 #define NBODYSIM_H
-
+/*
 #include "trees/octree.h"
 #include "ffthelper.h"
 #include "common.h"
@@ -250,22 +250,22 @@ public:
     {
         //float* mesh = new float[];
 
-        /*
-        //code for in main
-        const int N = 10;
-        fftw_complex x[N];
-        fftw_complex y[N];
-        for (int i = 0; i < N; i++)
-        {
-            x[i][REAL] = i;
-            x[i][IMAG] = N-i-1;
-        }
-        FFTHelper::fft(x, y, N);
-        FFTHelper::displatComplex(x, N);
-        FFTHelper::displatComplex(y, N);
-        FFTHelper::ifft(y, x, N);
-        FFTHelper::displatComplex(x, N);
-        */
+        
+        ////code for in main
+        //const int N = 10;
+        //fftw_complex x[N];
+        //fftw_complex y[N];
+        //for (int i = 0; i < N; i++)
+        //{
+        //    x[i][REAL] = i;
+        //    x[i][IMAG] = N-i-1;
+        //}
+        //FFTHelper::fft(x, y, N);
+        //FFTHelper::displatComplex(x, N);
+        //FFTHelper::displatComplex(y, N);
+        //FFTHelper::ifft(y, x, N);
+        //FFTHelper::displatComplex(x, N);
+        
     }
 
     void naiveAcc()
@@ -364,6 +364,6 @@ public:
     }
 private:
 };
-
+*/
 
 #endif

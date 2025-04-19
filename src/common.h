@@ -26,11 +26,23 @@ struct Renderable
 	}
 };
 
+struct VertexPos2Col3
+{
+	glm::vec2 position;
+	glm::vec3 color;
+
+	VertexPos2Col3(glm::vec2 initPosition, glm::vec3 initColor)
+	{
+		position = initPosition;
+		color = initColor;
+	}
+};
+
 struct LineSegment2D
 {
 	glm::vec2 pointB;
-	glm::vec2 pointE;
 	glm::vec3 colorB;
+	glm::vec2 pointE;
 	glm::vec3 colorE;
 	int depth;
 
@@ -48,29 +60,14 @@ struct LineSegment2D
 
 	}
 
-	static float* LineSegmentToFloat(LineSegment2D* lineSegments, std::size_t lineSegmentsSize)
+	static std::vector<VertexPos2Col3> LineSegmentToVertexPos2Col3(const std::vector<LineSegment2D>& lineSegments)
 	{
-		int lineSegmentAmount = lineSegmentsSize / sizeof(LineSegment2D);
-
-		float* result = new float[10 * lineSegmentAmount];
-
-		for (int i = 0; i < lineSegmentAmount; i++)
+		std::vector<VertexPos2Col3> result;
+		for (LineSegment2D lineSegment : lineSegments)
 		{
-			result[10 * i + 0] = lineSegments[i].pointB.x;
-			result[10 * i + 1] = lineSegments[i].pointB.y;
-
-			result[10 * i + 2] = lineSegments[i].colorB.r;
-			result[10 * i + 3] = lineSegments[i].colorB.g;
-			result[10 * i + 4] = lineSegments[i].colorB.b;
-
-			result[10 * i + 5] = lineSegments[i].pointE.x;
-			result[10 * i + 6] = lineSegments[i].pointE.y;
-
-			result[10 * i + 7] = lineSegments[i].colorE.r;
-			result[10 * i + 8] = lineSegments[i].colorE.g;
-			result[10 * i + 9] = lineSegments[i].colorE.b;
+			result.push_back(VertexPos2Col3(lineSegment.pointB, lineSegment.colorB));
+			result.push_back(VertexPos2Col3(lineSegment.pointE, lineSegment.colorE));
 		}
-
 		return result;
 	}
 };

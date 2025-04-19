@@ -10,6 +10,8 @@
 #include "../particles/embeddedPoint.h"
 #include "../particles/particle2D.h"
 
+#include <Fastor/Fastor.h>
+
 template <typename T>
 class QuadTreeBarnesHutReverseMultiPole
 {

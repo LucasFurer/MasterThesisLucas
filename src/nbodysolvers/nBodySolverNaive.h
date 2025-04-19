@@ -2,9 +2,10 @@
 
 #include "../trees/quadtree.h"
 #include <functional>
+#include "nbodysolvers/nBodySolver.h"
 
 template <typename T>
-class NBodySolverNaive
+class NBodySolverNaive : public NBodySolver<T>
 {
 public:
     std::function<void(float*, std::vector<T>*, int, int, std::vector<glm::vec2>*)> kernel;

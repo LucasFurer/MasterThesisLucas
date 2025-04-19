@@ -1,30 +1,36 @@
 #pragma once
 
 #include "../trees/quadtree.h"
+#include "nbodysolvers/nBodySolver.h"
 
 template <typename T>
-class NBodySolverBarnesHut
+class NBodySolverBarnesHut : public NBodySolver<T>
 {
 public:
     std::vector<LineSegment2D> lineSegments;
-    Buffer* boxBuffer = new Buffer();
-    int showLevel = 0;
+    //Buffer* boxBuffer = new Buffer();
+    //int showLevel = 0;
 
     std::function<glm::vec2(float*, T, QuadTree<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
+
+    int maxChildren;
+    float theta;
 
     NBodySolverBarnesHut()
     {
 
     }
 
-    NBodySolverBarnesHut(std::function<glm::vec2(float*, T, QuadTree<T>*)> initKernelParticleNode, std::function<glm::vec2(float*, T, T)> initKernelParticleParticle)
+    NBodySolverBarnesHut(std::function<glm::vec2(float*, T, QuadTree<T>*)> initKernelParticleNode, std::function<glm::vec2(float*, T, T)> initKernelParticleParticle, int initMaxChildren, float initTheta)
     {
         kernelParticleNode = initKernelParticleNode;
         kernelParticleParticle = initKernelParticleParticle;
+        maxChildren = initMaxChildren;
+        theta = initTheta;
     }
 
-    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints, int maxChildren, float theta)
+    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
@@ -37,11 +43,13 @@ public:
 
 
         lineSegments.clear();
-        root.getLineSegments(lineSegments, 0, showLevel);
-
-        float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
-        boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
-        delete[] lineSegmentsToBuffer;
+        root.getLineSegments(lineSegments, 0, this->showLevel);
+        
+        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
+        this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
+        //float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
+        //boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
+        //delete[] lineSegmentsToBuffer;
     }
 
 private:
