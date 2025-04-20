@@ -36,6 +36,25 @@ struct VertexPos2Col3
 		position = initPosition;
 		color = initColor;
 	}
+
+	template <typename T>
+	static std::vector<VertexPos2Col3> particlesAccelerationsToVertexPos2Col3(const std::vector<T>& particles, std::vector<glm::vec2>& accelerations)
+	{
+		std::vector<VertexPos2Col3> result;
+		for (int i = 0; i < particles.size(); i++)
+		{
+			glm::vec2 linePosB = particles[i].position;
+			glm::vec3 lineColB = glm::vec3(1.0f, 0.0f, 0.0f);
+
+			glm::vec2 linePosE = particles[i].position + 10.0f * accelerations[i];
+			//glm::vec2 linePosE = particles[i].position + particles[i].speed;
+			glm::vec3 lineColE = glm::vec3(1.0f, 0.0f, 0.0f);
+
+			result.push_back(VertexPos2Col3(linePosB, lineColB));
+			result.push_back(VertexPos2Col3(linePosE, lineColE));
+		}
+		return result;
+	}
 };
 
 struct LineSegment2D

@@ -8,7 +8,7 @@ template <typename T>
 class NBodySolverFMM : public NBodySolver<T>
 {
 public:
-    std::vector<LineSegment2D> lineSegments;
+    //std::vector<LineSegment2D> lineSegments;
     //Buffer* boxBuffer = new Buffer();
     //int showLevel = 0;
 
@@ -52,14 +52,10 @@ public:
         root.applyForces(forces);
         
 
-        lineSegments.clear();
-        root.getLineSegments(lineSegments, 0, this->showLevel);
-
-        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
+        this->lineSegments.clear();
+        root.getLineSegments(this->lineSegments, 0, this->showLevel);
+        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
         this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
-        //float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
-        //boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
-        //delete[] lineSegmentsToBuffer;
     }
     
 private:   

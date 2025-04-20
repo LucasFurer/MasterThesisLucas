@@ -29,6 +29,7 @@ public:
     std::vector<EmbeddedPoint> embeddedPointsPrev;
     std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
     Buffer* embeddedBuffer;
+    Buffer* forceBuffer;
 
     std::vector<glm::vec2> embeddedDerivative;
     std::vector<glm::vec2> attractForce;
@@ -63,7 +64,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 100000.0f;
+        timeStepsPerSec = 100.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -129,10 +130,16 @@ public:
         }
 
         embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
+
+        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
+        forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
 	
 	~TSNE()
 	{
+        delete embeddedBuffer;
+        delete forceBuffer;
+
         for (NBodySolver<EmbeddedPoint>* nBodySolverPointer : nBodySolvers)
         {
             delete nBodySolverPointer;
@@ -142,6 +149,7 @@ public:
     void cleanup()
     {
         embeddedBuffer->cleanup();
+        forceBuffer->cleanup();
 
         for (NBodySolver<EmbeddedPoint>* nBodySolver : nBodySolvers)
         {
@@ -161,12 +169,16 @@ public:
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
             embeddedPoints.swap(embeddedPointsPrev);
 
+
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
                 embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             }
 
             embeddedBuffer->updateBuffer(embeddedPoints, pos2DlabelInt);
+
+            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
+            forceBuffer->updateBuffer(forceLines, pos2DCol3D);
         }
     }
 
@@ -277,15 +289,7 @@ private:
     {
         float QijTotal = 0.0f;
 
-        //nBodySolvers[0]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
-        
-        //nBodySolvers[1]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 1.0f // keep theta between 0.0 (off) and 1.0 (can be higher) 0.3 gives no artifacts
-
-        //nBodySolvers[2]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 0.8f
-
-        //nBodySolvers[3]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints); // , 10, 1.0f
-
-        nBodySolvers[5]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);//, 10, 0.8f
+        nBodySolvers[nBodySelect]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -297,8 +301,10 @@ private:
     {
         std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
 
-        for (int k = 0; k < Pmatrix.outerSize(); ++k) { // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
-            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) {
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        { 
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
+            {
                 //glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
                 glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
                 float distance = glm::length(diff);

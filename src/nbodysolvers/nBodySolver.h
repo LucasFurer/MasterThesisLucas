@@ -4,6 +4,7 @@ template <typename T>
 class NBodySolver
 {
 public:
+	std::vector<LineSegment2D> lineSegments;
 	Buffer* boxBuffer = new Buffer();
 	int showLevel = 0;
 

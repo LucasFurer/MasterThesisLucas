@@ -17,9 +17,10 @@ public:
 	std::vector<glm::vec2> accelerations;
 	std::vector<glm::vec2> accelerationsErrorTest;
 	Buffer* particlesBuffer;
+    Buffer* forceBuffer;
 
     float stepSize = 0.1f;
-    float timeStepsPerSec = 300000000.0f;
+    float timeStepsPerSec = 3.0f;
     float lastTimeUpdated = 0.0f;
 
     std::vector<NBodySolver<Particle2D>*> nBodySolvers;
@@ -77,10 +78,16 @@ public:
         }
 
         particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
+        
+        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations);
+        forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
 
     ~GravitySim()
     {
+        delete particlesBuffer;
+        delete forceBuffer;
+
         for (NBodySolver<Particle2D>* nBodySolverPointer : nBodySolvers) 
         {
             delete nBodySolverPointer;
@@ -90,6 +97,7 @@ public:
     void cleanup()
     {
         particlesBuffer->cleanup();
+        forceBuffer->cleanup();
 
         for (NBodySolver<Particle2D>* nBodySolver : nBodySolvers)
         {
@@ -131,7 +139,9 @@ public:
                 particles[i].position += stepSize * particles[i].speed;
 
             particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
-            
+
+            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations);
+            forceBuffer->updateBuffer(forceLines, pos2DCol3D);
         }
     }
 
