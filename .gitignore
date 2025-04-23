@@ -2,11 +2,12 @@
 .vscode/
 build/
 data/
-Debug
+Debug/
 graphCSV/
-outdated
+outdated/
 plotOutput/
-TSNEdataInput
+TSNEdataInput/
+.ipynb_checkpoints/
 x64
 imgui.ini
 MasterThesis.sln
