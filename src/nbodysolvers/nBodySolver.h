@@ -8,6 +8,9 @@ public:
 	Buffer* boxBuffer = new Buffer();
 	int showLevel = 0;
 
+	int maxChildren;
+	float theta;
+
 	virtual void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* points) = 0;
 
 	~NBodySolver()

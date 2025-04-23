@@ -3,6 +3,7 @@
 
 //#include "common.h"
 #include "particles/embeddedPoint.h"
+#include <vector>
 
 enum DataType
 {

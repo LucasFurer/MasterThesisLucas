@@ -8,6 +8,6 @@ outdated
 .vs
 imgui.ini
 .vscode/
-CMakeLists.txt
 build/
 graphCSV/
+data/

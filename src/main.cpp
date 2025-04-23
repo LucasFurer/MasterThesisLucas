@@ -34,6 +34,7 @@
 #include "common.h"
 #include <fstream>
 #include <filesystem>
+#include <map>
 
 //std::cout << std::format("{}", std::numbers::pi_v<double>);
 
@@ -158,7 +159,7 @@ int main(void)
     Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
-    tsne.nBodySelect = 1;
+    tsne.nBodySelect = "BH";
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
@@ -183,7 +184,7 @@ int main(void)
     //Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
-    gravitySim.nBodySelect = 0;
+    gravitySim.nBodySelect = "BH";
     Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
     Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
@@ -197,8 +198,11 @@ int main(void)
 
     // one time graph creation -----------------------------------------------------------------------------------------------------------
 
-    //NBodyScenarios nBodyScenarios;
-    //nBodyScenarios.ErrorTimestep();
+    NBodyScenarios nBodyScenarios;
+    //nBodyScenarios.errorTimestep();
+    //nBodyScenarios.errorTimestepFMM();
+    //nBodyScenarios.calculationtimeTheta();
+    std::cout << "im done with the csv generation!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------
 

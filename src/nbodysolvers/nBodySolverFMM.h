@@ -17,8 +17,8 @@ public:
     std::function<void(float*, QuadTreeFMM<T>*, T)> kernelNodeParticle;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
 
-    int maxChildren;
-    float theta;
+    //int maxChildren;
+    //float theta;
 
     NBodySolverFMM
     (
@@ -34,8 +34,8 @@ public:
         kernelParticleNode = initKernelParticleNode;
         kernelNodeParticle = initKernelNodeParticle;
         kernelParticleParticle = initKernelParticleParticle;
-        maxChildren = initMaxChildren;
-        theta = initTheta;
+        this->maxChildren = initMaxChildren;
+        this->theta = initTheta;
     }
 
     NBodySolverFMM() {}
@@ -44,10 +44,10 @@ public:
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
-        QuadTreeFMM root(maxChildren, embeddedPoints);
+        QuadTreeFMM root(this->maxChildren, embeddedPoints);
 
 
-        getFMMAcc(total, forces, &root, &root, theta);
+        getFMMAcc(total, forces, &root, &root, this->theta);
         //root.divideC();
         root.applyForces(forces);
         
@@ -97,10 +97,10 @@ private:
             }
             
             
-            //for (int passiveNodeParticleIndex : passiveNode->occupants)
+            //for (int passivenodeparticleindex : passiveNode->occupants)
             //{
 
-            //    getBarnesHutAccActiveTree(total, forces, activeNode, passiveNodeParticleIndex, theta);
+            //    getBarnesHutAccActiveTree(total, forces, activeNode, passivenodeparticleindex, theta);
 
             //}
             
@@ -109,30 +109,30 @@ private:
         {
 
 
-            //if (passiveNode->children.size() == 0) // naive
-            //{
-            //    for (int ip : passiveNode->occupants)
-            //    {
-            //        for (int ia : activeNode->occupants)
-            //        {
-            //            (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
-            //        }
-            //    }
-            //}
-            //else // split
-            //{
-            //    for (QuadTreeFMM<T>* child : passiveNode->children)
-            //    {
-            //        getFMMAcc(total, forces, child, activeNode, theta);
-            //    }
-            //}
-            
-            for (int activeNodeParticleIndex : activeNode->occupants)
+            if (passiveNode->children.size() == 0) // naive
             {
-
-                getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
-
+                for (int ip : passiveNode->occupants)
+                {
+                    for (int ia : activeNode->occupants)
+                    {
+                        (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
+                    }
+                }
             }
+            else // split
+            {
+                for (QuadTreeFMM<T>* child : passiveNode->children)
+                {
+                    getFMMAcc(total, forces, child, activeNode, theta);
+                }
+            }
+            
+            //for (int activeNodeParticleIndex : activeNode->occupants)
+            //{
+
+            //    getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
+
+            //}
             
         }
         else
@@ -363,7 +363,7 @@ glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passivePar
                                         { { g2 * (R.y) + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
     };
     
-    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
+    Fastor::Tensor<float, 2> Q2D3 = Fastor::einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
 
     *accumulator += activeNode->totalMass * (1.0f / r);
 
@@ -560,8 +560,8 @@ void GRAVITYFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<Particle2D>* passi
                                         { { g2 * (R.y) + g3 * R.y * R.x * R.x, g2 * (R.x) + g3 * R.y * R.x * R.y }, { g2 * (R.x) + g3 * R.y * R.y * R.x, g2 * (R.y + R.y + R.y) + g3 * R.y * R.y * R.y } }
     };
 
-    //Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
-    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1, 2>, Fastor::Index<0, 1>>(D3, activeNode->quadrupole);
+    //Fastor::Tensor<float, 2> Q2D3 = Fastor::einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(activeNode->quadrupole, D3);
+    Fastor::Tensor<float, 2> Q2D3 = Fastor::einsum<Fastor::Index<0, 1, 2>, Fastor::Index<0, 1>>(D3, activeNode->quadrupole);
 
 
 

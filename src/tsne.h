@@ -37,8 +37,8 @@ public:
 
     std::vector<glm::vec2> errorCompare;
 
-    std::vector<NBodySolver<EmbeddedPoint>*> nBodySolvers;
-    int nBodySelect = 0;
+    std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolvers;
+    std::string nBodySelect = "naive";
 
     float learnRate;
     float accelerationRate;
@@ -58,13 +58,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 100.0f;
+        timeStepsPerSec = 2.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -95,12 +95,13 @@ public:
         errorCompare.resize(dataAmount);
 
 
-        nBodySolvers.push_back(new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal));
-        nBodySolvers.push_back(new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal,                                                   10, 1.0f));
-        nBodySolvers.push_back(new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal,                              10, 1.0f));
-        nBodySolvers.push_back(new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal,                                                   10, 1.0f));
-        nBodySolvers.push_back(new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal,   10, 1.0f));
-        nBodySolvers.push_back(new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal,                 10, 1.0f));
+        nBodySolvers["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
+        nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
 
         srand(1952732);
         float sizeParam = 2.0f;
@@ -140,9 +141,9 @@ public:
         delete embeddedBuffer;
         delete forceBuffer;
 
-        for (NBodySolver<EmbeddedPoint>* nBodySolverPointer : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolverPointer : nBodySolvers)
         {
-            delete nBodySolverPointer;
+            delete nBodySolverPointer.second;
         }
 	}
 
@@ -151,9 +152,9 @@ public:
         embeddedBuffer->cleanup();
         forceBuffer->cleanup();
 
-        for (NBodySolver<EmbeddedPoint>* nBodySolver : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolvers)
         {
-            nBodySolver->boxBuffer->cleanup();
+            nBodySolver.second->boxBuffer->cleanup();
         }
     }
     
@@ -240,7 +241,7 @@ private:
     {
         float QijTotalNaive = 0.0f;
         
-        nBodySolvers[0]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
+        nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
         //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
         //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
@@ -259,7 +260,7 @@ private:
         //-----------------------------------------------------------------------------------
 
         float QijTotalCompare = 0.0f;
-        nBodySolvers[1]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
+        nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
         float error1 = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -268,7 +269,7 @@ private:
         error1 /= embeddedPoints.size();
 
         QijTotalCompare = 0.0f;
-        nBodySolvers[5]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);//, 10, 0.5f
+        nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);//, 10, 0.5f
         //nBodySolvers[2]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 0.15f
         //nBodySolvers[3]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 1.4f
         float error2 = 0.0f;

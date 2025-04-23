@@ -14,8 +14,8 @@ public:
     std::function<glm::vec2(float*, T, QuadTree<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
 
-    int maxChildren;
-    float theta;
+    //int maxChildren;
+    //float theta;
 
     NBodySolverBarnesHut()
     {
@@ -26,8 +26,8 @@ public:
     {
         kernelParticleNode = initKernelParticleNode;
         kernelParticleParticle = initKernelParticleParticle;
-        maxChildren = initMaxChildren;
-        theta = initTheta;
+        this->maxChildren = initMaxChildren;
+        this->theta = initTheta;
     }
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
@@ -35,10 +35,10 @@ public:
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
 
-        QuadTree<T> root(maxChildren, embeddedPoints);
+        QuadTree<T> root(this->maxChildren, embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
-            (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], theta);
+            (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], this->theta);
         }
 
 

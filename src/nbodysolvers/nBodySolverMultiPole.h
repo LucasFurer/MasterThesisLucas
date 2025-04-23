@@ -17,8 +17,8 @@ public:
     std::function<glm::vec2(float*, T, QuadTreeMultiPole<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
 
-    int maxChildren;
-    float theta;
+    //int maxChildren;
+    //float theta;
 
     NBodySolverMultiPole()
     {
@@ -29,8 +29,8 @@ public:
     {
         kernelParticleNode = initKernelParticleNode;
         kernelParticleParticle = initKernelParticleParticle;
-        maxChildren = initMaxChildren;
-        theta = initTheta;
+        this->maxChildren = initMaxChildren;
+        this->theta = initTheta;
     }
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
@@ -42,7 +42,7 @@ public:
         //std::cout << "time it took for zeroing forces array: " << glfwGetTime() - timeBefore << std::endl;
 
         //timeBefore = glfwGetTime();
-        QuadTreeMultiPole<T> root(maxChildren, embeddedPoints);
+        QuadTreeMultiPole<T> root(this->maxChildren, embeddedPoints);
         //std::cout << "total mass: " << root.totalMass << std::endl;
         //std::cout << "center of mass: " << glm::to_string(root.centreOfMass) << std::endl;
         //std::cout << "dipole: " << glm::to_string(root.dipole) << std::endl;
@@ -52,7 +52,7 @@ public:
         //timeBefore = glfwGetTime();
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
-            (*forces)[i] = getMultiPoleAcc(total, &root, (*embeddedPoints)[i], theta);
+            (*forces)[i] = getMultiPoleAcc(total, &root, (*embeddedPoints)[i], this->theta);
         }
         //std::cout << "time it took for force calculations: " << glfwGetTime() - timeBefore << std::endl;
 
@@ -256,7 +256,7 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint i, Q
                                      { j->quadrupole[1][0], j->quadrupole[1][1] } 
                                   };
 */
-    Fastor::Tensor<float, 2> Q2D3 = einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(j->quadrupole, D3);
+    Fastor::Tensor<float, 2> Q2D3 = Fastor::einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(j->quadrupole, D3);
 
 
 

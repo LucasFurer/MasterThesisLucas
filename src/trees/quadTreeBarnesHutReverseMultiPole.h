@@ -168,11 +168,11 @@ public:
 				//	(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
 
 				Fastor::Tensor<float, 2> newC1 = C1 +
-					einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
-					(1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+					(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 
 				Fastor::Tensor<float, 2, 2> newC2 = C2 +
-					einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
+					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
 
 				Fastor::Tensor<float, 2, 2, 2> newC3 = C3;
 
@@ -200,9 +200,9 @@ public:
 
 				// evaluate C^n at occupants position then add to occupant acceleration // might be wrong!!!!!!!!!!!
 				Fastor::Tensor<float, 2> acceleration = C1 +
-					einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
+					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
 					//(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
-					(1.0f / 2.0f) * einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 
 				(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
 			}

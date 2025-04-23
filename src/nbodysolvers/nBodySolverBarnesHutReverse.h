@@ -14,8 +14,8 @@ public:
     std::function<glm::vec2(float*, T, QuadTreeBarnesHutReverse<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
 
-    int maxChildren;
-    float theta;
+    //int maxChildren;
+    //float theta;
 
     NBodySolverBarnesHutReverse()
     {
@@ -26,8 +26,8 @@ public:
     {
         kernelParticleNode = initKernelParticleNode;
         kernelParticleParticle = initKernelParticleParticle;
-        maxChildren = initMaxChildren;
-        theta = initTheta;
+        this->maxChildren = initMaxChildren;
+        this->theta = initTheta;
     }
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
@@ -35,10 +35,10 @@ public:
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
 
-        QuadTreeBarnesHutReverse<T> root(maxChildren, embeddedPoints);
+        QuadTreeBarnesHutReverse<T> root(this->maxChildren, embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
-            getBarnesHutAcc(total, forces, &root, (*embeddedPoints)[i], theta);
+            getBarnesHutAcc(total, forces, &root, (*embeddedPoints)[i], this->theta);
         }
         collapseTree(forces, &root, glm::vec2(0.0f));
 
