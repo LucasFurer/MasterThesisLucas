@@ -11,6 +11,8 @@ public:
     //Buffer* boxBuffer = new Buffer();
     //int showLevel = 0;
 
+    QuadTree<T> root;
+
     std::function<glm::vec2(float*, T, QuadTree<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
 
@@ -28,28 +30,29 @@ public:
         kernelParticleParticle = initKernelParticleParticle;
         this->maxChildren = initMaxChildren;
         this->theta = initTheta;
+
+
     }
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
+        updateTree(embeddedPoints);
 
-        QuadTree<T> root(this->maxChildren, embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
             (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], this->theta);
         }
+    }
 
-
+    void updateTree(std::vector<T>* embeddedPoints)
+    {
+        root = std::move(QuadTree<T>(this->maxChildren, embeddedPoints));
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);
-        
         std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
         this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
-        //float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
-        //boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
-        //delete[] lineSegmentsToBuffer;
     }
 
 private:

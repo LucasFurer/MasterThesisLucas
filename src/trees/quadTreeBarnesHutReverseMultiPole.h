@@ -34,6 +34,8 @@ public:
 
 	std::vector<QuadTreeBarnesHutReverseMultiPole*> children; // maybe change to no a pointer
 
+	QuadTreeBarnesHutReverseMultiPole() {}
+
 	QuadTreeBarnesHutReverseMultiPole(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;

@@ -33,6 +33,8 @@ public:
 
 	std::vector<QuadTreeMultiPole*> children; // maybe change to no a pointer
 
+	QuadTreeMultiPole() {}
+
 	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;

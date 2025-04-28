@@ -12,6 +12,7 @@ public:
 	float theta;
 
 	virtual void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* points) = 0;
+	virtual void updateTree(std::vector<T>* embeddedPoints) = 0;
 
 	~NBodySolver()
 	{

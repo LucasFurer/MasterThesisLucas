@@ -28,6 +28,8 @@ public:
 
 	std::vector<QuadTreeBarnesHutReverse*> children; // maybe change to no a pointer
 
+	QuadTreeBarnesHutReverse() {}
+
 	QuadTreeBarnesHutReverse(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;

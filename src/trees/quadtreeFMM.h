@@ -37,6 +37,8 @@ public:
 
 	std::vector<QuadTreeFMM*> children; // maybe change to no a pointer
 
+	QuadTreeFMM() {}
+
 	QuadTreeFMM(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;

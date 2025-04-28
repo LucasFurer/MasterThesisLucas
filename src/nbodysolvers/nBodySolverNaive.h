@@ -63,6 +63,8 @@ public:
         }
     }
 
+    void updateTree(std::vector<T>* embeddedPoints) {}
+
 private:
 
 };

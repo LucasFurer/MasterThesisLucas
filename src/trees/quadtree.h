@@ -26,6 +26,8 @@ public:
 
 	std::vector<QuadTree*> children; // maybe change to no a pointer
 
+	QuadTree() {}
+
 	QuadTree(int initMaxChildren, std::vector<T>* initAllParticles)
 	{
 		maxChildren = initMaxChildren;
@@ -62,6 +64,34 @@ public:
 
 		occupants = initOccupants;
 	}
+
+	QuadTree(const QuadTree& other)
+	{
+		//std::cout << "copy constructor" << std::endl;
+	}
+
+	QuadTree& operator=(QuadTree&& other)
+	{
+		//std::cout << "move assignment operator" << std::endl;
+		if (this != &other)  // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			allParticles = std::move(other.allParticles);
+			other.allParticles = nullptr;
+
+			totalMass = other.totalMass;
+			centreOfMass = other.centreOfMass;
+
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+
+			occupants = std::move(other.occupants);
+
+			children = std::move(other.children);
+		}
+		return *this;
+	}
+
 
 	std::pair<float, glm::vec2> createTree()
 	{

@@ -64,7 +64,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 2.0f;
+        timeStepsPerSec = 20.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -177,6 +177,8 @@ public:
             }
 
             embeddedBuffer->updateBuffer(embeddedPoints, pos2DlabelInt);
+
+            nBodySolvers[nBodySelect]->updateTree(&embeddedPoints);
 
             std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
             forceBuffer->updateBuffer(forceLines, pos2DCol3D);
