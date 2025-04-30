@@ -46,7 +46,7 @@ struct VertexPos2Col3
 			glm::vec2 linePosB = particles[i].position;
 			glm::vec3 lineColB = glm::vec3(1.0f, 0.0f, 0.0f);
 
-			glm::vec2 linePosE = particles[i].position + 500.0f * accelerations[i];
+			glm::vec2 linePosE = particles[i].position + 1.0f * accelerations[i];
 			//glm::vec2 linePosE = particles[i].position + particles[i].speed;
 			glm::vec3 lineColE = glm::vec3(1.0f, 0.0f, 0.0f);
 

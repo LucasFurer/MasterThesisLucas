@@ -48,7 +48,7 @@ std::vector<Scene*> scenes;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int sceneSelect = 0;
+int sceneSelect = 1;
 //std::string gravType = "barnesHut";
 //int gravType = 0;
 //int visSelect = 0;
@@ -184,7 +184,7 @@ int main(void)
     //Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
-    gravitySim.nBodySelect = "BH";
+    gravitySim.nBodySelect = "FMM";
     Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
     Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
@@ -202,6 +202,8 @@ int main(void)
     //nBodyScenarios.errorTimestep();
     //nBodyScenarios.errorTimestepFMM();
     //nBodyScenarios.calculationtimeTheta();
+    //nBodyScenarios.testNodeNode();
+    //nBodyScenarios.errorTheta();
     std::cout << "im done with the csv generation!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------

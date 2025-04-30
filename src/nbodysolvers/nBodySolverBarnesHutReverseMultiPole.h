@@ -37,24 +37,13 @@ public:
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
-
-        QuadTreeBarnesHutReverseMultiPole<T> root(this->maxChildren, embeddedPoints);
+        //updateTree(embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
             getBarnesHutAcc(total, forces, &root, (*embeddedPoints)[i], this->theta);
         }
         root.applyForces(forces);
         //collapseTree(forces, &root, glm::vec2(0.0f));
-
-
-        this->lineSegments.clear();
-        root.getLineSegments(this->lineSegments, 0, this->showLevel);
-
-        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
-        this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
-        //float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
-        //boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
-        //delete[] lineSegmentsToBuffer;
     }
 
     void updateTree(std::vector<T>* embeddedPoints)

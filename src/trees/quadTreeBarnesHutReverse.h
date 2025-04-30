@@ -67,6 +67,27 @@ public:
 		occupants = initOccupants;
 	}
 
+	QuadTreeBarnesHutReverse& operator=(QuadTreeBarnesHutReverse&& other) // move assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			allParticles = std::move(other.allParticles);
+			other.allParticles = nullptr;
+
+			totalMass = other.totalMass;
+			centreOfMass = other.centreOfMass;
+
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+
+			occupants = std::move(other.occupants);
+
+			children = std::move(other.children);
+		}
+		return *this;
+	}
+
 	std::pair<float, glm::vec2> createTree()
 	{
 		if (occupants.size() > maxChildren)

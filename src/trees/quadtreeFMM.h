@@ -75,6 +75,27 @@ public:
 		occupants = initOccupants;
 	}
 
+	QuadTreeFMM& operator=(QuadTreeFMM&& other) // move assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			allParticles = std::move(other.allParticles);
+			other.allParticles = nullptr;
+
+			totalMass = other.totalMass;
+			centreOfMass = other.centreOfMass;
+
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+
+			occupants = std::move(other.occupants);
+
+			children = std::move(other.children);
+		}
+		return *this;
+	}
+
 	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree()
 	{
 		if (occupants.size() > maxChildren)
@@ -187,8 +208,8 @@ public:
 			for (QuadTreeFMM* child : children)
 			{
 				// prework
-				glm::vec2 oldZ = centreOfMass;
-				glm::vec2 newZ = child->centreOfMass;
+				glm::vec2 oldZ = child->centreOfMass;
+				glm::vec2 newZ = centreOfMass;
 				Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y }; // dhenen
 				//Fastor::Tensor<float, 2> diff1 = { newZ.x - oldZ.x, newZ.y - oldZ.y }; // gadget4
 				Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);

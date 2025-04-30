@@ -54,6 +54,12 @@ public:
     int follow = 1;
     float totalError = 0.0f;
     int timeCounter = 0;
+
+    float totalError1 = 0.0f;
+    float totalError2 = 0.0f;
+    float maxError1 = 0.0f;
+    float maxError2 = 0.0f;
+    int globalTimeStep = 0;
     
 	TSNE()
 	{
@@ -64,7 +70,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 20.0f;
+        timeStepsPerSec = 2.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -95,14 +101,6 @@ public:
         errorCompare.resize(dataAmount);
 
 
-        nBodySolvers["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
-        nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-
         srand(1952732);
         float sizeParam = 2.0f;
         for (int i = 0; i < dataAmount; i++)
@@ -129,6 +127,19 @@ public:
             embeddedPointsPrev[i] = EmbeddedPoint(pos, lab);
             embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
         }
+
+        nBodySolvers["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
+        nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f); 
+        nBodySolvers["BH"]->updateTree(&embeddedPoints);
+        nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHR"]->updateTree(&embeddedPoints);
+        nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHMP"]->updateTree(&embeddedPoints);
+        nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
+        nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["FMM"]->updateTree(&embeddedPoints);
+        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
 
         embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
 
@@ -182,6 +193,8 @@ public:
 
             std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
             forceBuffer->updateBuffer(forceLines, pos2DCol3D);
+
+            globalTimeStep++;
         }
     }
 
@@ -226,7 +239,7 @@ private:
         }
         */
 
-        //checkError();
+        checkError();
         
         updateRepulsive();
         
@@ -237,6 +250,7 @@ private:
         {
             embeddedDerivative[i] = attractForce[i] - repulsForce[i];
         }
+
     }
 
     void checkError()
@@ -269,8 +283,11 @@ private:
             error1 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
         }
         error1 /= embeddedPoints.size();
+        totalError1 += error1;
+        if (error1 > maxError1) { maxError1 = error1; }
 
         QijTotalCompare = 0.0f;
+        nBodySolvers["FMM"]->theta = 1.0f;
         nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);//, 10, 0.5f
         //nBodySolvers[2]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 0.15f
         //nBodySolvers[3]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 1.4f
@@ -280,11 +297,22 @@ private:
             error2 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
         }
         error2 /= embeddedPoints.size();
+        totalError2 += error2;
+        if (error2 > maxError2) { maxError2 = error2; }
 
 
 
-        std::cout << "difference in error: " << error1 - error2 << std::endl;
-        std::cout << "ratio of error:      " << error1 / error2 << std::endl;
+        std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
+        std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
+
+        std::cout << "max error1:                  " << maxError1 << std::endl;
+        std::cout << "max error2:                  " << maxError2 << std::endl;
+
+        std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
+        std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
+
+        std::cout << "global time step: " << globalTimeStep << std::endl;
+
         std::cout << "------------------------------------------------------" << std::endl;
     }
 

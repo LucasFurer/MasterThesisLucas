@@ -37,36 +37,13 @@ public:
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
     {
-        //std::cout << "start the barnes hut solver" << std::endl;
-
-        //float timeBefore = glfwGetTime();
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
-        //std::cout << "time it took for zeroing forces array: " << glfwGetTime() - timeBefore << std::endl;
 
-        //timeBefore = glfwGetTime();
-        QuadTreeMultiPole<T> root(this->maxChildren, embeddedPoints);
-        //std::cout << "total mass: " << root.totalMass << std::endl;
-        //std::cout << "center of mass: " << glm::to_string(root.centreOfMass) << std::endl;
-        //std::cout << "dipole: " << glm::to_string(root.dipole) << std::endl;
-        //std::cout << "quadrupole: " << glm::to_string(root.quadrupole) << std::endl;
-        //std::cout << "time it took for tree construction: " << glfwGetTime() - timeBefore << std::endl;
-
-        //timeBefore = glfwGetTime();
+        //updateTree(embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
             (*forces)[i] = getMultiPoleAcc(total, &root, (*embeddedPoints)[i], this->theta);
         }
-        //std::cout << "time it took for force calculations: " << glfwGetTime() - timeBefore << std::endl;
-
-        //int showLevel = 0;
-        this->lineSegments.clear();
-        root.getLineSegments(this->lineSegments, 0, this->showLevel);
-
-        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
-        this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
-        //float* lineSegmentsToBuffer = LineSegment2D::LineSegmentToFloat(lineSegments.data(), lineSegments.size() * sizeof(LineSegment2D));
-        //boxBuffer->createVertexBuffer(lineSegmentsToBuffer, 10 * sizeof(float) * lineSegments.size(), pos2DCol3D, GL_DYNAMIC_DRAW);
-        //delete[] lineSegmentsToBuffer;
     }
 
     void updateTree(std::vector<T>* embeddedPoints)

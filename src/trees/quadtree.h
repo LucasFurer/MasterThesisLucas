@@ -65,15 +65,9 @@ public:
 		occupants = initOccupants;
 	}
 
-	QuadTree(const QuadTree& other)
+	QuadTree& operator=(QuadTree&& other) // move assignment operator
 	{
-		//std::cout << "copy constructor" << std::endl;
-	}
-
-	QuadTree& operator=(QuadTree&& other)
-	{
-		//std::cout << "move assignment operator" << std::endl;
-		if (this != &other)  // self-assignment check
+		if (this != &other) // self-assignment check
 		{
 			maxChildren = other.maxChildren;
 			allParticles = std::move(other.allParticles);

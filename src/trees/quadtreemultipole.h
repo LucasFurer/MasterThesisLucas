@@ -72,6 +72,27 @@ public:
 		occupants = initOccupants;
 	}
 
+	QuadTreeMultiPole& operator=(QuadTreeMultiPole&& other) // move assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			allParticles = std::move(other.allParticles);
+			other.allParticles = nullptr;
+
+			totalMass = other.totalMass;
+			centreOfMass = other.centreOfMass;
+
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+
+			occupants = std::move(other.occupants);
+
+			children = std::move(other.children);
+		}
+		return *this;
+	}
+
 	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree()
 	{
 		if (occupants.size() > maxChildren)

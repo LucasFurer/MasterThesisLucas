@@ -46,18 +46,10 @@ public:
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
-        QuadTreeFMM<T> root(this->maxChildren, embeddedPoints);
-
-
+        //updateTree(embeddedPoints);
         getFMMAcc(total, forces, &root, &root, this->theta);
         //root.divideC();
         root.applyForces(forces);
-        
-
-        this->lineSegments.clear();
-        root.getLineSegments(this->lineSegments, 0, this->showLevel);
-        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
-        this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
     }
 
     void updateTree(std::vector<T>* embeddedPoints)
@@ -120,30 +112,30 @@ private:
         {
 
 
-            if (passiveNode->children.size() == 0) // naive
-            {
-                for (int ip : passiveNode->occupants)
-                {
-                    for (int ia : activeNode->occupants)
-                    {
-                        (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
-                    }
-                }
-            }
-            else // split
-            {
-                for (QuadTreeFMM<T>* child : passiveNode->children)
-                {
-                    getFMMAcc(total, forces, child, activeNode, theta);
-                }
-            }
-            
-            //for (int activeNodeParticleIndex : activeNode->occupants)
+            //if (passiveNode->children.size() == 0) // naive
             //{
-
-            //    getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
-
+            //    for (int ip : passiveNode->occupants)
+            //    {
+            //        for (int ia : activeNode->occupants)
+            //        {
+            //            (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
+            //        }
+            //    }
             //}
+            //else // split
+            //{
+            //    for (QuadTreeFMM<T>* child : passiveNode->children)
+            //    {
+            //        getFMMAcc(total, forces, child, activeNode, theta);
+            //    }
+            //}
+            
+            for (int activeNodeParticleIndex : activeNode->occupants)
+            {
+
+                getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
+
+            }
             
         }
         else

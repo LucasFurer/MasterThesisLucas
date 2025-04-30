@@ -30,16 +30,13 @@ public:
         kernelParticleParticle = initKernelParticleParticle;
         this->maxChildren = initMaxChildren;
         this->theta = initTheta;
-
-
     }
 
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
 
-        updateTree(embeddedPoints);
-
+        //updateTree(embeddedPoints);
         for (int i = 0; i < embeddedPoints->size(); i++)
         {
             (*forces)[i] = getBarnesHutAcc(total, &root, (*embeddedPoints)[i], this->theta);
