@@ -164,11 +164,11 @@ int main(void)
     // one time graph creation -----------------------------------------------------------------------------------------------------------
 
     NBodyScenarios nBodyScenarios;
-    //nBodyScenarios.errorTimestep();
-    //nBodyScenarios.errorTimestepFMM();
-    //nBodyScenarios.calculationtimeTheta();
-    //nBodyScenarios.testNodeNode();
-    //nBodyScenarios.errorTheta();
+    nBodyScenarios.errorTimestep();
+    nBodyScenarios.errorTimestepFMM();
+    nBodyScenarios.calculationtimeTheta();
+    nBodyScenarios.testNodeNode();
+    nBodyScenarios.errorTheta();
     std::cout << "im done with the csv generation!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------

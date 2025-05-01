@@ -15,28 +15,55 @@ public:
     std::vector<Particle2D> particles;
     std::vector<glm::vec2> accelerations;
     std::vector<glm::vec2> accelerationsErrorTest;
-    Buffer* particlesBuffer;
+    //Buffer* particlesBuffer;
 
     float stepSize = 0.1f;
     float timeStepsPerSec = 30.0f;
     float lastTimeUpdated = 0.0f;
 
-    std::map<std::string, NBodySolver<Particle2D>*> nBodySolvers;
+    std::map<std::string, NBodySolver<Particle2D>*> nBodySolversGRAVITY;
+
+
+
+
+
+    std::vector<EmbeddedPoint> embeddedPoints;
+    std::vector<EmbeddedPoint> embeddedPointsPrev;
+    std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
+
+    std::vector<glm::vec2> embeddedDerivative;
+    std::vector<glm::vec2> attractForce;
+    std::vector<glm::vec2> repulsForce;
+
+    std::vector<glm::vec2> errorCompare;
+
+    std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolversTSNE;
+    std::string nBodySelect = "naive";
+
+    float learnRate;
+    float accelerationRate;
+
+    std::vector<uint8_t> labels;
+    Eigen::SparseMatrix<double> Pmatrix;
+
+
+
+
 
     NBodyScenarios()
     {
-        nBodySolvers["naive"] = new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
-        nBodySolvers["BH"] = new NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHMP"] = new NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMM"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["naive"] = new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
+        nBodySolversGRAVITY["BH"] = new NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["BHR"] = new NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["BHMP"] = new NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["FMM"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
+        nBodySolversGRAVITY["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
     }
 
     ~NBodyScenarios()
     {
-        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolverPointer : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolverPointer : nBodySolversGRAVITY)
         {
             delete nBodySolverPointer.second;
         }
@@ -44,9 +71,9 @@ public:
 
     void cleanup()
     {
-        particlesBuffer->cleanup();
+        //particlesBuffer->cleanup();
 
-        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolversGRAVITY)
         {
             nBodySolver.second->boxBuffer->cleanup();
         }
@@ -236,15 +263,17 @@ public:
 
     void errorTimestep()
     {
-        generatePoints(1000);
-        nBodySolvers["BH"]->updateTree(&particles);
-        nBodySolvers["BHMP"]->updateTree(&particles);
-        nBodySolvers["BHR"]->updateTree(&particles);
-        nBodySolvers["BHRMP"]->updateTree(&particles);
-        nBodySolvers["FMM"]->updateTree(&particles);
+        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+        int particleCount = 100; // use this many particles
+
+        generatePoints(particleCount);
+        nBodySolversGRAVITY["BH"]->updateTree(&particles);
+        nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+        nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+        nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+        nBodySolversGRAVITY["FMM"]->updateTree(&particles);
 
         // set graph size
-        int errorMeasurementAmount = 1000;
         std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
         std::vector<float> errorBHMultipole(errorMeasurementAmount, 0.0f);
         std::vector<float> errorBHReverse(errorMeasurementAmount, 0.0f);
@@ -264,34 +293,34 @@ public:
         {
             //lastTimeUpdated = glfwGetTime();
             // correct solution up to machine precision
-            nBodySolvers["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
+            nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
 
             // calculate the result of every approximation technique and find the error by comparing to naive
-            nBodySolvers["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBH[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBH[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBH[t] /= particles.size();
             
-            nBodySolvers["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHMultipole[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHMultipole[t] /= particles.size();
 
-            nBodySolvers["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHReverse[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHReverse[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHReverse[t] /= particles.size();
 
-            nBodySolvers["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeBHReverseMultipole[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorBHReverseMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorBHReverseMultipole[t] /= particles.size();
 
-            nBodySolvers["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
+            nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
             timeFMM[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorFMM[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
@@ -304,13 +333,13 @@ public:
             for (int i = 0; i < particles.size(); i++)
                 particles[i].position += stepSize * particles[i].speed;
 
-            particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
+            //particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
 
-            nBodySolvers["BH"]->updateTree(&particles);
-            nBodySolvers["BHMP"]->updateTree(&particles);
-            nBodySolvers["BHR"]->updateTree(&particles);
-            nBodySolvers["BHRMP"]->updateTree(&particles);
-            nBodySolvers["FMM"]->updateTree(&particles);
+            nBodySolversGRAVITY["BH"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["FMM"]->updateTree(&particles);
         }
 
         // write results to csv files
@@ -323,13 +352,15 @@ public:
 
     void errorTimestepFMM()
     {
-        //generatePoints(100);
+        int errorMeasurementAmount = 500; // how many iterations to run the simulation
+        int particleCount = 100; // use this many particles
+
+        //generatePoints(particleCount);
         generatePointsCustom1();
-        nBodySolvers["FMM"]->updateTree(&particles);
-        nBodySolvers["FMMnaive"]->updateTree(&particles);
+        nBodySolversGRAVITY["FMM"]->updateTree(&particles);
+        nBodySolversGRAVITY["FMMnaive"]->updateTree(&particles);
 
         // set graph size
-        int errorMeasurementAmount = 500;
         std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
         std::vector<float> errorFMMnaive(errorMeasurementAmount, 0.0f);
 
@@ -343,16 +374,16 @@ public:
         {
             //lastTimeUpdated = glfwGetTime();
             // correct solution up to machine precision
-            nBodySolvers["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
+            nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
 
             // calculate the result of every approximation technique and find the error by comparing to naive
-             nBodySolvers["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeFMM[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorFMM[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
             errorFMM[t] /= particles.size();
 
-            nBodySolvers["FMMnaive"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            nBodySolversGRAVITY["FMMnaive"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
             timeFMMnaive[t] = t;
             for (int i = 0; i < particles.size(); i++)
                 errorFMMnaive[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
@@ -365,10 +396,10 @@ public:
             for (int i = 0; i < particles.size(); i++)
                 particles[i].position += stepSize * particles[i].speed;
 
-            particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
+            //particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
 
-            nBodySolvers["FMM"]->updateTree(&particles);
-            nBodySolvers["FMMnaive"]->updateTree(&particles);
+            nBodySolversGRAVITY["FMM"]->updateTree(&particles);
+            nBodySolversGRAVITY["FMMnaive"]->updateTree(&particles);
         }
 
         // write results to csv files
@@ -379,7 +410,7 @@ public:
     void calculationtimeTheta()
     {
         int averageOverAmount = 100; // average the error over this many time steps
-        int particleCount = 1000; // use this many particles
+        int particleCount = 100; // use this many particles
 
         // set graph size
         int thetaDiversityAmount = 10;
@@ -406,11 +437,11 @@ public:
         for (int t = 0; t < thetaDiversityAmount; t++)
         {
             generatePoints(particleCount);
-            nBodySolvers["BH"]->updateTree(&particles);
-            nBodySolvers["BHMP"]->updateTree(&particles);
-            nBodySolvers["BHR"]->updateTree(&particles);
-            nBodySolvers["BHRMP"]->updateTree(&particles);
-            nBodySolvers["FMM"]->updateTree(&particles);
+            nBodySolversGRAVITY["BH"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["FMM"]->updateTree(&particles);
 
             float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
 
@@ -421,37 +452,37 @@ public:
             thetaBHReverseMultipole[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
 
-            nBodySolvers["BH"]->theta = chosenTheta;
-            nBodySolvers["BHMP"]->theta = chosenTheta;
-            nBodySolvers["BHR"]->theta = chosenTheta;
-            nBodySolvers["BHRMP"]->theta = chosenTheta;
-            nBodySolvers["FMM"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BH"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHMP"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHR"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHRMP"]->theta = chosenTheta;
+            nBodySolversGRAVITY["FMM"]->theta = chosenTheta;
 
             float timeBefore = 0.0f;
             for(int j = 0; j < averageOverAmount; j++)
             { 
                 timeBefore = glfwGetTime();
-                nBodySolvers["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
+                nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
                 calculationtimeNaive[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
-                nBodySolvers["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBH[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
-                nBodySolvers["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHMultipole[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
-                nBodySolvers["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHReverse[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
-                nBodySolvers["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHReverseMultipole[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
-                nBodySolvers["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeFMM[t] += glfwGetTime() - timeBefore;
 
 
@@ -462,13 +493,13 @@ public:
                 for (int i = 0; i < particles.size(); i++)
                     particles[i].position += stepSize * particles[i].speed;
 
-                particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
+                //particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
 
-                nBodySolvers["BH"]->updateTree(&particles);
-                nBodySolvers["BHMP"]->updateTree(&particles);
-                nBodySolvers["BHR"]->updateTree(&particles);
-                nBodySolvers["BHRMP"]->updateTree(&particles);
-                nBodySolvers["FMM"]->updateTree(&particles);
+                nBodySolversGRAVITY["BH"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+                nBodySolversGRAVITY["FMM"]->updateTree(&particles);
             }
 
             calculationtimeNaive[t] /= averageOverAmount;
@@ -491,7 +522,7 @@ public:
     void errorTheta()
     {
         int averageOverAmount = 100; // average the error over this many time steps
-        int particleCount = 1000; // use this many particles
+        int particleCount = 100; // use this many particles
 
         
         // set graph size
@@ -520,11 +551,11 @@ public:
         for (int t = 0; t < thetaDiversityAmount; t++)
         {
             generatePoints(particleCount);
-            nBodySolvers["BH"]->updateTree(&particles);
-            nBodySolvers["BHMP"]->updateTree(&particles);
-            nBodySolvers["BHR"]->updateTree(&particles);
-            nBodySolvers["BHRMP"]->updateTree(&particles);
-            nBodySolvers["FMM"]->updateTree(&particles);
+            nBodySolversGRAVITY["BH"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+            nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+            nBodySolversGRAVITY["FMM"]->updateTree(&particles);
 
             float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
 
@@ -534,29 +565,29 @@ public:
             thetaBHReverseMultipole[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
 
-            nBodySolvers["BH"]->theta = chosenTheta;
-            nBodySolvers["BHMP"]->theta = chosenTheta;
-            nBodySolvers["BHR"]->theta = chosenTheta;
-            nBodySolvers["BHRMP"]->theta = chosenTheta;
-            nBodySolvers["FMM"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BH"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHMP"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHR"]->theta = chosenTheta;
+            nBodySolversGRAVITY["BHRMP"]->theta = chosenTheta;
+            nBodySolversGRAVITY["FMM"]->theta = chosenTheta;
 
             for (int j = 0; j < averageOverAmount; j++)
             {
-                nBodySolvers["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
+                nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
 
-                nBodySolvers["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 errorBH[t] += getMSE(accelerations, accelerationsErrorTest);
 
-                nBodySolvers["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 errorBHMultipole[t] += getMSE(accelerations, accelerationsErrorTest);
 
-                nBodySolvers["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 errorBHReverse[t] += getMSE(accelerations, accelerationsErrorTest);
 
-                nBodySolvers["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 errorBHReverseMultipole[t] += getMSE(accelerations, accelerationsErrorTest);
 
-                nBodySolvers["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+                nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 errorFMM[t] += getMSE(accelerations, accelerationsErrorTest);
 
 
@@ -567,13 +598,13 @@ public:
                 for (int i = 0; i < particles.size(); i++)
                     particles[i].position += stepSize * particles[i].speed;
 
-                particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
+                //particlesBuffer->updateBuffer(particles, pos2Dvel2Dcol3Dmass);
 
-                nBodySolvers["BH"]->updateTree(&particles);
-                nBodySolvers["BHMP"]->updateTree(&particles);
-                nBodySolvers["BHR"]->updateTree(&particles);
-                nBodySolvers["BHRMP"]->updateTree(&particles);
-                nBodySolvers["FMM"]->updateTree(&particles);
+                nBodySolversGRAVITY["BH"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+                nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+                nBodySolversGRAVITY["FMM"]->updateTree(&particles);
             }
 
             errorBH[t] /= averageOverAmount;
@@ -657,7 +688,7 @@ private:
             particles[i] = Particle2D(pos, vel, glm::vec3(1.0f), 1.0f);
         }
 
-        particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
+        //particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
     }
 
     void generatePointsCustom1()
@@ -741,7 +772,7 @@ private:
             particles[i] = Particle2D(pos, vel, glm::vec3(1.0f), 1.0f);
         }
 
-        particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
+        //particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
     }
 
     void smartNodeNode(std::vector<Particle2D>& particles, std::vector<glm::vec2>& smartNodeNodeAccelerations, glm::vec2 centreOfMass1, float totalMass1, glm::vec2 dipole1, Fastor::Tensor<float, 2, 2> quadrupole1, glm::vec2 centreOfMass2, float totalMass2, glm::vec2 dipole2, Fastor::Tensor<float, 2, 2> quadrupole2, bool firstHalve)
