@@ -48,7 +48,7 @@ std::vector<Scene*> scenes;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int sceneSelect = 1;
+int sceneSelect = 0;
 //std::string gravType = "barnesHut";
 //int gravType = 0;
 //int visSelect = 0;
@@ -109,41 +109,6 @@ int main(void)
 
     // global stuff
     // ---------------------------------------
-    {
-    /*
-    NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
-    glm::mat4 particleModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-    Shader shaderPoint("shaders/shaderPoint.vs", "shaders/shaderPoint.fs");
-    Shader shaderLine("shaders/shaderLine.vs", "shaders/shaderLine.fs");
-
-    Renderable particleRenderable(GL_POINTS, particleModel, simulation.particlesBuffer, &shaderPoint, nullptr);
-    Renderable boxRenderable(GL_LINES, particleModel, simulation.boxBuffer, &shaderLine, nullptr);
-    Renderable* particleBoxRenderables = new Renderable[2]{ particleRenderable, boxRenderable };
-    Renderable* particleRenderables = new Renderable[1]{ particleRenderable };
-
-    Camera cameraNbody(glm::vec3(0.0f, 0.0f, -30.0f), glm::vec3(0.0f,1.0f,0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, true, &screenWidth, &screenHeight);
-
-    Scene nbodyParticleBoxScene(&cameraNbody, particleBoxRenderables, 2 * sizeof(Renderable));
-    Scene nbodyParticleScene(&cameraNbody, particleRenderables, 1 * sizeof(Renderable));
-
-
-    VisQuad potSimulation(16 * 8, 9 * 8, 0.1f, 30, 1.0f, 1.0f);
-    Buffer quad(verticesQuad, sizeof(verticesQuad), indicesQuad, sizeof(indicesQuad), pos3DUV2D, GL_STATIC_DRAW);
-    Shader shaderQuad("shaders/shaderQuad.vs", "shaders/shaderQuad.fs");
-    Renderable quadRenderable(GL_TRIANGLES, glm::mat4(1.0f), &quad, &shaderQuad, potSimulation.texture);
-    Renderable* quadRenderables = new Renderable[1]{ quadRenderable };
-
-    Camera cameraQuad(glm::vec3(0.0f, 0.0f, -130.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 45.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
-
-    Scene quadScene(&cameraQuad, quadRenderables, 1 * sizeof(Renderable));
-
-    
-    scenes[0] = &nbodyParticleBoxScene;
-    scenes[1] = &nbodyParticleScene;
-    scenes[2] = &quadScene;
-    */
-    //NbodySim simulation(rainbowCube, naive, 1.0f, 9999999, 250, 0.0001f, 0.001f, 1.0f, 30, 0);
-    }
     
     // t-SNE --------------------------------------------------------------------------------------------------------------------------
     TSNE tsne;
@@ -159,7 +124,7 @@ int main(void)
     Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
     #endif
 
-    tsne.nBodySelect = "BH";
+    tsne.nBodySelect = "FMM";
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };

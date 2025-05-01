@@ -7,17 +7,10 @@ template <typename T>
 class NBodySolverBarnesHut : public NBodySolver<T>
 {
 public:
-    //std::vector<LineSegment2D> lineSegments;
-    //Buffer* boxBuffer = new Buffer();
-    //int showLevel = 0;
-
     QuadTree<T> root;
 
     std::function<glm::vec2(float*, T, QuadTree<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
-
-    //int maxChildren;
-    //float theta;
 
     NBodySolverBarnesHut()
     {
@@ -94,13 +87,12 @@ private:
 
 };
 
-//float softening = 1.0f;
 
 glm::vec2 TSNEbarnesHutParticleNodeKernal(float* accumulator, EmbeddedPoint i, QuadTree<EmbeddedPoint>* j)
 {
     float softening = 1.0f; // should be 1.0f for t-SNE
 
-    glm::vec2 nodeDiff = i.position - j->centreOfMass; // change this
+    glm::vec2 nodeDiff = i.position - j->centreOfMass;
     float parCentreDistance = glm::length(nodeDiff);
 
     float oneOverDistance = (1.0f / (softening + parCentreDistance));
@@ -126,9 +118,9 @@ glm::vec2 TSNEbarnesHutParticleParticleKernal(float* accumulator, EmbeddedPoint 
 
 glm::vec2 GRAVITYbarnesHutParticleNodeKernal(float* accumulator, Particle2D i, QuadTree<Particle2D>* j)
 {
-    float softening = 0.1f; // should be 1.0f for t-SNE
+    float softening = 0.1f;
 
-    glm::vec2 nodeDiff = i.position - j->centreOfMass; // change this
+    glm::vec2 nodeDiff = i.position - j->centreOfMass;
     float parCentreDistance = glm::length(nodeDiff);
 
     float oneOverDistance = (1.0f / (softening + parCentreDistance));
@@ -138,7 +130,7 @@ glm::vec2 GRAVITYbarnesHutParticleNodeKernal(float* accumulator, Particle2D i, Q
 
 glm::vec2 GRAVITYbarnesHutParticleParticleKernal(float* accumulator, Particle2D i, Particle2D j)
 {
-    float softening = 0.1f; // should be 1.0f for t-SNE
+    float softening = 0.1f;
 
     glm::vec2 diff = i.position - j.position;
     float distance = glm::length(diff);

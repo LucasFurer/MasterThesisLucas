@@ -7,17 +7,10 @@ template <typename T>
 class NBodySolverBarnesHutReverse : public NBodySolver<T>
 {
 public:
-    //std::vector<LineSegment2D> lineSegments;
-    //Buffer* boxBuffer = new Buffer();
-    //int showLevel = 0;
-
     QuadTreeBarnesHutReverse<T> root;
 
     std::function<glm::vec2(float*, T, QuadTreeBarnesHutReverse<T>*)> kernelParticleNode;
     std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
-
-    //int maxChildren;
-    //float theta;
 
     NBodySolverBarnesHutReverse()
     {
@@ -104,7 +97,7 @@ private:
             for (int i : node->occupants)
             {
 
-                (*forces)[i] += updateDaccumulatedAcc; // for multipole do evaluated at offset
+                (*forces)[i] += updateDaccumulatedAcc;
 
             }
         }
@@ -113,7 +106,7 @@ private:
             for (QuadTreeBarnesHutReverse<T>* childQuadTree : node->children)
             {
 
-                collapseTree(forces, childQuadTree, updateDaccumulatedAcc); // for multipole do evaluated at offset
+                collapseTree(forces, childQuadTree, updateDaccumulatedAcc);
 
             }
         }
@@ -121,16 +114,15 @@ private:
 
 };
 
-//float softening = 1.0f;
 
 glm::vec2 TSNEbarnesHutReverseParticleNodeKernal(float* accumulator, EmbeddedPoint i, QuadTreeBarnesHutReverse<EmbeddedPoint>* j)
 {
     float softening = 1.0f; // should be 1.0f for t-SNE
 
-    glm::vec2 nodeDiff = j->centreOfMass - i.position; // change this
-    float parCentreDistance = glm::length(nodeDiff);
+    glm::vec2 nodeDiff = j->centreOfMass - i.position;
+    float distance = glm::length(nodeDiff);
 
-    float oneOverDistance = (1.0f / (softening + parCentreDistance));
+    float oneOverDistance = (1.0f / (softening + distance));
     *accumulator += j->totalMass * oneOverDistance;
 
     return -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
@@ -150,22 +142,21 @@ glm::vec2 TSNEbarnesHutReverseParticleParticleKernal(float* accumulator, Embedde
 }
 
 
-
 glm::vec2 GRAVITYbarnesHutReverseParticleNodeKernal(float* accumulator, Particle2D i, QuadTreeBarnesHutReverse<Particle2D>* j)
 {
-    float softening = 0.1f; // should be 1.0f for t-SNE
+    float softening = 0.1f;
 
-    glm::vec2 nodeDiff = j->centreOfMass - i.position; // change this
-    float parCentreDistance = glm::length(nodeDiff);
+    glm::vec2 nodeDiff = j->centreOfMass - i.position;
+    float distance = glm::length(nodeDiff);
 
-    float oneOverDistance = (1.0f / (softening + parCentreDistance));
+    float oneOverDistance = (1.0f / (softening + distance));
     
     return -i.mass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
 }
 
 glm::vec2 GRAVITYbarnesHutReverseParticleParticleKernal(float* accumulator, Particle2D i, Particle2D j)
 {
-    float softening = 0.1f; // should be 1.0f for t-SNE
+    float softening = 0.1f;
 
     glm::vec2 diff = j.position - i.position;
     float distance = glm::length(diff);

@@ -129,10 +129,8 @@ private:
         totalError1 += error1;
         if (error1 > maxError1) { maxError1 = error1; }
 
-        //nBodySolvers[3]->solveNbody(&noAccumulator, &accelerations, &particles);
         nBodySolvers["FMM"]->theta = 1.3f;
         nBodySolvers["FMM"]->solveNbody(&noAccumulator, &accelerations, &particles);
-        //nBodySolvers[5]->.solveNbody(&noAccumulator, &accelerations, &particles);
         float error2 = 0.0f;
         for (int i = 0; i < particles.size(); i++)
         {

@@ -64,13 +64,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 2.0f;
+        timeStepsPerSec = 60.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -220,26 +220,7 @@ private:
 
     void updateDerivativeNaive()
     {
-        /*
-        updateQ();
-        std::cout << "new cost is: " << kullbackLeiblerdivergence() << std::endl;
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                    embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j) - Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
-                    //embeddedDerivative[i] += ((-Qmatrix[i][j]) * diff) / (1.0f + glm::length(diff));
-                    //embeddedDerivative[i] += (((float)Pmatrix.coeff(i, j)) * diff) / (1.0f + glm::length(diff));
-                }
-            }
-        }
-        */
-
-        checkError();
+        //checkError();
         
         updateRepulsive();
         
@@ -259,21 +240,6 @@ private:
         
         nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
-        //NBodySolverNaive::solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-        //nBodySolverBarnesHut.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
-        //nBodySolverMultiPole.solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints, 10, 1.0f);
-
-        //for (int i = 0; i < embeddedPoints.size(); i++)
-        //{
-        //    errorCompare[i] *= (1.0f / QijTotal);
-        //}
-
-        //for (int i = 0; i < embeddedPoints.size(); i++)
-        //{
-        //    errorCompare[i] = attractForce[i] - repulsForce[i];
-        //}
-
-        //-----------------------------------------------------------------------------------
 
         float QijTotalCompare = 0.0f;
         nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
@@ -288,9 +254,7 @@ private:
 
         QijTotalCompare = 0.0f;
         nBodySolvers["FMM"]->theta = 1.0f;
-        nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);//, 10, 0.5f
-        //nBodySolvers[2]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 0.15f
-        //nBodySolvers[3]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints); // , 10, 1.4f
+        nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
         float error2 = 0.0f;
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -336,93 +300,13 @@ private:
         { 
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
             {
-                //glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
                 glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
                 float distance = glm::length(diff);
 
-                //attractForce[it.col()] += (float)it.value() * (diff / (1.0f + distance));
                 attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
             }
         }
-        /*
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)//might be useless
-                {
-                    glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                    float distance = glm::length(diff);
-
-                    attractForce[i] += (float)Pmatrix.coeff(i, j) * (diff / (1.0f + distance));
-                }
-            }
-        }
-        */
     }
-
-    /*
-    void updateQ()
-    {
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                Qmatrix[i][j] = 0.0f;
-            }
-        }
-        Qsum = 0.0f;
-
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    float distance = glm::length(embeddedPoints[i].position - embeddedPoints[j].position);
-                    Qmatrix[i][j] = 1.0f / (1.0f + distance);
-                    Qsum += Qmatrix[i][j];
-                }
-            }
-        }
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    Qmatrix[i][j] = Qmatrix[i][j] / Qsum;
-                }
-            }
-        }
-    }
-
-    float kullbackLeiblerdivergence()
-    {
-        float cost = 0.0f;
-
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                if (i != j)
-                {
-                    if (Qmatrix[i][j] != 0.0f && Pmatrix.coeff(i, j) != 0) 
-                    { 
-                        //std::cout << "divide by zero" << std::endl; 
-                        //std::cout << "put in log: " << (float)Pmatrix.coeff(i, j) / Qmatrix[i][j] << std::endl;
-                        cost += (float)Pmatrix.coeff(i, j) * std::log((float)Pmatrix.coeff(i, j) / Qmatrix[i][j]);
-                    }
-
-                }
-            }
-        }
-
-        return cost;
-    }
-    */
 
 };
 
