@@ -32,10 +32,14 @@ public:
     std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
 
     std::vector<glm::vec2> embeddedDerivative;
-    std::vector<glm::vec2> attractForce;
-    std::vector<glm::vec2> repulsForce;
+    std::vector<glm::vec2> embeddedDerivativeErrorTest;
 
-    std::vector<glm::vec2> errorCompare;
+    std::vector<glm::vec2> attractForce;
+
+    std::vector<glm::vec2> repulsForce;
+    std::vector<glm::vec2> repulsForceErrorTest;
+
+
 
     std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolversTSNE;
     std::string nBodySelect = "naive";
@@ -59,6 +63,14 @@ public:
         nBodySolversGRAVITY["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
         nBodySolversGRAVITY["FMM"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
         nBodySolversGRAVITY["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
+
+        nBodySolversTSNE["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
+        nBodySolversTSNE["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
     }
 
     ~NBodyScenarios()
@@ -263,7 +275,7 @@ public:
 
     void errorTimestep()
     {
-        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+        int errorMeasurementAmount = 100; // how many iterations to run the simulation
         int particleCount = 100; // use this many particles
 
         generatePoints(particleCount);
@@ -272,6 +284,7 @@ public:
         nBodySolversGRAVITY["BHR"]->updateTree(&particles);
         nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
         nBodySolversGRAVITY["FMM"]->updateTree(&particles);
+
 
         // set graph size
         std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
@@ -353,7 +366,7 @@ public:
     void errorTimestepFMM()
     {
         int errorMeasurementAmount = 500; // how many iterations to run the simulation
-        int particleCount = 100; // use this many particles
+        int particleCount = 1000; // use this many particles
 
         //generatePoints(particleCount);
         generatePointsCustom1();
@@ -409,8 +422,8 @@ public:
 
     void calculationtimeTheta()
     {
-        int averageOverAmount = 100; // average the error over this many time steps
-        int particleCount = 100; // use this many particles
+        int averageOverAmount = 1000; // average the error over this many time steps
+        int particleCount = 1000; // use this many particles
 
         // set graph size
         int thetaDiversityAmount = 10;
@@ -521,8 +534,8 @@ public:
 
     void errorTheta()
     {
-        int averageOverAmount = 100; // average the error over this many time steps
-        int particleCount = 100; // use this many particles
+        int averageOverAmount = 1000; // average the error over this many time steps
+        int particleCount = 1000; // use this many particles
 
         
         // set graph size
@@ -622,6 +635,123 @@ public:
         writeToFile(thetaFMM, errorFMM, ("graphCSV/scenario4errorThetaFMM.csv"));
     }
 
+    void errorTimestepTSNE()
+    {
+        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+        int dataAmount = 1000; // use this many particles
+        float perplexity = 30.0f;
+
+        learnRate = 1000.0f;
+        accelerationRate = 0.5f;
+
+        #ifdef _WIN32
+        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+        #endif
+        #ifdef linux
+        std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+        #endif
+
+        labels = Loader::loadLabels(labelsPath.string());
+        Pmatrix = Loader::loadPmatrix(fileName.string());
+
+        embeddedPoints.resize(dataAmount);
+        embeddedPointsPrev.resize(dataAmount);
+        embeddedPointsPrevPrev.resize(dataAmount);
+
+        embeddedDerivative.resize(dataAmount);
+        embeddedDerivativeErrorTest.resize(dataAmount);
+        attractForce.resize(dataAmount);
+        repulsForce.resize(dataAmount);
+        repulsForceErrorTest.resize(dataAmount);
+
+
+        generatePointsTSNE(dataAmount);
+        nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+        nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+        nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+        nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+        nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+
+
+        // set graph size
+        std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
+        std::vector<float> errorBHMultipole(errorMeasurementAmount, 0.0f);
+        std::vector<float> errorBHReverse(errorMeasurementAmount, 0.0f);
+        std::vector<float> errorBHReverseMultipole(errorMeasurementAmount, 0.0f);
+        std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
+
+        std::vector<int> timeBH(errorMeasurementAmount, 0);
+        std::vector<int> timeBHMultipole(errorMeasurementAmount, 0);
+        std::vector<int> timeBHReverse(errorMeasurementAmount, 0);
+        std::vector<int> timeBHReverseMultipole(errorMeasurementAmount, 0);
+        std::vector<int> timeFMM(errorMeasurementAmount, 0);
+
+
+        // find error at every time step
+        for (int t = 0; t < errorMeasurementAmount; t++)
+        {
+            //lastTimeUpdated = glfwGetTime();
+            // correct solution up to machine precision
+            updateTSNE("naive", embeddedDerivative, repulsForce);
+            //nBodySolversTSNE["naive"]->solveNbody(&noAccumulator, &embeddedDerivative, &particles);
+
+            // calculate the result of every approximation technique and find the error by comparing to naive
+            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            timeBH[t] = t;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+                errorBH[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
+            errorBH[t] /= embeddedPoints.size();
+
+            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            timeBHMultipole[t] = t;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+                errorBHMultipole[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
+            errorBHMultipole[t] /= embeddedPoints.size();
+
+            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            timeBHReverse[t] = t;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+                errorBHReverse[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
+            errorBHReverse[t] /= embeddedPoints.size();
+
+            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            timeBHReverseMultipole[t] = t;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+                errorBHReverseMultipole[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
+            errorBHReverseMultipole[t] /= embeddedPoints.size();
+
+            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            timeFMM[t] = t;
+            for (int i = 0; i < embeddedPoints.size(); i++)
+                errorFMM[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
+            errorFMM[t] /= embeddedPoints.size();
+
+            // update positions with naive solution
+            embeddedPointsPrev.swap(embeddedPointsPrevPrev);
+            embeddedPoints.swap(embeddedPointsPrev);
+
+            for (int i = 0; i < embeddedPoints.size(); i++)
+            {
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+            }
+
+            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+        }
+
+        // write results to csv files
+        writeToFile(timeBH, errorBH, "graphCSV/scenario5lineErrorTimestepBH.csv");
+        writeToFile(timeBHMultipole, errorBHMultipole, "graphCSV/scenario5lineErrorTimestepBHMultipole.csv");
+        writeToFile(timeBHReverse, errorBHReverse, "graphCSV/scenario5lineErrorTimestepBHReverse.csv");
+        writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, "graphCSV/scenario5lineErrorTimestepBHReverseMultipole.csv");
+        writeToFile(timeFMM, errorFMM, "graphCSV/scenario5lineErrorTimestepFMM.csv");
+    }
+
 private:
     float getMSE(const std::vector<glm::vec2>& MSEaccelerations, const std::vector<glm::vec2>& MSEaccelerationsErrorTest)
     {
@@ -689,6 +819,89 @@ private:
         }
 
         //particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
+    }
+
+    void generatePointsTSNE(int particleAmount)
+    {
+        srand(1952732);
+        float sizeParam = 2.0f;
+        for (int i = 0; i < particleAmount; i++)
+        {
+            float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+
+
+            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            {
+                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            }
+
+
+            glm::vec2 pos = glm::vec2(
+                powf(sizeParam * randX, 1.0f),
+                powf(sizeParam * randY, 1.0f)
+            );
+
+            int lab = labels[i];
+
+            embeddedPoints[i] = EmbeddedPoint(pos, lab);
+            embeddedPointsPrev[i] = EmbeddedPoint(pos, lab);
+            embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
+        }
+    }
+
+    //void updateAttractive()
+    //{
+    //    std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
+
+    //    for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+    //    {
+    //        for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
+    //        {
+    //            glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
+    //            float distance = glm::length(diff);
+
+    //            attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
+    //        }
+    //    }
+    //}
+
+    void updateTSNE(std::string nbodySolverName, std::vector<glm::vec2>& derivResult, std::vector<glm::vec2>& repulResult)
+    {
+        float QijTotal = 0.0f;
+
+        nBodySolversTSNE[nbodySolverName]->solveNbody(&QijTotal, &repulResult, &embeddedPoints);
+
+        
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            repulResult[i] *= (1.0f / QijTotal);
+        }
+
+        // --------------------------------
+
+        std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
+
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
+            {
+                glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
+                float distance = glm::length(diff);
+
+                attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
+            }
+        }
+
+        // --------------------------------
+
+        std::fill(derivResult.begin(), derivResult.end(), glm::vec2(0.0f, 0.0f));
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            derivResult[i] = attractForce[i] - repulResult[i];
+        }
     }
 
     void generatePointsCustom1()

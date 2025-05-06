@@ -70,7 +70,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 60.0f;
+        timeStepsPerSec = 99999.0f;
 
         lastTimeUpdated = 0.0f;
 
