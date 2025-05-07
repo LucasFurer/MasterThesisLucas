@@ -64,13 +64,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 99999.0f;
+        timeStepsPerSec = 99999999.0f;
 
         lastTimeUpdated = 0.0f;
 

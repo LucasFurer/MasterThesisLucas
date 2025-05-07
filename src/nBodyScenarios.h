@@ -1,5 +1,9 @@
 #pragma once
+#include <iostream>
+#include <fstream>
 #include <vector>
+#include <string>
+#include <filesystem>
 #include "particles/particle3D.h"
 #include "buffer.h"
 #include "nbodysolvers/nBodySolverNaive.h"
@@ -38,6 +42,8 @@ public:
 
     std::vector<glm::vec2> repulsForce;
     std::vector<glm::vec2> repulsForceErrorTest;
+    std::vector<glm::vec2> repulsForceNotNorm;
+    std::vector<glm::vec2> repulsForceErrorTestNotNorm;
 
 
 
@@ -79,6 +85,11 @@ public:
         {
             delete nBodySolverPointer.second;
         }
+
+        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolverPointer : nBodySolversTSNE)
+        {
+            delete nBodySolverPointer.second;
+        }
     }
 
     void cleanup()
@@ -86,6 +97,11 @@ public:
         //particlesBuffer->cleanup();
 
         for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolversGRAVITY)
+        {
+            nBodySolver.second->boxBuffer->cleanup();
+        }
+
+        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolversTSNE)
         {
             nBodySolver.second->boxBuffer->cleanup();
         }
@@ -356,11 +372,11 @@ public:
         }
 
         // write results to csv files
-        writeToFile(timeBH, errorBH, "graphCSV/scenario1lineErrorTimestepBH.csv");
-        writeToFile(timeBHMultipole, errorBHMultipole, "graphCSV/scenario1lineErrorTimestepBHMultipole.csv");
-        writeToFile(timeBHReverse, errorBHReverse, "graphCSV/scenario1lineErrorTimestepBHReverse.csv");
-        writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, "graphCSV/scenario1lineErrorTimestepBHReverseMultipole.csv");
-        writeToFile(timeFMM, errorFMM, "graphCSV/scenario1lineErrorTimestepFMM.csv");
+        // writeToFile(timeBH, errorBH, "graphCSV/scenario1lineErrorTimestepBH.csv");
+        // writeToFile(timeBHMultipole, errorBHMultipole, "graphCSV/scenario1lineErrorTimestepBHMultipole.csv");
+        // writeToFile(timeBHReverse, errorBHReverse, "graphCSV/scenario1lineErrorTimestepBHReverse.csv");
+        // writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, "graphCSV/scenario1lineErrorTimestepBHReverseMultipole.csv");
+        // writeToFile(timeFMM, errorFMM, "graphCSV/scenario1lineErrorTimestepFMM.csv");
     }
 
     void errorTimestepFMM()
@@ -416,8 +432,8 @@ public:
         }
 
         // write results to csv files
-        writeToFile(timeFMM, errorFMM, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMM.csv");
-        writeToFile(timeFMMnaive, errorFMMnaive, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMMnaive.csv");
+        //writeToFile(timeFMM, errorFMM, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMM.csv");
+        //writeToFile(timeFMMnaive, errorFMMnaive, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMMnaive.csv");
     }
 
     void calculationtimeTheta()
@@ -524,12 +540,12 @@ public:
         }
 
         // write results to csv files
-        writeToFile(thetaNaive, calculationtimeNaive, ("graphCSV/scenario3calculationtimeThetaNaive.csv"));
-        writeToFile(thetaBH, calculationtimeBH, ("graphCSV/scenario3calculationtimeThetaBH.csv"));
-        writeToFile(thetaBHMultipole, calculationtimeBHMultipole, ("graphCSV/scenario3calculationtimeThetaBHMP.csv"));
-        writeToFile(thetaBHReverse, calculationtimeBHReverse, ("graphCSV/scenario3calculationtimeThetaBHR.csv"));
-        writeToFile(thetaBHReverseMultipole, calculationtimeBHReverseMultipole, ("graphCSV/scenario3calculationtimeThetaBHRMP.csv"));
-        writeToFile(thetaFMM, calculationtimeFMM, ("graphCSV/scenario3calculationtimeThetaFMM.csv"));
+        // writeToFile(thetaNaive, calculationtimeNaive, ("graphCSV/scenario3calculationtimeThetaNaive.csv"));
+        // writeToFile(thetaBH, calculationtimeBH, ("graphCSV/scenario3calculationtimeThetaBH.csv"));
+        // writeToFile(thetaBHMultipole, calculationtimeBHMultipole, ("graphCSV/scenario3calculationtimeThetaBHMP.csv"));
+        // writeToFile(thetaBHReverse, calculationtimeBHReverse, ("graphCSV/scenario3calculationtimeThetaBHR.csv"));
+        // writeToFile(thetaBHReverseMultipole, calculationtimeBHReverseMultipole, ("graphCSV/scenario3calculationtimeThetaBHRMP.csv"));
+        // writeToFile(thetaFMM, calculationtimeFMM, ("graphCSV/scenario3calculationtimeThetaFMM.csv"));
     }
 
     void errorTheta()
@@ -628,16 +644,16 @@ public:
         }
 
         // write results to csv files
-        writeToFile(thetaBH, errorBH, ("graphCSV/scenario4errorThetaBH.csv"));
-        writeToFile(thetaBHMultipole, errorBHMultipole, ("graphCSV/scenario4errorThetaBHMP.csv"));
-        writeToFile(thetaBHReverse, errorBHReverse, ("graphCSV/scenario4errorThetaBHR.csv"));
-        writeToFile(thetaBHReverseMultipole, errorBHReverseMultipole, ("graphCSV/scenario4errorThetaBHRMP.csv"));
-        writeToFile(thetaFMM, errorFMM, ("graphCSV/scenario4errorThetaFMM.csv"));
+        // writeToFile(thetaBH, errorBH, ("graphCSV/scenario4errorThetaBH.csv"));
+        // writeToFile(thetaBHMultipole, errorBHMultipole, ("graphCSV/scenario4errorThetaBHMP.csv"));
+        // writeToFile(thetaBHReverse, errorBHReverse, ("graphCSV/scenario4errorThetaBHR.csv"));
+        // writeToFile(thetaBHReverseMultipole, errorBHReverseMultipole, ("graphCSV/scenario4errorThetaBHRMP.csv"));
+        // writeToFile(thetaFMM, errorFMM, ("graphCSV/scenario4errorThetaFMM.csv"));
     }
 
     void errorTimestepTSNE()
     {
-        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+        int errorMeasurementAmount = 500; // how many iterations to run the simulation
         int dataAmount = 1000; // use this many particles
         float perplexity = 30.0f;
 
@@ -665,6 +681,8 @@ public:
         attractForce.resize(dataAmount);
         repulsForce.resize(dataAmount);
         repulsForceErrorTest.resize(dataAmount);
+        repulsForceNotNorm.resize(dataAmount);
+        repulsForceErrorTestNotNorm.resize(dataAmount);
 
 
         generatePointsTSNE(dataAmount);
@@ -745,11 +763,18 @@ public:
         }
 
         // write results to csv files
-        writeToFile(timeBH, errorBH, "graphCSV/scenario5lineErrorTimestepBH.csv");
-        writeToFile(timeBHMultipole, errorBHMultipole, "graphCSV/scenario5lineErrorTimestepBHMultipole.csv");
-        writeToFile(timeBHReverse, errorBHReverse, "graphCSV/scenario5lineErrorTimestepBHReverse.csv");
-        writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, "graphCSV/scenario5lineErrorTimestepBHReverseMultipole.csv");
-        writeToFile(timeFMM, errorFMM, "graphCSV/scenario5lineErrorTimestepFMM.csv");
+        std::filesystem::path projectFolder;
+        #ifdef _WIN32
+        projectFolder = std::filesystem::current_path();
+        #endif
+        #ifdef linux
+        projectFolder = std::filesystem::current_path().parent_path();
+        #endif
+        writeToFile(timeBH, errorBH, projectFolder / std::filesystem::path("graphCSV") / "scenario5lineErrorTimestepBH.csv");
+        writeToFile(timeBHMultipole, errorBHMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario5lineErrorTimestepBHMultipole.csv");
+        writeToFile(timeBHReverse, errorBHReverse, projectFolder / std::filesystem::path("graphCSV") / "scenario5lineErrorTimestepBHReverse.csv");
+        writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario5lineErrorTimestepBHReverseMultipole.csv");
+        writeToFile(timeFMM, errorFMM, projectFolder / std::filesystem::path("graphCSV") / "scenario5lineErrorTimestepFMM.csv");
     }
 
 private:
@@ -766,12 +791,34 @@ private:
         return MSE;
     }
 
+    // template <typename T, typename I>
+    // void writeToFile(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, std::string filename)
+    // {
+    //     std::ofstream file(filename);
+    //     for (size_t i = 0; i < Xaxis.size(); ++i)
+    //         file << Xaxis[i] << "," << Yaxis[i] << "\n";
+    // }
+
     template <typename T, typename I>
-    void writeToFile(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, std::string filename)
+    void writeToFile(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, std::filesystem::path filepath)
     {
-        std::ofstream file(filename);
+        std::ofstream file(filepath, std::ios::out);
+
+        if (!file.is_open()) 
+        {
+            std::cerr << "Error: Could not open file for writing: " << filepath << std::endl;
+            return;
+        }
+
         for (size_t i = 0; i < Xaxis.size(); ++i)
             file << Xaxis[i] << "," << Yaxis[i] << "\n";
+
+        if (file.fail()) 
+            std::cerr << "Error: Failed while writing to file: " << filepath << std::endl;
+        else 
+            std::cout << "File written successfully: " << filepath << std::endl;
+
+        file.close();
     }
 
     void generatePoints(int particleAmount)

@@ -127,7 +127,8 @@ int main(void)
     tsne.nBodySelect = "FMM";
     Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
     Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-    std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
+    Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
+    std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -169,7 +170,7 @@ int main(void)
     //nBodyScenarios.calculationtimeTheta();
     //nBodyScenarios.testNodeNode();
     //nBodyScenarios.errorTheta();
-    //nBodyScenarios.errorTimestepTSNE();
+    nBodyScenarios.errorTimestepTSNE();
     std::cout << "im done with the csv generation!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------
@@ -282,6 +283,7 @@ int main(void)
     shaderGravity.cleanup();
     shaderTsne.cleanup();
     shaderLine2D.cleanup();
+    nBodyScenarios.cleanup();
 
     glfwTerminate();
     return 0;
