@@ -165,14 +165,24 @@ int main(void)
     // one time graph creation -----------------------------------------------------------------------------------------------------------
 
     NBodyScenarios nBodyScenarios;
-    nBodyScenarios.errorTimestepGRAVITY();
-    nBodyScenarios.errorTimestepTSNE();
-    //nBodyScenarios.errorTimestepFMM();
-    //nBodyScenarios.calculationtimeTheta();
-    //nBodyScenarios.testNodeNode();
-    //nBodyScenarios.errorTheta();
+    //nBodyScenarios.errorTimestepGRAVITY();
+    //nBodyScenarios.errorTimestepTSNE();
+     
+    //nBodyScenarios.errorTimestepGRAVITYFMMtest();
+     
+    //nBodyScenarios.calculationtimeThetaGRAVITY();
+    //nBodyScenarios.calculationtimeThetaTSNE();
 
-    std::cout << "im done with the csv generation!" << std::endl;
+    //nBodyScenarios.errorThetaGRAVITY();
+    //nBodyScenarios.errorThetaTSNE();
+
+    //nBodyScenarios.calculationtimeErrorGRAVITY();
+    //nBodyScenarios.calculationtimeErrorTSNE();
+
+
+    //nBodyScenarios.testNodeNode();
+
+    std::cout << "im done with nBodyScenarios!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------
 
