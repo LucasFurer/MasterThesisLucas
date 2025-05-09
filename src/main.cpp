@@ -170,7 +170,7 @@ int main(void)
     //nBodyScenarios.calculationtimeTheta();
     //nBodyScenarios.testNodeNode();
     //nBodyScenarios.errorTheta();
-    nBodyScenarios.errorTimestepTSNE();
+    //nBodyScenarios.errorTimestepTSNE();
     std::cout << "im done with the csv generation!" << std::endl;
 
     //scene creation done ----------------------------------------------------------------------------------------------------------------

@@ -291,8 +291,8 @@ public:
 
     void errorTimestep()
     {
-        int errorMeasurementAmount = 100; // how many iterations to run the simulation
-        int particleCount = 100; // use this many particles
+        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+        int particleCount = 1000; // use this many particles
 
         generatePoints(particleCount);
         nBodySolversGRAVITY["BH"]->updateTree(&particles);
@@ -324,36 +324,43 @@ public:
             // correct solution up to machine precision
             nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
 
+
+
             // calculate the result of every approximation technique and find the error by comparing to naive
             nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            errorBH[t] = getMSE(accelerations, accelerationsErrorTest);
             timeBH[t] = t;
-            for (int i = 0; i < particles.size(); i++)
-                errorBH[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
-            errorBH[t] /= particles.size();
+            //for (int i = 0; i < particles.size(); i++)
+            //    errorBH[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
+            //errorBH[t] /= particles.size();
             
             nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            errorBHMultipole[t] = getMSE(accelerations, accelerationsErrorTest);
             timeBHMultipole[t] = t;
-            for (int i = 0; i < particles.size(); i++)
-                errorBHMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
-            errorBHMultipole[t] /= particles.size();
+            //for (int i = 0; i < particles.size(); i++)
+            //    errorBHMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
+            //errorBHMultipole[t] /= particles.size();
 
             nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            errorBHReverse[t] = getMSE(accelerations, accelerationsErrorTest);
             timeBHReverse[t] = t;
-            for (int i = 0; i < particles.size(); i++)
-                errorBHReverse[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
-            errorBHReverse[t] /= particles.size();
+            //for (int i = 0; i < particles.size(); i++)
+            //    errorBHReverse[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
+            //errorBHReverse[t] /= particles.size();
 
             nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+            errorBHReverseMultipole[t] = getMSE(accelerations, accelerationsErrorTest);
             timeBHReverseMultipole[t] = t;
-            for (int i = 0; i < particles.size(); i++)
-                errorBHReverseMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
-            errorBHReverseMultipole[t] /= particles.size();
+            //for (int i = 0; i < particles.size(); i++)
+            //    errorBHReverseMultipole[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
+            //errorBHReverseMultipole[t] /= particles.size();
 
             nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
+            errorFMM[t] = getMSE(accelerations, accelerationsErrorTest);
             timeFMM[t] = t;
-            for (int i = 0; i < particles.size(); i++)
-                errorFMM[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
-            errorFMM[t] /= particles.size();
+            //for (int i = 0; i < particles.size(); i++)
+            //    errorFMM[t] += powf(glm::length(accelerations[i] - accelerationsErrorTest[i]), 2.0f);
+            //errorFMM[t] /= particles.size();
 
             // update positions with naive solution
             for (int i = 0; i < particles.size(); i++)
@@ -372,11 +379,18 @@ public:
         }
 
         // write results to csv files
-        // writeToFile(timeBH, errorBH, "graphCSV/scenario1lineErrorTimestepBH.csv");
-        // writeToFile(timeBHMultipole, errorBHMultipole, "graphCSV/scenario1lineErrorTimestepBHMultipole.csv");
-        // writeToFile(timeBHReverse, errorBHReverse, "graphCSV/scenario1lineErrorTimestepBHReverse.csv");
-        // writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, "graphCSV/scenario1lineErrorTimestepBHReverseMultipole.csv");
-        // writeToFile(timeFMM, errorFMM, "graphCSV/scenario1lineErrorTimestepFMM.csv");
+        std::filesystem::path projectFolder;
+        #ifdef _WIN32
+        projectFolder = std::filesystem::current_path();
+        #endif
+        #ifdef linux
+        projectFolder = std::filesystem::current_path().parent_path();
+        #endif
+        writeToFile(timeBH, errorBH, projectFolder / std::filesystem::path("graphCSV") / "scenario1lineErrorTimestepBH.csv");
+        writeToFile(timeBHMultipole, errorBHMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario1lineErrorTimestepBHMultipole.csv");
+        writeToFile(timeBHReverse, errorBHReverse, projectFolder / std::filesystem::path("graphCSV") / "scenario1lineErrorTimestepBHReverse.csv");
+        writeToFile(timeBHReverseMultipole, errorBHReverseMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario1lineErrorTimestepBHReverseMultipole.csv");
+        writeToFile(timeFMM, errorFMM, projectFolder / std::filesystem::path("graphCSV") / "scenario1lineErrorTimestepFMM.csv");
     }
 
     void errorTimestepFMM()
@@ -432,8 +446,15 @@ public:
         }
 
         // write results to csv files
-        //writeToFile(timeFMM, errorFMM, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMM.csv");
-        //writeToFile(timeFMMnaive, errorFMMnaive, "graphCSV/scenario2lineErrorTimestepFMMcompare_FMMnaive.csv");
+        std::filesystem::path projectFolder;
+        #ifdef _WIN32
+        projectFolder = std::filesystem::current_path();
+        #endif
+        #ifdef linux
+        projectFolder = std::filesystem::current_path().parent_path();
+        #endif
+        writeToFile(timeFMM, errorFMM, projectFolder / std::filesystem::path("graphCSV") / "scenario2lineErrorTimestepFMMcompare_FMM.csv");
+        writeToFile(timeFMMnaive, errorFMMnaive, projectFolder / std::filesystem::path("graphCSV") / "scenario2lineErrorTimestepFMMcompare_FMMnaive.csv");
     }
 
     void calculationtimeTheta()
@@ -540,12 +561,19 @@ public:
         }
 
         // write results to csv files
-        // writeToFile(thetaNaive, calculationtimeNaive, ("graphCSV/scenario3calculationtimeThetaNaive.csv"));
-        // writeToFile(thetaBH, calculationtimeBH, ("graphCSV/scenario3calculationtimeThetaBH.csv"));
-        // writeToFile(thetaBHMultipole, calculationtimeBHMultipole, ("graphCSV/scenario3calculationtimeThetaBHMP.csv"));
-        // writeToFile(thetaBHReverse, calculationtimeBHReverse, ("graphCSV/scenario3calculationtimeThetaBHR.csv"));
-        // writeToFile(thetaBHReverseMultipole, calculationtimeBHReverseMultipole, ("graphCSV/scenario3calculationtimeThetaBHRMP.csv"));
-        // writeToFile(thetaFMM, calculationtimeFMM, ("graphCSV/scenario3calculationtimeThetaFMM.csv"));
+        std::filesystem::path projectFolder;
+        #ifdef _WIN32
+        projectFolder = std::filesystem::current_path();
+        #endif
+        #ifdef linux
+        projectFolder = std::filesystem::current_path().parent_path();
+        #endif
+        writeToFile(thetaNaive, calculationtimeNaive, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaNaive.csv");
+        writeToFile(thetaBH, calculationtimeBH, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaBH.csv");
+        writeToFile(thetaBHMultipole, calculationtimeBHMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaBHMP.csv");
+        writeToFile(thetaBHReverse, calculationtimeBHReverse, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaBHR.csv");
+        writeToFile(thetaBHReverseMultipole, calculationtimeBHReverseMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaBHRMP.csv");
+        writeToFile(thetaFMM, calculationtimeFMM, projectFolder / std::filesystem::path("graphCSV") / "scenario3calculationtimeThetaFMM.csv");
     }
 
     void errorTheta()
@@ -644,16 +672,23 @@ public:
         }
 
         // write results to csv files
-        // writeToFile(thetaBH, errorBH, ("graphCSV/scenario4errorThetaBH.csv"));
-        // writeToFile(thetaBHMultipole, errorBHMultipole, ("graphCSV/scenario4errorThetaBHMP.csv"));
-        // writeToFile(thetaBHReverse, errorBHReverse, ("graphCSV/scenario4errorThetaBHR.csv"));
-        // writeToFile(thetaBHReverseMultipole, errorBHReverseMultipole, ("graphCSV/scenario4errorThetaBHRMP.csv"));
-        // writeToFile(thetaFMM, errorFMM, ("graphCSV/scenario4errorThetaFMM.csv"));
+        std::filesystem::path projectFolder;
+        #ifdef _WIN32
+        projectFolder = std::filesystem::current_path();
+        #endif
+        #ifdef linux
+        projectFolder = std::filesystem::current_path().parent_path();
+        #endif
+        writeToFile(thetaBH, errorBH, projectFolder / std::filesystem::path("graphCSV") / "scenario4errorThetaBH.csv");
+        writeToFile(thetaBHMultipole, errorBHMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario4errorThetaBHMP.csv");
+        writeToFile(thetaBHReverse, errorBHReverse, projectFolder / std::filesystem::path("graphCSV") / "scenario4errorThetaBHR.csv");
+        writeToFile(thetaBHReverseMultipole, errorBHReverseMultipole, projectFolder / std::filesystem::path("graphCSV") / "scenario4errorThetaBHRMP.csv");
+        writeToFile(thetaFMM, errorFMM, projectFolder / std::filesystem::path("graphCSV") / "scenario4errorThetaFMM.csv");
     }
 
     void errorTimestepTSNE()
     {
-        int errorMeasurementAmount = 500; // how many iterations to run the simulation
+        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
         int dataAmount = 1000; // use this many particles
         float perplexity = 30.0f;
 
@@ -710,41 +745,30 @@ public:
         // find error at every time step
         for (int t = 0; t < errorMeasurementAmount; t++)
         {
-            //lastTimeUpdated = glfwGetTime();
             // correct solution up to machine precision
-            updateTSNE("naive", embeddedDerivative, repulsForce);
-            //nBodySolversTSNE["naive"]->solveNbody(&noAccumulator, &embeddedDerivative, &particles);
+            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm);
 
             // calculate the result of every approximation technique and find the error by comparing to naive
-            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorBH[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeBH[t] = t;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-                errorBH[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
-            errorBH[t] /= embeddedPoints.size();
 
-            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorBHMultipole[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeBHMultipole[t] = t;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-                errorBHMultipole[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
-            errorBHMultipole[t] /= embeddedPoints.size();
 
-            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorBHReverse[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeBHReverse[t] = t;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-                errorBHReverse[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
-            errorBHReverse[t] /= embeddedPoints.size();
 
-            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorBHReverseMultipole[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeBHReverseMultipole[t] = t;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-                errorBHReverseMultipole[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
-            errorBHReverseMultipole[t] /= embeddedPoints.size();
 
-            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest);
+            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorFMM[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeFMM[t] = t;
-            for (int i = 0; i < embeddedPoints.size(); i++)
-                errorFMM[t] += powf(glm::length(repulsForce[i] - repulsForceErrorTest[i]), 2.0f);
-            errorFMM[t] /= embeddedPoints.size();
+
 
             // update positions with naive solution
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
@@ -780,24 +804,30 @@ public:
 private:
     float getMSE(const std::vector<glm::vec2>& MSEaccelerations, const std::vector<glm::vec2>& MSEaccelerationsErrorTest)
     {
+        //float MSE = 0.0f;
+
+        //for (int i = 0; i < MSEaccelerations.size(); i++)
+        //{
+        //    MSE += powf(glm::length(MSEaccelerations[i] - MSEaccelerationsErrorTest[i]), 2.0f);
+        //}
+
+        //MSE /= MSEaccelerations.size();
+        //return MSE;
+
+        // ------------------------------------------------------------
+
         float MSE = 0.0f;
+        float divide = 0.0f;
 
         for (int i = 0; i < MSEaccelerations.size(); i++)
         {
-            MSE += powf(glm::length(MSEaccelerations[i] - MSEaccelerationsErrorTest[i]), 2.0f);
+            MSE += powf(glm::length(MSEaccelerations[i] - MSEaccelerationsErrorTest[i]), 1.0f);
+            divide += powf(glm::length(MSEaccelerations[i]), 1.0f);
         }
 
-        MSE /= MSEaccelerations.size();
-        return MSE;
+        float NMSE =  MSE / divide;
+        return NMSE;
     }
-
-    // template <typename T, typename I>
-    // void writeToFile(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, std::string filename)
-    // {
-    //     std::ofstream file(filename);
-    //     for (size_t i = 0; i < Xaxis.size(); ++i)
-    //         file << Xaxis[i] << "," << Yaxis[i] << "\n";
-    // }
 
     template <typename T, typename I>
     void writeToFile(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, std::filesystem::path filepath)
@@ -898,29 +928,18 @@ private:
         }
     }
 
-    //void updateAttractive()
-    //{
-    //    std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
-
-    //    for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
-    //    {
-    //        for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
-    //        {
-    //            glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
-    //            float distance = glm::length(diff);
-
-    //            attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
-    //        }
-    //    }
-    //}
-
-    void updateTSNE(std::string nbodySolverName, std::vector<glm::vec2>& derivResult, std::vector<glm::vec2>& repulResult)
+    void updateTSNE(std::string nbodySolverName, std::vector<glm::vec2>& derivResult, std::vector<glm::vec2>& repulResult, std::vector<glm::vec2>& repulNotNormResult)
     {
+        std::fill(repulResult.begin(), repulResult.end(), glm::vec2(0.0f, 0.0f));
+        std::fill(repulNotNormResult.begin(), repulNotNormResult.end(), glm::vec2(0.0f, 0.0f));
+
         float QijTotal = 0.0f;
 
         nBodySolversTSNE[nbodySolverName]->solveNbody(&QijTotal, &repulResult, &embeddedPoints);
-
-        
+        for (int i = 0; i < repulResult.size(); i++)
+        { 
+            repulNotNormResult[i] = repulResult[i];
+        }
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {

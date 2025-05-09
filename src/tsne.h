@@ -64,7 +64,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
