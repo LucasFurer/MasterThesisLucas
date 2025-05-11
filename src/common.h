@@ -38,7 +38,7 @@ struct VertexPos2Col3
 	}
 
 	template <typename T>
-	static std::vector<VertexPos2Col3> particlesAccelerationsToVertexPos2Col3(const std::vector<T>& particles, std::vector<glm::vec2>& accelerations)
+	static std::vector<VertexPos2Col3> particlesAccelerationsToVertexPos2Col3(const std::vector<T>& particles, std::vector<glm::vec2>& accelerations, float forceSize)
 	{
 		std::vector<VertexPos2Col3> result;
 		for (int i = 0; i < particles.size(); i++)
@@ -46,7 +46,7 @@ struct VertexPos2Col3
 			glm::vec2 linePosB = particles[i].position;
 			glm::vec3 lineColB = glm::vec3(1.0f, 0.0f, 0.0f);
 
-			glm::vec2 linePosE = particles[i].position + 200.0f * accelerations[i];
+			glm::vec2 linePosE = particles[i].position + forceSize * forceSize * accelerations[i];
 			//glm::vec2 linePosE = particles[i].position + particles[i].speed;
 			glm::vec3 lineColE = glm::vec3(1.0f, 0.0f, 0.0f);
 

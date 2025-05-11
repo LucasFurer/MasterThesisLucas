@@ -29,7 +29,9 @@ public:
     std::vector<EmbeddedPoint> embeddedPointsPrev;
     std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
     Buffer* embeddedBuffer;
+
     Buffer* forceBuffer;
+    float forceSize = 1.0f;
 
     std::vector<glm::vec2> embeddedDerivative;
     std::vector<glm::vec2> attractForce;
@@ -70,7 +72,7 @@ public:
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 99999999.0f;
+        timeStepsPerSec = 1.0f;
 
         lastTimeUpdated = 0.0f;
 
@@ -143,7 +145,7 @@ public:
 
         embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
 
-        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
+        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
         forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
 	
@@ -191,7 +193,7 @@ public:
 
             nBodySolvers[nBodySelect]->updateTree(&embeddedPoints);
 
-            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative);
+            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
             forceBuffer->updateBuffer(forceLines, pos2DCol3D);
 
             globalTimeStep++;

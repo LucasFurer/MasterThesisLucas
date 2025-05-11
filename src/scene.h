@@ -1,6 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <string>
 #include "camera.h"
 #include "shader.h"
 #include "buffer.h"
@@ -10,6 +11,7 @@
 class Scene
 {
 public:
+	std::string sceneName;
 	Camera* camera;
 	std::vector<Renderable> renderables;
 
@@ -17,8 +19,9 @@ public:
 	{
 	}
 
-	Scene(Camera* initCamera, std::vector<Renderable> initRenderables)
+	Scene(std::string initSceneName, Camera* initCamera, std::vector<Renderable> initRenderables)
 	{
+		sceneName = initSceneName;
 		camera = initCamera;
 		renderables = initRenderables;
 	}

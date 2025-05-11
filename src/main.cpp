@@ -49,9 +49,7 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 int sceneSelect = 0;
-//std::string gravType = "barnesHut";
-//int gravType = 0;
-//int visSelect = 0;
+
 int frameCounter = 0;
 int frameCounted = 0;
 
@@ -97,6 +95,7 @@ int main(void)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
     (void)io;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -132,7 +131,7 @@ int main(void)
 
     Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene tsneScene(&cameraTsne, tsneRenderables);
+    Scene tsneScene("tsne", &cameraTsne, tsneRenderables);
 
     scenes.push_back(&tsneScene);
 
@@ -158,9 +157,16 @@ int main(void)
 
     Camera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-    Scene gravityScene(&cameraGravity, gravityRenderables);
+    Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
 
     scenes.push_back(&gravityScene);
+
+    // sceneNames --------------------------------------------------------------------------------------------------------------------------
+    std::vector<std::string> sceneNames;
+    for (Scene* scene : scenes)
+    {
+        sceneNames.push_back(scene->sceneName);
+    }
 
     // one time graph creation -----------------------------------------------------------------------------------------------------------
 
@@ -221,14 +227,33 @@ int main(void)
             frameCounter = 0;
         }
 
+        ImGui::SetNextWindowSize(ImVec2(500, 250), ImGuiCond_FirstUseEver);
         ImGui::Begin("options");
 
         std::string frameOutput = "frames: " + std::to_string(frameCounted);
         ImGui::Text(frameOutput.c_str());
 
+
+        ImGui::Combo(
+            "Select scene",
+            &sceneSelect,
+            [](void* data, int idx, const char** out_text)
+            {
+                const std::vector<std::string>& vec = *static_cast<std::vector<std::string>*>(data);
+                if (idx < 0 || idx >= vec.size()) { return false; }
+                *out_text = vec[idx].c_str();
+                return true;
+            },
+            static_cast<void*>(&sceneNames),
+            static_cast<int>(sceneNames.size())
+        );
+        //ImGui::Combo("Select scene", &sceneSelect, sceneNames, IM_ARRAYSIZE(sceneNames.data()));
+        // this is kinda cursed, fix later!!!!!!!!!
+        
         
         if (sceneSelect == 0)
         {
+            ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
             ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
             ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
@@ -247,6 +272,7 @@ int main(void)
         }
         else
         {
+            ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
             ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
 
             gravitySim.timeStep();

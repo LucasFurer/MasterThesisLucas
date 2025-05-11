@@ -17,7 +17,9 @@ public:
 	std::vector<glm::vec2> accelerations;
 	std::vector<glm::vec2> accelerationsErrorTest;
 	Buffer* particlesBuffer;
+
     Buffer* forceBuffer;
+    float forceSize = 1.0f;
 
     float stepSize = 0.1f;
     float timeStepsPerSec = 99999999.0f;
@@ -35,7 +37,6 @@ public:
 	GravitySim(int particleAmount)
 	{
         generatePoints(particleAmount, 1952731);
-
         //generatePointsCustom1();
 
         nBodySolvers["naive"] = new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
@@ -55,7 +56,7 @@ public:
 
         particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
         
-        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations);
+        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations, forceSize);
         forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
 
@@ -106,7 +107,7 @@ public:
 
             nBodySolvers[nBodySelect]->updateTree(&particles);
 
-            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations);
+            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(particles, accelerations, forceSize);
             forceBuffer->updateBuffer(forceLines, pos2DCol3D);
         }
     }
