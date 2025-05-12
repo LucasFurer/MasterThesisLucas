@@ -13,7 +13,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include "camera.h"
+#include "cameras/camera.h"
+#include "cameras/normalCamera.h"
+#include "cameras/tsneCamera.h"
 #include "data.h"
 #include "buffer.h"
 #include "texture.h"
@@ -129,7 +131,7 @@ int main(void)
     Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
 
-    Camera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+    TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
     Scene tsneScene("tsne", &cameraTsne, tsneRenderables);
 
@@ -155,7 +157,7 @@ int main(void)
     Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
     std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines, gravityRenderableForces };
 
-    Camera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 12.5, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+    TsneCamera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
     Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
 

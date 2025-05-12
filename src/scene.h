@@ -2,7 +2,7 @@
 #define SCENE_H
 
 #include <string>
-#include "camera.h"
+#include "cameras/camera.h"
 #include "shader.h"
 #include "buffer.h"
 #include "texture.h"
