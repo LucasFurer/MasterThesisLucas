@@ -17,7 +17,7 @@ class Shader
 {
 public:
     // the program ID
-    unsigned int ID;
+    unsigned int ID = 0;
 
     Shader()
     {
@@ -26,7 +26,6 @@ public:
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath)
     {
-        
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
         std::string fragmentCode;
@@ -86,11 +85,22 @@ public:
         glDeleteShader(fragment);
         
     }
+
+    ~Shader()
+    {
+        if (ID != 0) { std::cerr << "VAO of buffer was not deleted!" << std::endl; }
+    }
+    void cleanup()
+    {
+        if (ID != 0) { glDeleteProgram(ID); ID = 0; }
+    }
+
     // use/activate the shader
     void use()
     {
         glUseProgram(ID);
     }
+
     // utility uniform functions
     void setBool(const std::string& name, bool value) const
     {
@@ -117,14 +127,6 @@ public:
         glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, glm::value_ptr(value));
     }
 
-    ~Shader()
-    {
-        //glDeleteProgram(ID);
-    }
-    void cleanup()
-    {
-        glDeleteProgram(ID);
-    }
 
     private:
         // utility function for checking shader compilation/linking errors.

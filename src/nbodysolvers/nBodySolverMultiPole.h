@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <unsupported/Eigen/CXX11/Tensor>
+//#include <Eigen/Core>
+//#include <unsupported/Eigen/CXX11/Tensor>
 #include "../trees/quadtreemultipole.h"
 #include <Fastor/Fastor.h>
 #include "../nbodysolvers/nBodySolver.h"
@@ -48,6 +48,7 @@ public:
 
     void updateTree(std::vector<T>* embeddedPoints)
     {
+        root.~QuadTreeMultiPole();
         root = QuadTreeMultiPole<T>(this->maxChildren, embeddedPoints);
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);

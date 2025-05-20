@@ -4,7 +4,7 @@
 class Texture
 {
 public:
-	unsigned int TEX;
+    unsigned int TEX = 0;
     int width;
     int height;
     int nrChannels;
@@ -78,7 +78,14 @@ public:
 	~Texture()
 	{
         stbi_image_free(data);
+
+        if (TEX != 0) { std::cerr << "VAO of buffer was not deleted!" << std::endl; }
 	}
+
+    void cleanup()
+    {
+        if (TEX != 0) { glDeleteTextures(1, &TEX); TEX = 0; }
+    }
 
     void updateData()
     {

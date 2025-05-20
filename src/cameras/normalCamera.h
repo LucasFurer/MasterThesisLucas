@@ -40,7 +40,7 @@ public:
 
     }
 
-    void processInput(GLFWwindow* window, float deltaTime)
+    void processInput(GLFWwindow* window, float deltaTime) override
     {
         float velocity = MovementSpeed * deltaTime;
 
@@ -67,7 +67,7 @@ public:
     }
 
 
-    void mouse_callback_impl(GLFWwindow* window, double xposIn, double yposIn)
+    void mouse_callback_impl(GLFWwindow* window, double xposIn, double yposIn) override
     {
         float xpos = static_cast<float>(xposIn);
         float ypos = static_cast<float>(yposIn);
@@ -107,7 +107,7 @@ public:
     }
 
 
-    void scroll_callback_impl(GLFWwindow* window, double xoffset, double yoffset)
+    void scroll_callback_impl(GLFWwindow* window, double xoffset, double yoffset) override
     {
         Zoom *= ((-(float)yoffset / 20.0f) + 1.0f);
     }

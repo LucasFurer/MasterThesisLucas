@@ -39,6 +39,7 @@ public:
 
     void updateTree(std::vector<T>* embeddedPoints)
     {
+        root.~QuadTreeBarnesHutReverse();
         root = QuadTreeBarnesHutReverse<T>(this->maxChildren, embeddedPoints);
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);

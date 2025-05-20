@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../trees/quadtree.h"
-#include <functional>
+//#include <functional>
 #include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
@@ -15,14 +15,12 @@ public:
 
     }
 
-    //template <typename T>
     NBodySolverNaive(std::function<void(float*, std::vector<T>*, int, int, std::vector<glm::vec2>*)> initKernel)
     {
         kernel = initKernel;
     }
 
-    //template <typename T>
-    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints)
+    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints) override
     {
         std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
         *total = 0.0f;
@@ -33,37 +31,17 @@ public:
             {
                 if (i != j)//might be useless
                 {
-                    /*
-                    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
-                    float distance = glm::length(diff);
-
-                    float Qij = 1.0f / (1.0f + distance);
-                    *total += Qij;
-
-                    (*forces)[i] += Qij * (1.0f / (1.0f + distance)) * glm::normalize(diff);
-                    */
 
                     if (kernel) {
                         kernel(total, embeddedPoints, i, j, forces);
                     }
 
-                    /*
-                    float softening = 1.0f; // should be 1.0f for t-SNE
-
-                    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
-                    float distance = glm::length(diff);
-
-                    float oneOverDistance = 1.0f / (softening + distance);
-                    *total += 1.0f * oneOverDistance;
-
-                    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
-                    */
                 }
             }
         }
     }
 
-    void updateTree(std::vector<T>* embeddedPoints) {}
+    void updateTree(std::vector<T>* embeddedPoints) override {}
 
 private:
 

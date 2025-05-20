@@ -56,7 +56,7 @@ public:
 		std::pair<float, glm::vec2> childMassPosition = createTree();
 	}
 
-	QuadTreeBarnesHutReverse(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeBarnesHutReverse(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -65,6 +65,14 @@ public:
 		highestCorner = initHighestCorner;
 
 		occupants = initOccupants;
+	}
+
+	~QuadTreeBarnesHutReverse()
+	{
+		for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children)
+		{
+			delete quadTreeBarnesHutReverse;
+		}
 	}
 
 	QuadTreeBarnesHutReverse& operator=(QuadTreeBarnesHutReverse&& other) // move assignment operator
@@ -211,14 +219,6 @@ public:
 		for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children)
 		{
 			quadTreeBarnesHutReverse->getLineSegments(lineSegments, level + 1, showLevel);
-		}
-	}
-
-	~QuadTreeBarnesHutReverse()
-	{
-		for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children)
-		{
-			delete quadTreeBarnesHutReverse;
 		}
 	}
 

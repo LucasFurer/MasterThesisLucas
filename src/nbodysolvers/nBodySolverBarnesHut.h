@@ -38,6 +38,7 @@ public:
 
     void updateTree(std::vector<T>* embeddedPoints)
     {
+        root.~QuadTree();
         root = std::move(QuadTree<T>(this->maxChildren, embeddedPoints));
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);

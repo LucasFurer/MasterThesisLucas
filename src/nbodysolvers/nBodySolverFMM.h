@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../trees/quadtreeFMM.h"
-#include <Fastor/Fastor.h>
 #include "../nbodysolvers/nBodySolver.h"
 
 template <typename T>
@@ -41,6 +40,11 @@ public:
     }
 
     NBodySolverFMM() {}
+
+    //~NBodySolverFMM()
+    //{
+    //    root.~QuadTreeFMM();
+    //}
     
     void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints) override
     {
@@ -54,6 +58,7 @@ public:
 
     void updateTree(std::vector<T>* embeddedPoints)
     {
+        root.~QuadTreeFMM();
         root = QuadTreeFMM<T>(this->maxChildren, embeddedPoints);
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);

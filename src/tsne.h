@@ -4,23 +4,13 @@
 #include "common.h"
 #include "buffer.h"
 #include "loader.h"
-#include <fstream>
-#include <Eigen/Sparse>
-#include <Eigen/Eigen>
-#include <unsupported/Eigen/SparseExtra>
-#include <filesystem>
-#include <format>
-#include <math.h>
-#include <numbers>
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverse.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverseMultiPole.h"
 #include "nbodysolvers/nBodySolverMultiPole.h"
 #include "nbodysolvers/nBodySolverFMM.h"
-#include <filesystem>
-#include <iostream>
-#include <random>
+
 
 class TSNE
 {
@@ -66,13 +56,13 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
         accelerationRate = 0.5f;
 
-        timeStepsPerSec = 1.0f;
+        timeStepsPerSec = 0.0f;
 
         lastTimeUpdated = 0.0f;
 

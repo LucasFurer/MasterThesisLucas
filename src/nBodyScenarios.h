@@ -1086,12 +1086,12 @@ public:
 
     void calculationtimeErrorGRAVITY()
     {
-        int averageOverAmount = 50; // average the error over this many time steps
+        int averageOverAmount = 150; // average the error over this many time steps
         int particleCount = 1000; // use this many particles
 
         
         // set graph size
-        int thetaDiversityAmount = 100;
+        int thetaDiversityAmount = 30;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 
@@ -1106,6 +1106,12 @@ public:
         std::vector<float> errorBHR(thetaDiversityAmount, 0.0f);
         std::vector<float> errorBHRMP(thetaDiversityAmount, 0.0f);
         std::vector<float> errorFMM(thetaDiversityAmount, 0.0f);
+
+        std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
 
 
         float noAccumulator = 0.0f;
@@ -1183,6 +1189,12 @@ public:
             calculationtimeBHR[t] /= averageOverAmount;
             calculationtimeBHRMP[t] /= averageOverAmount;
             calculationtimeFMM[t] /= averageOverAmount;
+
+            thetaBH[t] = chosenTheta;
+            thetaBHMP[t] = chosenTheta;
+            thetaBHR[t] = chosenTheta;
+            thetaBHRMP[t] = chosenTheta;
+            thetaFMM[t] = chosenTheta;
         }
 
         // write results to csv files
@@ -1194,11 +1206,18 @@ public:
         projectFolder = std::filesystem::current_path().parent_path();
         #endif
         std::string attributes = "_point" + std::to_string(particleCount);
-        writeToFile(errorBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBH" + attributes + ".csv"));
-        writeToFile(errorBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHMP" + attributes + ".csv"));
-        writeToFile(errorBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHR" + attributes + ".csv"));
-        writeToFile(errorBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHRMP" + attributes + ".csv"));
-        writeToFile(errorFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorFMM" + attributes + ".csv"));
+
+        writeToFile3(errorBH,    calculationtimeBH,    thetaBH,    projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBH" + attributes + ".csv"));
+        writeToFile3(errorBHMP,  calculationtimeBHMP,  thetaBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHMP" + attributes + ".csv"));
+        writeToFile3(errorBHR,   calculationtimeBHR,   thetaBHR,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHR" + attributes + ".csv"));
+        writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHRMP" + attributes + ".csv"));
+        writeToFile3(errorFMM,   calculationtimeFMM,   thetaFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorFMM" + attributes + ".csv"));
+
+        //writeToFile(errorBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBH" + attributes + ".csv"));
+        //writeToFile(errorBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHMP" + attributes + ".csv"));
+        //writeToFile(errorBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHR" + attributes + ".csv"));
+        //writeToFile(errorBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorBHRMP" + attributes + ".csv"));
+        //writeToFile(errorFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeErrorFMM" + attributes + ".csv"));
     }
 
     void calculationtimeErrorTSNE()
@@ -1208,7 +1227,7 @@ public:
 
         
         // set graph size
-        int thetaDiversityAmount = 100;
+        int thetaDiversityAmount = 30;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 
@@ -1254,6 +1273,11 @@ public:
         std::vector<float> errorBHRMP(thetaDiversityAmount, 0.0f);
         std::vector<float> errorFMM(thetaDiversityAmount, 0.0f);
 
+        std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
+        std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
 
         float noAccumulator = 0.0f;
         for (int t = 0; t < thetaDiversityAmount; t++)
@@ -1331,6 +1355,12 @@ public:
             calculationtimeBHR[t] /= averageOverAmount;
             calculationtimeBHRMP[t] /= averageOverAmount;
             calculationtimeFMM[t] /= averageOverAmount;
+
+            thetaBH[t] = chosenTheta;
+            thetaBHMP[t] = chosenTheta;
+            thetaBHR[t] = chosenTheta;
+            thetaBHRMP[t] = chosenTheta;
+            thetaFMM[t] = chosenTheta;
         }
 
         // write results to csv files
@@ -1342,11 +1372,20 @@ public:
         projectFolder = std::filesystem::current_path().parent_path();
         #endif
         std::string attributes = "_point" + std::to_string(dataAmount);
-        writeToFile(errorBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBH" + attributes + ".csv"));
-        writeToFile(errorBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHMP" + attributes + ".csv"));
-        writeToFile(errorBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHR" + attributes + ".csv"));
-        writeToFile(errorBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHRMP" + attributes + ".csv"));
-        writeToFile(errorFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorFMM" + attributes + ".csv"));
+
+        writeToFile3(errorBH,    calculationtimeBH,    thetaBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBH" + attributes + ".csv"));
+        writeToFile3(errorBHMP,  calculationtimeBHMP,  thetaBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHMP" + attributes + ".csv"));
+        writeToFile3(errorBHR,   calculationtimeBHR,   thetaBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHR" + attributes + ".csv"));
+        writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHRMP" + attributes + ".csv"));
+        writeToFile3(errorFMM,   calculationtimeFMM,   thetaFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorFMM" + attributes + ".csv"));
+
+        //writeToFileN(projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorFMM" + attributes + ".csv"), errorFMM, calculationtimeFMM, thetaFMM);
+
+        //writeToFile(errorBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBH" + attributes + ".csv"));
+        //writeToFile(errorBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHMP" + attributes + ".csv"));
+        //writeToFile(errorBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHR" + attributes + ".csv"));
+        //writeToFile(errorBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHRMP" + attributes + ".csv"));
+        //writeToFile(errorFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorFMM" + attributes + ".csv"));
     }
 
 private:
@@ -1394,6 +1433,58 @@ private:
         if (file.fail()) 
             std::cerr << "Error: Failed while writing to file: " << filepath << std::endl;
         else 
+            std::cout << "File written successfully: " << filepath << std::endl;
+
+        file.close();
+    }
+
+    template <typename T, typename I, typename J>
+    void writeToFile3(const std::vector<T>& Xaxis, const std::vector<I>& Yaxis, const std::vector<J>& Zaxis, std::filesystem::path filepath)
+    {
+        std::ofstream file(filepath, std::ios::out);
+
+        if (!file.is_open())
+        {
+            std::cerr << "Error: Could not open file for writing: " << filepath << std::endl;
+            return;
+        }
+
+        for (size_t i = 0; i < Xaxis.size(); ++i)
+            file << Xaxis[i] << "," << Yaxis[i] << "," << Zaxis[i] << "\n";
+
+        if (file.fail())
+            std::cerr << "Error: Failed while writing to file: " << filepath << std::endl;
+        else
+            std::cout << "File written successfully: " << filepath << std::endl;
+
+        file.close();
+    }
+
+    template <typename... Vectors>
+    void writeToFileN(const std::filesystem::path& filepath, const Vectors&... vectors)
+    {
+        std::ofstream file(filepath, std::ios::out);
+        if (!file.is_open())
+        {
+            std::cerr << "Error: Could not open file for writing: " << filepath << std::endl;
+            return;
+        }
+
+        size_t size = std::min({ vectors.size()... }); // take smallest size of vectors
+
+        for (size_t i = 0; i < size; ++i)
+        {
+            std::ostringstream oss;
+            ((oss << vectors[i] << ","), ...);
+            std::string line = oss.str();
+            file << line.substr(0, line.size() - 1) << "\n";
+
+            //((file << vectors[i] << ((&vectors == &std::get<sizeof...(vectors) - 1>(std::tie(vectors...))) ? "\n" : ",")), ...);
+        }
+
+        if (file.fail())
+            std::cerr << "Error: Failed while writing to file: " << filepath << std::endl;
+        else
             std::cout << "File written successfully: " << filepath << std::endl;
 
         file.close();

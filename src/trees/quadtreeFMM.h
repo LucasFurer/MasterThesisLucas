@@ -1,15 +1,15 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <algorithm>
-#include <vector>
-#include <iostream>
-#include "../particles/embeddedPoint.h"
-
-#include <Fastor/Fastor.h>
+//#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+//
+//#include <algorithm>
+//#include <vector>
+//#include <iostream>
+//#include "../particles/embeddedPoint.h"
+//
+//#include <Fastor/Fastor.h>
 
 template <typename T>
 class QuadTreeFMM
@@ -64,7 +64,7 @@ public:
 		//quadrupole = std::get<3>(childPositionMassDiQuad);
 	}
 
-	QuadTreeFMM(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeFMM(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -75,20 +75,31 @@ public:
 		occupants = initOccupants;
 	}
 
+	~QuadTreeFMM() 
+	{
+		for (QuadTreeFMM* quadTreeFMM : children)
+		{
+			delete quadTreeFMM;
+		}
+	}
+
 	QuadTreeFMM& operator=(QuadTreeFMM&& other) // move assignment operator
 	{
 		if (this != &other) // self-assignment check
 		{
 			maxChildren = other.maxChildren;
 			allParticles = std::move(other.allParticles);
+			//allParticles = other.allParticles;
 			other.allParticles = nullptr;
+			//allParticles = std::exchange(other.allParticles, nullptr);
+
 
 			totalMass = other.totalMass;
 			centreOfMass = other.centreOfMass;
 
 			lowestCorner = other.lowestCorner;
 			highestCorner = other.highestCorner;
-
+			
 			occupants = std::move(other.occupants);
 
 			children = std::move(other.children);
@@ -360,8 +371,6 @@ public:
 			octTree->getLineSegments(lineSegments, level + 1, showLevel);
 		}
 	}
-
-	~QuadTreeFMM() {}
 
 private:
 };

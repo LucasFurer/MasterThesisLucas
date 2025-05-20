@@ -61,7 +61,7 @@ public:
 		std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = createTree();
 	}
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int> initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -91,6 +91,14 @@ public:
 			children = std::move(other.children);
 		}
 		return *this;
+	}
+
+	~QuadTreeMultiPole()
+	{
+		for (QuadTreeMultiPole* quadTreeBHMP : children)
+		{
+			delete quadTreeBHMP;
+		}
 	}
 
 	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree()
@@ -298,10 +306,7 @@ public:
 		}
 	}
 
-	~QuadTreeMultiPole()
-	{
 
-	}
 
 private:
 };

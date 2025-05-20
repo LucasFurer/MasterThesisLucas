@@ -1,12 +1,12 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <string>
-#include "cameras/camera.h"
-#include "shader.h"
-#include "buffer.h"
-#include "texture.h"
-#include "common.h"
+
+//#include "cameras/camera.h"
+//#include "shader.h"
+//#include "buffer.h"
+//#include "texture.h"
+//#include "common.h"
 
 class Scene
 {
@@ -29,6 +29,16 @@ public:
 	~Scene()
 	{
 
+	}
+
+	void cleanup()
+	{
+		//for (Renderable renderable : renderables)
+		//{
+		//	if (renderable.buffer != nullptr) { renderable.buffer->cleanup(); }
+		//	if (renderable.shader != nullptr) { renderable.shader->cleanup(); }
+		//	if (renderable.texture != nullptr) { renderable.texture->cleanup(); }
+		//}
 	}
 
 	void Render()

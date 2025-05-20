@@ -22,7 +22,7 @@ public:
     float forceSize = 1.0f;
 
     float stepSize = 0.1f;
-    float timeStepsPerSec = 99999999.0f;
+    float timeStepsPerSec = 0.0f;
     float lastTimeUpdated = 0.0f;
 
     std::map<std::string, NBodySolver<Particle2D>*> nBodySolvers;
@@ -50,8 +50,8 @@ public:
         nBodySolvers["BHRMP"]->updateTree(&particles);
         nBodySolvers["FMM"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
         nBodySolvers["FMM"]->updateTree(&particles);
-        nBodySolvers["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMMnaive"]->updateTree(&particles);
+        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["FMMnaive"]->updateTree(&particles);
 
 
         particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
@@ -78,7 +78,8 @@ public:
 
         for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolvers)
         {
-            nBodySolver.second->boxBuffer->cleanup();
+            nBodySolver.second->cleanup();
+            //nBodySolver.second->boxBuffer->cleanup();
         }
     }
 
@@ -92,7 +93,7 @@ public:
             //checkError();
 
             float noAccumulator = 0.0f;
-            nBodySolvers[nBodySelect]->theta = 2.5f;
+            nBodySolvers[nBodySelect]->theta = 1.0f;
             nBodySolvers[nBodySelect]->solveNbody(&noAccumulator, &accelerations, &particles);
             globalTimeStep++;
 

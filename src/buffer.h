@@ -21,9 +21,9 @@ enum DataType
 class Buffer
 {
 public:
-	unsigned int VBO;
-	unsigned int VAO;
-	unsigned int EBO;
+	unsigned int VBO = 0;
+	unsigned int VAO = 0;
+	unsigned int EBO = 0;
 	int elementAmount;
 
 	// constructor --------------------------------------------------------------------------------------------------------
@@ -77,16 +77,16 @@ public:
 
 	~Buffer()
 	{
-		//if (VAO != 0) { glDeleteVertexArrays(1, &VAO); }
-		//if (VBO != 0) { glDeleteBuffers(1, &VBO); }
-		//if (EBO != 0) { glDeleteBuffers(1, &EBO); }
+		if (VAO != 0) { std::cerr << "VAO of buffer was not deleted!" << std::endl; }
+		if (VBO != 0) { std::cerr << "VBO of buffer was not deleted!" << std::endl; }
+		if (EBO != 0) { std::cerr << "EBO of buffer was not deleted!" << std::endl; }
 	}
 
 	void cleanup()
 	{
-		if (VAO != 0) { glDeleteVertexArrays(1, &VAO); }
-		if (VBO != 0) { glDeleteBuffers(1, &VBO); }
-		if (EBO != 0) { glDeleteBuffers(1, &EBO); }
+		if (VAO != 0) { glDeleteVertexArrays(1, &VAO); VAO = 0; }
+		if (VBO != 0) { glDeleteBuffers(1, &VBO); VBO = 0; }
+		if (EBO != 0) { glDeleteBuffers(1, &EBO); EBO = 0; }
 	}
 
 	// updateBuffer --------------------------------------------------------------------------------------------------------
