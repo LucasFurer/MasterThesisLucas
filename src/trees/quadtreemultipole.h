@@ -88,6 +88,7 @@ public:
 
 			occupants = std::move(other.occupants);
 
+			for (QuadTreeMultiPole* quadTreeBHMP : children) { delete quadTreeBHMP; }
 			children = std::move(other.children);
 		}
 		return *this;

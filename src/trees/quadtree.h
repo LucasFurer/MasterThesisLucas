@@ -81,11 +81,19 @@ public:
 
 			occupants = std::move(other.occupants);
 
+			for (QuadTree* quadTreeBH : children) { delete quadTreeBH; }
 			children = std::move(other.children);
 		}
 		return *this;
 	}
 
+	~QuadTree()
+	{
+		for (QuadTree* quadTree : children)
+		{
+			delete quadTree;
+		}
+	}
 
 	std::pair<float, glm::vec2> createTree()
 	{
@@ -210,14 +218,6 @@ public:
 		for (QuadTree* octTree : children)
 		{
 			octTree->getLineSegments(lineSegments, level + 1, showLevel);
-		}
-	}
-
-	~QuadTree()
-	{
-		for (QuadTree* quadTree : children)
-		{
-			delete quadTree;
 		}
 	}
 

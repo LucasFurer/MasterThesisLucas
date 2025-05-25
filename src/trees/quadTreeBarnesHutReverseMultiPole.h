@@ -89,9 +89,18 @@ public:
 
 			occupants = std::move(other.occupants);
 
+			for (QuadTreeBarnesHutReverseMultiPole* quadTreeBarnesHutReverse : children) { delete quadTreeBarnesHutReverse; }
 			children = std::move(other.children);
 		}
 		return *this;
+	}
+
+	~QuadTreeBarnesHutReverseMultiPole()
+	{
+		for (QuadTreeBarnesHutReverseMultiPole* quadTreeBarnesHutReverse : children)
+		{
+			delete quadTreeBarnesHutReverse;
+		}
 	}
 
 	std::pair<float, glm::vec2> createTree()
@@ -279,14 +288,6 @@ public:
 		for (QuadTreeBarnesHutReverseMultiPole* quadTreeBarnesHutReverse : children)
 		{
 			quadTreeBarnesHutReverse->getLineSegments(lineSegments, level + 1, showLevel);
-		}
-	}
-
-	~QuadTreeBarnesHutReverseMultiPole()
-	{
-		for (QuadTreeBarnesHutReverseMultiPole* quadTreeBarnesHutReverse : children)
-		{
-			delete quadTreeBarnesHutReverse;
 		}
 	}
 

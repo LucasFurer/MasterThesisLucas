@@ -1091,7 +1091,7 @@ public:
 
         
         // set graph size
-        int thetaDiversityAmount = 30;
+        int thetaDiversityAmount = 40;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 
@@ -1227,7 +1227,7 @@ public:
 
         
         // set graph size
-        int thetaDiversityAmount = 30;
+        int thetaDiversityAmount = 40;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 

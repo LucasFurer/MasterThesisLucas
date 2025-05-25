@@ -67,14 +67,6 @@ public:
 		occupants = initOccupants;
 	}
 
-	~QuadTreeBarnesHutReverse()
-	{
-		for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children)
-		{
-			delete quadTreeBarnesHutReverse;
-		}
-	}
-
 	QuadTreeBarnesHutReverse& operator=(QuadTreeBarnesHutReverse&& other) // move assignment operator
 	{
 		if (this != &other) // self-assignment check
@@ -91,9 +83,18 @@ public:
 
 			occupants = std::move(other.occupants);
 
+			for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children) { delete quadTreeBarnesHutReverse; }
 			children = std::move(other.children);
 		}
 		return *this;
+	}
+
+	~QuadTreeBarnesHutReverse()
+	{
+		for (QuadTreeBarnesHutReverse* quadTreeBarnesHutReverse : children)
+		{
+			delete quadTreeBarnesHutReverse;
+		}
 	}
 
 	std::pair<float, glm::vec2> createTree()

@@ -48,8 +48,7 @@ public:
 
     void updateTree(std::vector<T>* embeddedPoints)
     {
-        root.~QuadTreeMultiPole();
-        root = QuadTreeMultiPole<T>(this->maxChildren, embeddedPoints);
+        root = std::move(QuadTreeMultiPole<T>(this->maxChildren, embeddedPoints));
         this->lineSegments.clear();
         root.getLineSegments(this->lineSegments, 0, this->showLevel);
         std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);

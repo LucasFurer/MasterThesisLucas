@@ -29,6 +29,7 @@
 #include <format>
 #include <math.h>
 #include <numbers>
+#include <queue>
 
 
 #define _CRTDBG_MAP_ALLOC
@@ -75,8 +76,6 @@ unsigned int screenHeight = 1080;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int sceneSelect = 0;
-
 int frameCounter = 0;
 int frameCounted = 0;
 
@@ -93,9 +92,9 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
+    #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+    #endif
 
     // glfw window creation
     // --------------------
@@ -136,7 +135,11 @@ int main(void)
     {
         // global stuff
         // ---------------------------------------
-        std::vector<Scene*> scenes;
+        std::map<std::string, Scene*> scenes;
+        std::string currentSceneName = "tsne";
+
+
+
 
         #ifdef _WIN32
         Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
@@ -159,7 +162,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "FMMiter";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -169,7 +172,8 @@ int main(void)
 
         Scene tsneScene("tsne", &cameraTsne, tsneRenderables);
        
-        scenes.push_back(&tsneScene);
+        scenes[tsneScene.sceneName] = &tsneScene;
+        //scenes.push_back(&tsneScene);
         
         // gravity --------------------------------------------------------------------------------------------------------------------------
 
@@ -194,14 +198,25 @@ int main(void)
 
         Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
 
-        scenes.push_back(&gravityScene);
+        scenes[gravityScene.sceneName] = &gravityScene;
+        //scenes.push_back(&gravityScene);
         
         // sceneNames --------------------------------------------------------------------------------------------------------------------------
+
+        int currentSceneNameIndex = -1;
         std::vector<std::string> sceneNames;
-        for (Scene* scene : scenes)
+        for (std::pair<const std::string, Scene*> scene : scenes)
         {
-            sceneNames.push_back(scene->sceneName);
+            sceneNames.push_back(scene.second->sceneName);
         }
+        for (int i = 0; i < sceneNames.size(); i++) 
+        {
+            if (sceneNames[i] == currentSceneName)
+            {
+                currentSceneNameIndex = i;
+            }
+        }
+        
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
@@ -243,8 +258,8 @@ int main(void)
         while (!glfwWindowShouldClose(window))
         {
             // initial
-            scenes[sceneSelect]->camera->processInput(window, deltaTime);
-            glfwSetWindowUserPointer(window, scenes[sceneSelect]->camera);
+            scenes[currentSceneName]->camera->processInput(window, deltaTime);
+            glfwSetWindowUserPointer(window, scenes[currentSceneName]->camera);
             glfwSetCursorPosCallback(window, Camera::mouse_callback);
             glfwSetScrollCallback(window, Camera::scroll_callback);
 
@@ -273,10 +288,10 @@ int main(void)
             std::string frameOutput = "frames: " + std::to_string(frameCounted);
             ImGui::Text(frameOutput.c_str());
 
-            
+            currentSceneName = sceneNames[currentSceneNameIndex];
             ImGui::Combo(
                 "Select scene",
-                &sceneSelect,
+                &currentSceneNameIndex,
                 [](void* data, int idx, const char** out_text)
                 {
                     const std::vector<std::string>& vec = *static_cast<std::vector<std::string>*>(data);
@@ -291,8 +306,27 @@ int main(void)
             // this is kinda cursed, fix later!!!!!!!!!
 
             
-            if (sceneSelect == 0)
+            if (currentSceneName == "tsne")
             {
+                if (per == 1)
+                    scenes[currentSceneName]->camera->perspective = true;
+                else
+                    scenes[currentSceneName]->camera->perspective = false;
+
+                //std::vector<std::string> solvers = 
+                //ImGui::Combo(
+                //    "Select solver",
+                //    &sceneSelect,
+                //    [](void* data, int idx, const char** out_text)
+                //    {
+                //        const std::vector<std::string>& vec = *static_cast<std::vector<std::string>*>(data);
+                //        if (idx < 0 || idx >= vec.size()) { return false; }
+                //        *out_text = vec[idx].c_str();
+                //        return true;
+                //    },
+                //    static_cast<void*>(&sceneNames),
+                //    static_cast<int>(sceneNames.size())
+                //);
                 ImGui::SliderFloat("sim speed", &tsne.timeStepsPerSec, 0.0f, 1000.0f);
                 ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
                 ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
@@ -303,15 +337,12 @@ int main(void)
                 if (tsne.follow == 1)
                 {
                     auto [left, right, down, up] = tsne.getEdges();
-                    scenes[0]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[0]->camera->Position.z);
-                    scenes[0]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-                    //std::cout << "horizontal size: " << right - left << std::endl;
-                    //std::cout << "vertical size:   " << up - down << std::endl;
-
-                    //scenes[0]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
+                    scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
+                    scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+                    //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
                 }
             }
-            else
+            else if (currentSceneName == "gravity")
             {
                 ImGui::SliderFloat("sim speed", &gravitySim.timeStepsPerSec, 0.0f, 1000.0f);
                 ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
@@ -319,19 +350,20 @@ int main(void)
 
                 gravitySim.timeStep();
             }
-
-
-
-
-
-            if (per == 1)
-                scenes[0]->camera->perspective = true;
             else
-                scenes[0]->camera->perspective = false;
+            {
+                std::cout << "no scene selected" << std::endl;
+            }
 
 
 
-            scenes[sceneSelect]->Render();
+
+
+
+
+
+
+            scenes[currentSceneName]->Render();
             
 
 
