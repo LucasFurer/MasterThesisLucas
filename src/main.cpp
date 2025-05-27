@@ -66,6 +66,9 @@
 #include "trees/quadtreeFMM.h"
 #include "nbodysolvers/nBodySolver.h"
 #include "testfiles/nBodyTest.h"
+#include "particles/tsneInteractable2D.h"
+#include "particles/tsneInteractablePoint2D.h"
+#include "particles/tsneInteractableNode2D.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -222,7 +225,7 @@ int main(void)
 
         NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepGRAVITY();
-        //nBodyScenarios.errorTimestepTSNE();
+        nBodyScenarios.errorTimestepTSNE();
 
         //nBodyScenarios.errorTimestepGRAVITYFMMtest();
 

@@ -71,6 +71,7 @@ public:
         nBodySolversTSNE["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
         nBodySolversTSNE["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
         nBodySolversTSNE["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+        nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterNodeNodeKernal, &TSNEFMMiterParticleNodeKernal, &TSNEFMMiterNodeParticleKernal, &TSNEFMMiterParticleParticleKernal, 10, 1.0f);
     }
 
     ~NBodyScenarios()
@@ -422,12 +423,14 @@ public:
         nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
         nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
         nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+        nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
 
         nBodySolversTSNE["BH"]->theta = setTheta;
         nBodySolversTSNE["BHMP"]->theta = setTheta;
         nBodySolversTSNE["BHR"]->theta = setTheta;
         nBodySolversTSNE["BHRMP"]->theta = setTheta;
         nBodySolversTSNE["FMM"]->theta = setTheta;
+        nBodySolversTSNE["FMMiter"]->theta = setTheta;
 
 
         // set graph size
@@ -436,12 +439,14 @@ public:
         std::vector<float> errorBHR(errorMeasurementAmount, 0.0f);
         std::vector<float> errorBHRMP(errorMeasurementAmount, 0.0f);
         std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
+        std::vector<float> errorFMMiter(errorMeasurementAmount, 0.0f);
 
         std::vector<int> timeBH(errorMeasurementAmount, 0);
         std::vector<int> timeBHMP(errorMeasurementAmount, 0);
         std::vector<int> timeBHR(errorMeasurementAmount, 0);
         std::vector<int> timeBHRMP(errorMeasurementAmount, 0);
         std::vector<int> timeFMM(errorMeasurementAmount, 0);
+        std::vector<int> timeFMMiter(errorMeasurementAmount, 0);
 
 
         // find error at every time step
@@ -471,6 +476,10 @@ public:
             errorFMM[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
             timeFMM[t] = t;
 
+            updateTSNE("FMMiter", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
+            errorFMMiter[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+            timeFMMiter[t] = t;
+
 
             // update positions with naive solution
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
@@ -486,6 +495,7 @@ public:
             nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
             nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
             nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+            nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
         }
 
         // write results to csv files
@@ -497,11 +507,12 @@ public:
         projectFolder = std::filesystem::current_path().parent_path();
         #endif
         std::string attributes = "_point" + std::to_string(dataAmount) + "_theta" + fltToStr(setTheta);
-        writeToFile(timeBH,    errorBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBH"    + attributes + ".csv"));
-        writeToFile(timeBHMP,  errorBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHMP"  + attributes + ".csv"));
-        writeToFile(timeBHR,   errorBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHR"   + attributes + ".csv"));
-        writeToFile(timeBHRMP, errorBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHRMP" + attributes + ".csv"));
-        writeToFile(timeFMM,   errorFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMM"   + attributes + ".csv"));
+        writeToFile(timeBH,      errorBH,      projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBH"      + attributes + ".csv"));
+        writeToFile(timeBHMP,    errorBHMP,    projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHMP"    + attributes + ".csv"));
+        writeToFile(timeBHR,     errorBHR,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHR"     + attributes + ".csv"));
+        writeToFile(timeBHRMP,   errorBHRMP,   projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHRMP"   + attributes + ".csv"));
+        writeToFile(timeFMM,     errorFMM,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMM"     + attributes + ".csv"));
+        writeToFile(timeFMMiter, errorFMMiter, projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMMiter" + attributes + ".csv"));
     }
 
 

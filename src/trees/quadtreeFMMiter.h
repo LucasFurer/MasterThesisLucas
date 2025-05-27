@@ -1,13 +1,13 @@
 #pragma once
 
 template <typename T>
-class QuadTreeFMMiter
+class QuadTreeFMMiter : public TsneInteractable2D
 {
 public:
 	int maxChildren;
 	std::vector<T>* allParticles;
 
-	glm::vec2 centreOfMass = glm::vec2(0.0f);
+	//glm::vec2 centreOfMass = glm::vec2(0.0f);
 
 	float totalMass = 0.0f;
 	glm::vec2 dipole = glm::vec2(0.0f);
@@ -323,6 +323,55 @@ public:
 		}
 	}
 
+
+
+	float getTotalMass() override
+	{
+		return totalMass;
+	}
+	glm::vec2 getCentreOfMass() override
+	{
+		return centreOfMass;
+	}
+
+	glm::vec2 getDipole() override
+	{
+		return dipole;
+	}
+	Fastor::Tensor<float, 2, 2> getQuadrupole() override
+	{
+		return quadrupole;
+	}
+
+	glm::vec2 getHighestCorner() override
+	{
+		return highestCorner;
+	}
+	glm::vec2 getLowestCorner() override
+	{
+		return lowestCorner;
+	}
+
+	std::vector<int>* getOccupants() override
+	{
+		return &occupants;
+	}
+	int getOccupantsSize() override
+	{
+		return occupants.size();
+	}
+
+	void addForces(Fastor::Tensor<float, 2> C1add, Fastor::Tensor<float, 2, 2> C2add, Fastor::Tensor<float, 2, 2, 2> C3add)
+	{
+		C1 += C1add;
+		C2 += C2add;
+		C3 += C3add;
+	}
+
+	bool areWeNode() override
+	{
+		return true;
+	}
 private:
 };
 
