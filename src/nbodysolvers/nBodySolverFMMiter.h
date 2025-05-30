@@ -24,7 +24,7 @@ public:
 
     std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> kernelInteract;
 
-    std::queue<IntPair<T>> interactionList;
+    std::stack<IntPair<T>> interactionList;
 
     NBodySolverFMMiter
     (
@@ -62,14 +62,13 @@ public:
 private:
     void getFMMAcc(float* total, std::vector<glm::vec2>* forces, float theta, std::vector<T>* embeddedPoints)
     {
-        std::queue<IntPair<T>> interactionListEmpty;
-        std::swap(interactionList, interactionListEmpty);
+        std::stack<IntPair<T>>().swap(interactionList);
 
         interactionList.push(IntPair<T>(&root, &root));
 
         while (!interactionList.empty())
         {
-            IntPair currentPair = interactionList.front();
+            IntPair currentPair = interactionList.top();
             interactionList.pop();
 
             float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;

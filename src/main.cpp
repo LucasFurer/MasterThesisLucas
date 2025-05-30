@@ -30,6 +30,7 @@
 #include <math.h>
 #include <numbers>
 #include <queue>
+#include <stack>
 
 
 #define _CRTDBG_MAP_ALLOC
@@ -236,7 +237,7 @@ int main(void)
         //nBodyScenarios.errorThetaTSNE();
 
         //nBodyScenarios.calculationtimeErrorGRAVITY();
-        //nBodyScenarios.calculationtimeErrorTSNE();
+        nBodyScenarios.calculationtimeErrorTSNE();
 
 
         //nBodyScenarios.testNodeNode();
