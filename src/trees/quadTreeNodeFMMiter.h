@@ -19,7 +19,7 @@ public:
 	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
 	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
 
-	std::vector<QuadTreeNodeFMMiter*> children; // maybe change to no a pointer
+	std::vector<QuadTreeNodeFMMiter*> children; // change back to indices to QuadTreeNodeFMMiter
 
 	QuadTreeNodeFMMiter() {}
 

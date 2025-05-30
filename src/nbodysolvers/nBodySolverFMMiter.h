@@ -78,30 +78,11 @@ private:
             glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
             float distanceNodeNode = glm::length(nodeDiff);
 
-            //if (distanceNodeNode == 0.0f)
-            //{
-            //    std::cout << "distanceNodeNode is 0.0f, this means particle interact with itself" << std::endl;
-            //}
-
-            //if ((LA + LB) / distanceNodeNode >= theta && currentPair.A->children.size() == 0 && currentPair.B->children.size() == 0)
-            //{
-            //    std::cout << "lowest  of A: " << glm::to_string(currentPair.A->lowestCorner) << std::endl;
-            //    std::cout << "highest of A: " << glm::to_string(currentPair.A->highestCorner) << std::endl;
-
-            //    std::cout << "lowest  of B: " << glm::to_string(currentPair.B->lowestCorner) << std::endl;
-            //    std::cout << "highest of B: " << glm::to_string(currentPair.B->highestCorner) << std::endl;
-
-            //    std::cout << "LA + LB: " << LA + LB << std::endl;
-            //}
-
-
             if ((LA + LB) / distanceNodeNode < theta)
             {
 
                 kernelInteract(total, currentPair.A, currentPair.B, forces);
 
-                //kernelNodeNode(total, currentPair.A, currentPair.B);
-                //kernelNodeNode(total, currentPair.B , currentPair.A);
 
             }
             else
