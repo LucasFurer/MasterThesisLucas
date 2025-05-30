@@ -66,9 +66,7 @@
 #include "trees/quadtreeFMM.h"
 #include "nbodysolvers/nBodySolver.h"
 #include "testfiles/nBodyTest.h"
-#include "particles/tsneInteractable2D.h"
-#include "particles/tsneInteractablePoint2D.h"
-#include "particles/tsneInteractableNode2D.h"
+
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -154,6 +152,7 @@ int main(void)
 
         // t-SNE --------------------------------------------------------------------------------------------------------------------------
         
+
         TSNE tsne;
         
         glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -177,6 +176,7 @@ int main(void)
        
         scenes[tsneScene.sceneName] = &tsneScene;
         //scenes.push_back(&tsneScene);
+
         
         // gravity --------------------------------------------------------------------------------------------------------------------------
 
@@ -225,7 +225,7 @@ int main(void)
 
         NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepGRAVITY();
-        nBodyScenarios.errorTimestepTSNE();
+        //nBodyScenarios.errorTimestepTSNE();
 
         //nBodyScenarios.errorTimestepGRAVITYFMMtest();
 

@@ -133,7 +133,7 @@ public:
         nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
         nBodySolvers["FMM"]->updateTree(&embeddedPoints);
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterNodeNodeKernal, &TSNEFMMiterParticleNodeKernal, &TSNEFMMiterNodeParticleKernal, &TSNEFMMiterParticleParticleKernal, 10, 1.0f);
+        nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
         nBodySolvers["FMMiter"]->updateTree(&embeddedPoints);
 
         embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
