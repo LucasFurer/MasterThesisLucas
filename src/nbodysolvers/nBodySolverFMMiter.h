@@ -24,7 +24,8 @@ public:
 
     std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> kernelInteract;
 
-    std::stack<IntPair<T>> interactionList;
+    //std::stack<IntPair<T>> interactionList;
+    std::vector<IntPair<T>> interactionList;
 
     NBodySolverFMMiter
     (
@@ -62,14 +63,20 @@ public:
 private:
     void getFMMAcc(float* total, std::vector<glm::vec2>* forces, float theta, std::vector<T>* embeddedPoints)
     {
-        std::stack<IntPair<T>>().swap(interactionList);
+        //std::stack<IntPair<T>>().swap(interactionList);
+        interactionList.clear();
 
-        interactionList.push(IntPair<T>(&root, &root));
+        //interactionList.push(IntPair<T>(&root, &root));
+        interactionList.push_back(IntPair<T>(&root, &root));
+        
 
-        while (!interactionList.empty())
+        //while (!interactionList.empty())
+        while (interactionList.size() != 0)
         {
-            IntPair currentPair = interactionList.top();
-            interactionList.pop();
+            //IntPair currentPair = interactionList.top();
+            //interactionList.pop();
+            IntPair currentPair = interactionList.back();
+            interactionList.pop_back();
 
             float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
             float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
@@ -82,7 +89,6 @@ private:
 
                 kernelInteract(total, currentPair.A, currentPair.B, forces);
 
-
             }
             else
             {
@@ -94,7 +100,8 @@ private:
                         {
                             for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
                             {
-                                interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
+                                //interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
+                                interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
                             }
                         }
                     }
@@ -102,7 +109,8 @@ private:
                     {
                         for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children)
                         {
-                            interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, currentPair.B));
+                            //interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, currentPair.B));
+                            interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, currentPair.B));
                         }
                     }
                 }
@@ -112,7 +120,8 @@ private:
                     {
                         for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
                         {
-                            interactionList.push(IntPair<T>(currentPair.A, quadTreeNodeFMMiterB));
+                            //interactionList.push(IntPair<T>(currentPair.A, quadTreeNodeFMMiterB));
+                            interactionList.push_back(IntPair<T>(currentPair.A, quadTreeNodeFMMiterB));
                         }
                     }
                     else

@@ -19,18 +19,16 @@ public:
 	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
 	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
 
-	std::vector<QuadTreeNodeFMMiter*> children; // change back to indices to QuadTreeNodeFMMiter
+	std::vector<QuadTreeNodeFMMiter*> children;
 
-	QuadTreeNodeFMMiter() {}
+	QuadTreeNodeFMMiter() {} // empty constructor
 
-	QuadTreeNodeFMMiter(int maxChildren, std::vector<T>& allParticles)
+	QuadTreeNodeFMMiter(int maxChildren, std::vector<T>& allParticles) // root constructor
 	{
 		children.resize(allParticles.size());
 		for (int i = 0; i < allParticles.size(); i++)
 		{
-			//std::cout << "all particles position: " << glm::to_string(allParticles[i].position) << std::endl;
 			children[i] = new QuadTreeNodeFMMiter(i, allParticles[i].position);
-			//std::cout << "all particles position after: " << glm::to_string(children[i]->centreOfMass) << std::endl;
 
 			lowestCorner = glm::min(lowestCorner, allParticles[i].position);
 			highestCorner = glm::max(highestCorner, allParticles[i].position);
@@ -45,7 +43,7 @@ public:
 		std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = createTree(maxChildren);
 	}
 	
-	QuadTreeNodeFMMiter(int initId, glm::vec2 initCentreOfMass)
+	QuadTreeNodeFMMiter(int initId, glm::vec2 initCentreOfMass) // child point constructor
 	{
 		id = initId;
 		centreOfMass = initCentreOfMass;
@@ -55,7 +53,7 @@ public:
 		highestCorner = glm::vec2(initCentreOfMass);
 	}
 
-	QuadTreeNodeFMMiter(std::vector<QuadTreeNodeFMMiter*>& initChildren, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeNodeFMMiter(std::vector<QuadTreeNodeFMMiter*>& initChildren, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner) // child node constructor
 	{
 		lowestCorner = initLowestCorner;
 		highestCorner = initHighestCorner;
@@ -63,33 +61,96 @@ public:
 		children = std::move(initChildren);
 	}
 
-	QuadTreeNodeFMMiter& operator=(QuadTreeNodeFMMiter&& other) // move assignment operator
+	QuadTreeNodeFMMiter(const QuadTreeNodeFMMiter& other) // copy constructor
 	{
-		//std::cout << "i should be called" << std::endl;
+		id = other.id;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		C1 = other.C1;
+		C2 = other.C2;
+		C3 = other.C3;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+
+		children.reserve(other.children.size());
+		for (const QuadTreeNodeFMMiter* child : other.children)
+		{
+			children.push_back(new QuadTreeNodeFMMiter(*child));
+		}
+	}
+
+	QuadTreeNodeFMMiter& operator=(const QuadTreeNodeFMMiter& other) // copy assignment operator
+	{
 		if (this != &other) // self-assignment check
 		{
 			id = other.id;
-
 			centreOfMass = other.centreOfMass;
-
 			totalMass = other.totalMass;
 			dipole = other.dipole;
 			quadrupole = other.quadrupole;
-			
 			C1 = other.C1;
 			C2 = other.C2;
 			C3 = other.C3;
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
 
+			for (QuadTreeNodeFMMiter* child : children)
+			{
+				delete child;
+			}
+			children.clear();
+
+			children.reserve(other.children.size());
+			for (const QuadTreeNodeFMMiter* child : other.children) 
+			{
+				children.push_back(new QuadTreeNodeFMMiter(*child));
+			}
+		}
+		return *this;
+	}
+
+	QuadTreeNodeFMMiter(QuadTreeNodeFMMiter&& other) noexcept // move constructor
+	{
+		id = other.id;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		C1 = other.C1;
+		C2 = other.C2;
+		C3 = other.C3;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+
+		children = std::move(other.children);
+		other.children.clear();
+	}
+
+	QuadTreeNodeFMMiter& operator=(QuadTreeNodeFMMiter&& other) noexcept // move assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			id = other.id;
+			centreOfMass = other.centreOfMass;
+			totalMass = other.totalMass;
+			dipole = other.dipole;
+			quadrupole = other.quadrupole;
+			C1 = other.C1;
+			C2 = other.C2;
+			C3 = other.C3;
 			lowestCorner = other.lowestCorner;
 			highestCorner = other.highestCorner;
 
 			for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children) { delete quadTreeNodeFMMiter; }
 			children = std::move(other.children);
+			other.children.clear();
 		}
 		return *this;
 	}
 
-	~QuadTreeNodeFMMiter()
+	~QuadTreeNodeFMMiter() // destructor
 	{
 		for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children)
 		{
@@ -99,9 +160,6 @@ public:
 
 	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree(int maxChildren)
 	{
-		//std::cout << "have called create tree func" << std::endl;
-
-		//std::cout << "size of children1: " << children.size() << std::endl;
 		if (children.size() > maxChildren)
 		{
 			std::vector<QuadTreeNodeFMMiter*> HH;
@@ -115,9 +173,6 @@ public:
 
 			for (int i = 0; i < children.size(); i++)
 			{
-				//std::cout << "child centre of mass: " << glm::to_string(children[i]->centreOfMass) << std::endl;
-				//std::cout << "middle x and y: " << middleX << ", " << middleY << std::endl;
-
 				if (children[i]->centreOfMass.x >= middleX && children[i]->centreOfMass.y >= middleY)
 				{
 					HH.push_back(children[i]);
@@ -140,19 +195,12 @@ public:
 				}
 			}
 
-			//std::cout << "size of HH: " << HH.size() << std::endl;
-			//std::cout << "size of HL: " << HH.size() << std::endl;
-			//std::cout << "size of LH: " << HH.size() << std::endl;
-			//std::cout << "size of LL: " << HH.size() << std::endl;
-
 			std::vector<QuadTreeNodeFMMiter*>().swap(children); // empty the children array
 
 			if (HH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HH, glm::vec2(middleX,        middleY)       , glm::vec2(highestCorner.x, highestCorner.y))); }
 			if (HL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HL, glm::vec2(middleX,        lowestCorner.y), glm::vec2(highestCorner.x, middleY))        ); }
 			if (LH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LH, glm::vec2(lowestCorner.x, middleY)       , glm::vec2(middleX,         highestCorner.y))); }
 			if (LL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX,         middleY))        ); }
-
-			//std::cout << "size of children2: " << children.size() << std::endl;
 
 			for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children)
 			{
@@ -213,7 +261,6 @@ public:
 			return std::make_tuple(centreOfMass, totalMass, dipole, quadrupole);
 		}
 	}
-
 
 	void applyForces(std::vector<glm::vec2>* forces)
 	{
@@ -276,7 +323,6 @@ public:
 			}
 		}
 	}
-
 
 	void getLineSegments(std::vector<LineSegment2D>& lineSegments, int level, int showLevel)
 	{
