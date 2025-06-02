@@ -71,7 +71,8 @@ public:
         nBodySolversTSNE["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
         nBodySolversTSNE["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
         nBodySolversTSNE["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-        nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
+        //nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
+        nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
     }
 
     ~NBodyScenarios()
