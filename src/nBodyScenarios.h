@@ -641,22 +641,27 @@ public:
                 calculationtimeNaive[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BH"]->updateTree(&particles);
                 nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBH[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHR"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHR[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["FMM"]->updateTree(&particles);
                 nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeFMM[t] += glfwGetTime() - timeBefore;
 
@@ -788,22 +793,27 @@ public:
                 calculationtimeNaive[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
                 updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBH[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
                 updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
                 updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHR[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
                 updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
                 updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeFMM[t] += glfwGetTime() - timeBefore;
 
@@ -1150,26 +1160,31 @@ public:
                 nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BH"]->updateTree(&particles);
                 nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBH[t] += glfwGetTime() - timeBefore;
                 errorBH[t] += getMSE(accelerations, accelerationsErrorTest);
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
                 errorBHMP[t] += getMSE(accelerations, accelerationsErrorTest);
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHR"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHR[t] += glfwGetTime() - timeBefore;
                 errorBHR[t] += getMSE(accelerations, accelerationsErrorTest);
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
                 nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
                 errorBHRMP[t] += getMSE(accelerations, accelerationsErrorTest);
 
                 timeBefore = glfwGetTime();
+                nBodySolversGRAVITY["FMM"]->updateTree(&particles);
                 nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
                 calculationtimeFMM[t] += glfwGetTime() - timeBefore;
                 errorFMM[t] += getMSE(accelerations, accelerationsErrorTest);
@@ -1234,12 +1249,12 @@ public:
 
     void calculationtimeErrorTSNE()
     {
-        int averageOverAmount = 150; // average the error over this many time steps
+        int averageOverAmount = 50; // average the error over this many time steps
         int dataAmount = 1000; // use this many particles
 
         
         // set graph size
-        int thetaDiversityAmount = 40;
+        int thetaDiversityAmount = 20;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 
@@ -1320,31 +1335,37 @@ public:
                 updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
                 updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBH[t] += glfwGetTime() - timeBefore;
                 errorBH[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
                 updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
                 errorBHMP[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
                 updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHR[t] += glfwGetTime() - timeBefore;
                 errorBHR[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
                 updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
                 errorBHRMP[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
                 updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeFMM[t] += glfwGetTime() - timeBefore;
                 errorFMM[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 
                 timeBefore = glfwGetTime();
+                nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
                 updateTSNE("FMMiter", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm);
                 calculationtimeFMMiter[t] += glfwGetTime() - timeBefore;
                 errorFMMiter[t] += getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);

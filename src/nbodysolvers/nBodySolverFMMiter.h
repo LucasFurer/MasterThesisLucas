@@ -6,14 +6,27 @@
 template <typename T>
 struct IntPair
 {
+    QuadTreeNodeFMMiter<T>* A;
+    QuadTreeNodeFMMiter<T>* B;
+
     IntPair(QuadTreeNodeFMMiter<T>* initA, QuadTreeNodeFMMiter<T>* initB)
     {
         A = initA;
         B = initB;
     }
 
-    QuadTreeNodeFMMiter<T>* A;
-    QuadTreeNodeFMMiter<T>* B;
+    static bool intPairNotIn(std::vector<IntPair>& vec, IntPair& intpair)
+    {
+        for (int i = 0; i < vec.size(); i++)
+        {
+            if ((vec[i].A == intpair.A && vec[i].B == intpair.B) || (vec[i].A == intpair.B && vec[i].B == intpair.A)) // maybe also add || (vec[i].A == intpair.B && vec[i].B == intpair.A)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 };
 
 template <typename T>
@@ -59,7 +72,7 @@ public:
 
         //updateTree(embeddedPoints);
         getFMMAcc(total, forces, this->theta, embeddedPoints);
-        //root.divideC();
+        root.divideC();
         root.applyForces(forces);
     }
 
@@ -92,65 +105,83 @@ private:
 
 
 
-            //if ((LA + LB) / distanceNodeNode < theta)
-            //{
+            float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
+            float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
 
-            //    kernelInteract(total, currentPair.A, currentPair.B, forces);
+            glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
+            float distanceNodeNode = glm::length(nodeDiff);
 
-            //}
-            //else
-            //{
+            //bool closenessCondition = (LA + LB) / distanceNodeNode < theta;
+
+
             if (currentPair.A->children.size() != 0)
             {
-                float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
-                float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
 
-                glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
-                float distanceNodeNode = glm::length(nodeDiff);
-
-                //bool closenessCondition = (LA + LB) / distanceNodeNode < theta;
-
-
-                if (currentPair.B->children.size() != 0)
+                if (currentPair.B->children.size() != 0) // Node Node interaction
                 {
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
-                        //kernelInteract(total, currentPair.A, currentPair.B, forces); nodeNode
-                        TSNEFMMiterInteractionKernalNodeNode(total, currentPair.A, currentPair.B);
+                        kernelInteractNodeNode(total, currentPair.A, currentPair.B);
+                        //kernelInteractNodeNode(total, currentPair.B, currentPair.A);
                     }
                     else
                     {
-                        for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children)
+                        //std::vector<IntPair<T>> addedPairs; // slow symmetric method
+                        //addedPairs.reserve(16);
+
+                        //for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children)
+                        //{
+                        //    for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
+                        //    {
+                        //        IntPair<T> newIntPair(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB);
+                        //        if (IntPair<T>::intPairNotIn(addedPairs, newIntPair))
+                        //        {
+                        //            addedPairs.push_back(newIntPair);
+                        //            interactionList.push_back(newIntPair);
+                        //        }
+                        //        //interactionList.push_back(newIntPair);
+                        //    }
+                        //}
+
+                        for (int i = 0; i < currentPair.A->children.size(); i++) // fast symmetric method
                         {
-                            for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
+                            if (currentPair.A == currentPair.B)
                             {
-                                //interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
-                                interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
+                                for (int j = i; j < currentPair.B->children.size(); j++)
+                                {
+                                    interactionList.push_back(IntPair<T>(currentPair.A->children[i], currentPair.B->children[j]));
+                                }
+                            }
+                            else
+                            {
+                                for (int j = 0; j < currentPair.B->children.size(); j++)
+                                {
+                                    interactionList.push_back(IntPair<T>(currentPair.A->children[i], currentPair.B->children[j]));
+                                }
                             }
                         }
+
+                        //for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children) // normal unsymmetric method
+                        //{
+                        //    for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
+                        //    {
+                        //        interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
+                        //    }
+                        //}
                     }
                 }
-                else
+                else // Node Particle interaction
                 {
-                    float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
-                    float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
-
-                    glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
-                    float distanceNodeNode = glm::length(nodeDiff);
-
-                    bool closenessCondition = (LA + LB) / distanceNodeNode < theta;
-
 
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
-                        //kernelInteract(total, currentPair.A, currentPair.B, forces); nodeParticle
                         kernelInteractNodeParticle(total, currentPair.A, currentPair.B);
+                        kernelInteractParticleNode(total, currentPair.B, currentPair.A, forces); // remove this for unsymmetric method
                     }
                     else
                     {
                         for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children)
                         {
-                            //interactionList.push(IntPair<T>(quadTreeNodeFMMiterA, currentPair.B));
                             interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, currentPair.B));
                         }
                     }
@@ -158,47 +189,30 @@ private:
             }
             else
             {
-                if (currentPair.B->children.size() != 0)
+                if (currentPair.B->children.size() != 0) // Particle Node interaction
                 {
-                    float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
-                    float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
-
-                    glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
-                    float distanceNodeNode = glm::length(nodeDiff);
-
-                    bool closenessCondition = (LA + LB) / distanceNodeNode < theta;
-
-
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
-                        //kernelInteract(total, currentPair.A, currentPair.B, forces); nodeParticle
                         kernelInteractParticleNode(total, currentPair.A, currentPair.B, forces);
+                        kernelInteractNodeParticle(total, currentPair.B, currentPair.A); // remove this for unsymmetric method
                     }
                     else
                     {
                         for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
                         {
-                            //interactionList.push(IntPair<T>(currentPair.A, quadTreeNodeFMMiterB));
                             interactionList.push_back(IntPair<T>(currentPair.A, quadTreeNodeFMMiterB));
                         }
                     }
                 }
-                else
+                else // Particle Particle interaction
                 {
-                    float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
-                    float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
-
-                    glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
-                    float distanceNodeNode = glm::length(nodeDiff);
-
                     if (distanceNodeNode != 0.0f) // nodes with the same position will not be calculated since it will result in nonsense, this also prevents self interaction
                     {
-                        //kernelInteract(total, currentPair.A, currentPair.B, forces);
                         kernelInteractParticleParticle(total, currentPair.A, currentPair.B, forces);
+                        kernelInteractParticleParticle(total, currentPair.B, currentPair.A, forces); // remove this for unsymmetric method
                     }
                 }
             }
-            // }
         }
     }
 };
@@ -231,13 +245,15 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+
+
+    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
     {
         {
             MB0 * (D1 + R.x * R.x * D2),
@@ -249,7 +265,7 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
     {
         {
             {
@@ -276,6 +292,38 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
     passiveNode->C1 += C1;
     passiveNode->C2 += C2;
     passiveNode->C3 += C3;
+
+
+    // ---------------------------------------------------------------------
+    
+    R = -R;
+
+    *accumulator += (activeNode->totalMass * passiveNode->totalMass) / rS;
+
+    MA0 = activeNode->totalMass;
+    MB0 = passiveNode->totalMass;
+    MB2 = passiveNode->quadrupole;
+    MB2Tilde = (1.0f / MB0) * MB2;
+
+    // calculate the C^m
+    MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1other = MA0 * Fastor::Tensor<float, 2>
+    {
+        MB0* (R.x* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0* (R.y* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    // ---------------------------------------------------------------------
+
+
+    activeNode->C1 += C1other;
+    activeNode->C2 += C2;
+    activeNode->C3 += -C3;
+    
 }
 
 
@@ -294,13 +342,13 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
 
     float MA0 = passiveNode->totalMass;
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
     {
         R.x * D1,
         R.y * D1
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
     {
         {
             D1 + R.x * R.x * D2,
@@ -312,7 +360,7 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
     {
         {
             {
@@ -336,6 +384,7 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
         }
     };
 
+
     passiveNode->C1 += C1;
     passiveNode->C2 += C2;
     passiveNode->C3 += C3;
@@ -355,6 +404,7 @@ void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFM
     float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
     *accumulator += activeNode->totalMass / rS;
 
+    float MA0 = passiveNode->totalMass;
     float MB0 = activeNode->totalMass;
     Fastor::Tensor<float, 2, 2> MB2 = activeNode->quadrupole;
     Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
@@ -365,13 +415,14 @@ void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFM
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    (*forces)[passiveNode->id] += glm::vec2(C1(0), C1(1));
+    passiveNode->C1 += C1;
+    //(*forces)[passiveNode->id] += glm::vec2(C1(0), C1(1));
 }
 
 
@@ -387,7 +438,18 @@ void TSNEFMMiterInteractionKernalParticleParticle(float* accumulator, QuadTreeNo
 
     *accumulator += 1.0f / rS;
 
-    (*forces)[passiveNode->id] += D1 * R;
+
+    Fastor::Tensor<float, 2> C1 = // massPassive * Fastor::Tensor<float, 2>
+    {
+        R.x * D1,
+        R.y * D1
+    };
+
+
+    passiveNode->C1 += C1;
+
+    //activeNode->C1 += -C1;
+    //(*forces)[passiveNode->id] += D1 * R;
 }
 
 
