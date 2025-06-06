@@ -122,7 +122,7 @@ glm::vec2 TSNEbarnesHutReverseParticleNodeKernal(float* accumulator, EmbeddedPoi
     glm::vec2 nodeDiff = j->centreOfMass - i.position;
     float distance = glm::length(nodeDiff);
 
-    float oneOverDistance = (1.0f / (softening + distance));
+    float oneOverDistance = (1.0f / (softening + (distance * distance)));
     *accumulator += j->totalMass * oneOverDistance;
 
     return -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
@@ -135,7 +135,7 @@ glm::vec2 TSNEbarnesHutReverseParticleParticleKernal(float* accumulator, Embedde
     glm::vec2 diff = j.position - i.position;
     float distance = glm::length(diff);
 
-    float oneOverDistance = 1.0f / (softening + distance);
+    float oneOverDistance = 1.0f / (softening + (distance * distance));
     *accumulator += 1.0f * oneOverDistance;
 
     return -1.0f * oneOverDistance * oneOverDistance * diff;

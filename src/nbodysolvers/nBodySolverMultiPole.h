@@ -198,11 +198,11 @@ glm::vec2 TSNEmultiPoleParticleNodeKernal(float* accumulator, EmbeddedPoint pass
 
     glm::vec2 R = passiveParticle.position - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += activeNode->totalMass / rS;
 
     //float MA0 = 1.0f;//passiveNode->totalMass;
@@ -230,7 +230,7 @@ glm::vec2 TSNEmultiPoleParticleParticleKernal(float* accumulator, EmbeddedPoint 
 
     glm::vec2 R = i.position - j.position;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float oneOverDistance = 1.0f / (rS);
     *accumulator += 1.0f * oneOverDistance;

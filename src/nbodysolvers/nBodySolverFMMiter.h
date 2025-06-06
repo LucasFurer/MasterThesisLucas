@@ -227,11 +227,11 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
 
     glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += (passiveNode->totalMass * activeNode->totalMass) / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -333,11 +333,11 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
 
     glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += passiveNode->totalMass / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -397,11 +397,11 @@ void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFM
 
     glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += activeNode->totalMass / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -432,7 +432,7 @@ void TSNEFMMiterInteractionKernalParticleParticle(float* accumulator, QuadTreeNo
 
     glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
 

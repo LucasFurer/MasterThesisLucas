@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "particles/particle3D.h"
-#include "buffer.h"
+#include "openGLhelper/buffer.h"
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverse.h"

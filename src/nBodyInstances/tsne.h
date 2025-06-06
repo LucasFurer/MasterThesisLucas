@@ -2,8 +2,8 @@
 #define TSNE_H
 
 #include "common.h"
-#include "buffer.h"
-#include "loader.h"
+#include "openGLhelper/buffer.h"
+#include "dataLoaders/loader.h"
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverBarnesHut.h"
 #include "nbodysolvers/nBodySolverBarnesHutReverse.h"
@@ -57,7 +57,7 @@ public:
 	TSNE()
 	{
         //srand(time(NULL));
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
@@ -299,7 +299,7 @@ private:
                 glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
                 float distance = glm::length(diff);
 
-                attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + distance));
+                attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + (distance * distance)));
             }
         }
     }

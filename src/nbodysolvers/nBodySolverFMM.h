@@ -259,11 +259,13 @@ void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passi
 
     glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
-
+    float rS = (r*r) + softening;
+    
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    //float D2 = (4.0f * r) / (rS * rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
+    //float D3 = -(-4.0f + 28*r*r) / (rS * rS * rS * rS * rS * rS);
     *accumulator += (passiveNode->totalMass * activeNode->totalMass) / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -342,11 +344,11 @@ glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passivePar
 
     glm::vec2 R = passiveParticle.position - activeNode->centreOfMass;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += activeNode->totalMass / rS;
 
     float MB0 = activeNode->totalMass;
@@ -388,11 +390,13 @@ void TSNEFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* p
 
     glm::vec2 R = passiveNode->centreOfMass - activeParticle.position;
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    //float D2 = (4.0f * r) / (rS * rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
+    //float D3 = -(-4.0f + 28*r*r) / (rS * rS * rS * rS * rS * rS);
     *accumulator += passiveNode->totalMass / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -460,7 +464,7 @@ glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiv
     glm::vec2 diff = passiveParticle.position - activeParticle.position;
     float distance = glm::length(diff);
 
-    float oneOverDistance = 1.0f / (distance + softening);
+    float oneOverDistance = 1.0f / ((distance * distance) + softening);
     *accumulator += 1.0f * oneOverDistance;
     return -1.0f * oneOverDistance * oneOverDistance * diff;
 }

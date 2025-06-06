@@ -43,30 +43,29 @@
 #endif
 
 
-#include "shader.h"
+#include "openGLhelper/shader.h"
 #include "cameras/camera.h"
 #include "cameras/normalCamera.h"
 #include "cameras/tsneCamera.h"
-#include "data.h"
-#include "buffer.h"
-#include "texture.h"
+#include "codeData/data.h"
+#include "openGLhelper/buffer.h"
+#include "openGLhelper/texture.h"
 #include "particles/particle3D.h"
 #include "particles/particle2D.h"
 #include "particles/embeddedPoint.h"
 #include "common.h"
-#include "nbodySim.h"
 #include "ffthelper.h"
 #include "visquad.h"
-#include "scene.h"
-#include "tsne.h"
-#include "gravitysim.h"
-#include "nBodyScenarios.h"
+#include "openGLhelper/scene.h"
+#include "nBodyInstances/tsne.h"
+#include "nBodyInstances/tsneGpu.h"
+#include "nBodyInstances/gravitysim.h"
+#include "nBodyInstances/nBodyScenarios.h"
 #include "nbodysolvers/nBodySolver.h"
 #include "nbodysolvers/nBodySolverNaive.h"
 #include "nbodysolvers/nBodySolverFMM.h"
 #include "trees/quadtreeFMM.h"
 #include "nbodysolvers/nBodySolver.h"
-#include "testfiles/nBodyTest.h"
 
 
 
@@ -165,7 +164,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMMiter";
+        tsne.nBodySelect = "FMM";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -224,6 +223,9 @@ int main(void)
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
+        TsneGpu tsneGpu;
+        tsneGpu.timeStep();
+
         NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepGRAVITY();
         //nBodyScenarios.errorTimestepTSNE();
@@ -237,7 +239,7 @@ int main(void)
         //nBodyScenarios.errorThetaTSNE();
 
         //nBodyScenarios.calculationtimeErrorGRAVITY();
-        nBodyScenarios.calculationtimeErrorTSNE();
+        //nBodyScenarios.calculationtimeErrorTSNE();
 
 
         //nBodyScenarios.testNodeNode();

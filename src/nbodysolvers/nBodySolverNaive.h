@@ -32,7 +32,8 @@ public:
                 if (i != j)//might be useless
                 {
 
-                    if (kernel) {
+                    if (kernel) 
+                    {
                         kernel(total, embeddedPoints, i, j, forces);
                     }
 
@@ -54,7 +55,7 @@ void TSNEnaiveKernal(float* accumulator, std::vector<EmbeddedPoint>* embeddedPoi
     glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
     float distance = glm::length(diff);
 
-    float oneOverDistance = 1.0f / (softening + distance);
+    float oneOverDistance = 1.0f / (softening + (distance * distance));
     *accumulator += 1.0f * oneOverDistance;
 
     (*forces)[i] += oneOverDistance * oneOverDistance * diff;

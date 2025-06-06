@@ -15,7 +15,9 @@ enum DataType
 	pos2DlabelInt,
 	pos2Dvel2Dcol3Dmass,
 	pos3DNOTvel3DCol3DNOTmass1D,
-	pos2Dcol3Dpos2Dcol3DNOTdepth1D
+	pos2Dcol3Dpos2Dcol3DNOTdepth1D,
+
+	Pos2floatAcc2floatLab1Int
 };
 
 class Buffer

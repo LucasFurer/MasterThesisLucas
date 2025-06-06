@@ -96,11 +96,11 @@ void TSNEbarnesHutReverseMultiPoleParticleNodeKernal(float* accumulator, QuadTre
 
     glm::vec2 R = passiveNode->centreOfMass - activeParticle.position; // dhenen
     float r = glm::length(R);
-    float rS = r + softening;
+    float rS = (r * r) + softening;
 
     float D1 = -1.0f / (rS * rS);
-    float D2 = 2.0f / (rS * rS * rS * rS);
-    float D3 = -8.0f / (rS * rS * rS * rS * rS * rS);
+    float D2 = 4.0f / (rS * rS * rS);
+    float D3 = -24.0f / (rS * rS * rS * rS);
     *accumulator += passiveNode->totalMass / rS;
 
     float MA0 = passiveNode->totalMass;
@@ -168,7 +168,7 @@ glm::vec2 TSNEbarnesHutReverseMultiPoleParticleParticleKernal(float* accumulator
     glm::vec2 diff = j.position - i.position;
     float distance = glm::length(diff);
 
-    float oneOverDistance = 1.0f / (softening + distance);
+    float oneOverDistance = 1.0f / (softening + (distance * distance));
     *accumulator += 1.0f * oneOverDistance;
 
     return -1.0f * oneOverDistance * oneOverDistance * diff;
