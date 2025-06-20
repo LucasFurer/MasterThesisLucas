@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../trees/quadtreeNodeFMMiter.h"
-#include "../nbodysolvers/nBodySolver.h"
+#include "../trees/cpu/quadTreeNodeFMMiter.h"
+#include "../nbodysolvers/cpu/nBodySolver.h"
 
 template <typename T>
 struct IntPair

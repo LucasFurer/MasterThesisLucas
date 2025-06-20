@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../trees/quadTreeBarnesHutReverseMultiPole.h"
+#include "../trees/cpu/quadTreeBarnesHutReverseMultiPole.h"
 #include "../particles/particle2D.h"
-#include "../nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/cpu/nBodySolver.h"
 
 template <typename T>
 class NBodySolverBarnesHutReverseMultiPole : public NBodySolver<T>

@@ -88,7 +88,7 @@ public:
 
     ~Shader()
     {
-        if (ID != 0) { std::cerr << "VAO of buffer was not deleted!" << std::endl; }
+        if (ID != 0) { std::cerr << "ID of shader was not deleted!" << std::endl; }
     }
     void cleanup()
     {

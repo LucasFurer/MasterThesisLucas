@@ -2,13 +2,13 @@
 #include <vector>
 #include "particles/particle3D.h"
 #include "openGLhelper/buffer.h"
-#include "nbodysolvers/nBodySolverNaive.h"
-#include "nbodysolvers/nBodySolverBarnesHut.h"
-#include "nbodysolvers/nBodySolverBarnesHutReverse.h"
-#include "nbodysolvers/nBodySolverMultiPole.h"
-#include "nbodysolvers/nBodySolverBarnesHutReverseMultiPole.h"
-#include "nbodysolvers/nBodySolverFMM.h"
-#include "nbodysolvers/nBodySolver.h"
+#include "nbodysolvers/cpu/nBodySolverNaive.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHut.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
+#include "nbodysolvers/cpu/nBodySolverMultiPole.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+#include "nbodysolvers/cpu/nBodySolverFMM.h"
+#include "nbodysolvers/cpu/nBodySolver.h"
 
 class GravitySim
 {

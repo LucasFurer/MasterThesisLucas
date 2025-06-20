@@ -1,5 +1,4 @@
-#ifndef ENUMS_H
-#define ENUMS_H
+#pragma once
 
 enum AccelerationType 
 {
@@ -7,6 +6,8 @@ enum AccelerationType
     barnesHut,
     particleMesh
 };
+
+//------------------------------------------------------------------------------------
 
 struct Renderable
 {
@@ -26,6 +27,8 @@ struct Renderable
 	}
 };
 
+//------------------------------------------------------------------------------------
+
 struct VertexPos2Col3
 {
 	glm::vec2 position;
@@ -38,9 +41,30 @@ struct VertexPos2Col3
 	}
 
 	template <typename T>
+	static std::vector<VertexPos2Col3> particlesToVertexPos2Col3(const std::vector<T>& particles, float forceSize)
+	{
+		std::vector<VertexPos2Col3> result;
+		result.reserve(particles.size());
+		for (int i = 0; i < particles.size(); i++)
+		{
+			glm::vec2 linePosB = particles[i].position;
+			glm::vec3 lineColB = glm::vec3(1.0f, 0.0f, 0.0f);
+
+			glm::vec2 linePosE = particles[i].position + forceSize * forceSize * particles[i].derivative;
+			//glm::vec2 linePosE = particles[i].position + particles[i].speed;
+			glm::vec3 lineColE = glm::vec3(1.0f, 0.0f, 0.0f);
+
+			result.push_back(VertexPos2Col3(linePosB, lineColB));
+			result.push_back(VertexPos2Col3(linePosE, lineColE));
+		}
+		return result;
+	}
+
+	template <typename T>
 	static std::vector<VertexPos2Col3> particlesAccelerationsToVertexPos2Col3(const std::vector<T>& particles, std::vector<glm::vec2>& accelerations, float forceSize)
 	{
 		std::vector<VertexPos2Col3> result;
+		result.reserve(particles.size()*2);
 		for (int i = 0; i < particles.size(); i++)
 		{
 			glm::vec2 linePosB = particles[i].position;
@@ -56,6 +80,36 @@ struct VertexPos2Col3
 		return result;
 	}
 };
+
+//------------------------------------------------------------------------------------
+
+struct Pos2FloatLab1Int
+{
+	glm::vec2 position;
+	int label;
+
+	Pos2FloatLab1Int(glm::vec2 initPosition, int initLabel)
+	{
+		position = initPosition;
+		label = initLabel;
+	}
+
+	template <typename T>
+	static std::vector<Pos2FloatLab1Int> particlesToVertexPos2Col3(const std::vector<T>& particles)
+	{
+		std::vector<Pos2FloatLab1Int> result;
+		result.reserve(particles.size());
+
+		for (int i = 0; i < particles.size(); i++)
+		{
+			result.push_back(Pos2FloatLab1Int(particles[i].position, particles[i].label));
+		}
+
+		return result;
+	}
+};
+
+//------------------------------------------------------------------------------------
 
 struct LineSegment2D
 {
@@ -91,4 +145,4 @@ struct LineSegment2D
 	}
 };
 
-#endif
+

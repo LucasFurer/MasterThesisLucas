@@ -4,13 +4,13 @@
 #include "common.h"
 #include "openGLhelper/buffer.h"
 #include "dataLoaders/loader.h"
-#include "nbodysolvers/nBodySolverNaive.h"
-#include "nbodysolvers/nBodySolverBarnesHut.h"
-#include "nbodysolvers/nBodySolverBarnesHutReverse.h"
-#include "nbodysolvers/nBodySolverBarnesHutReverseMultiPole.h"
-#include "nbodysolvers/nBodySolverMultiPole.h"
-#include "nbodysolvers/nBodySolverFMM.h"
-#include "nbodysolvers/nBodySolverFMMiter.h"
+#include "nbodysolvers/cpu/nBodySolverNaive.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHut.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
+#include "nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+#include "nbodysolvers/cpu/nBodySolverMultiPole.h"
+#include "nbodysolvers/cpu/nBodySolverFMM.h"
+#include "nbodysolvers/cpu/nBodySolverFMMiter.h"
 
 
 class TSNE
@@ -56,8 +56,7 @@ public:
     
 	TSNE()
 	{
-        //srand(time(NULL));
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
@@ -93,7 +92,7 @@ public:
 
         errorCompare.resize(dataAmount);
 
-
+        //srand(time(NULL));
         srand(1952732);
         float sizeParam = 2.0f;
         for (int i = 0; i < dataAmount; i++)
@@ -161,7 +160,7 @@ public:
 
         for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolvers)
         {
-            nBodySolver.second->boxBuffer->cleanup();
+            nBodySolver.second->cleanup();
         }
     }
     

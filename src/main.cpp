@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/component_wise.hpp>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
@@ -53,6 +54,7 @@
 #include "particles/particle3D.h"
 #include "particles/particle2D.h"
 #include "particles/embeddedPoint.h"
+#include "particles/tsneParticle2D.h"
 #include "common.h"
 #include "ffthelper.h"
 #include "visquad.h"
@@ -61,11 +63,12 @@
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
 #include "nBodyInstances/nBodyScenarios.h"
-#include "nbodysolvers/nBodySolver.h"
-#include "nbodysolvers/nBodySolverNaive.h"
-#include "nbodysolvers/nBodySolverFMM.h"
-#include "trees/quadtreeFMM.h"
-#include "nbodysolvers/nBodySolver.h"
+#include "nbodysolvers/cpu/nBodySolver.h"
+#include "nbodysolvers/cpu/nBodySolverNaive.h"
+#include "nbodysolvers/cpu/nBodySolverFMM.h"
+#include "trees/cpu/quadtreeFMM.h"
+#include "nbodysolvers/cpu/nBodySolver.h"
+#include "nbodysolvers/gpu/nBodySolverGpu.h"
 
 
 
@@ -137,7 +140,8 @@ int main(void)
         // global stuff
         // ---------------------------------------
         std::map<std::string, Scene*> scenes;
-        std::string currentSceneName = "tsne";
+        std::string currentSceneName = "tsneGpu";
+        //std::string currentSceneName = "tsne";
 
 
 
@@ -164,7 +168,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "naive";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -203,6 +207,34 @@ int main(void)
 
         scenes[gravityScene.sceneName] = &gravityScene;
         //scenes.push_back(&gravityScene);
+
+
+        // gpu solver tests ------------------------------------------------------------------------------------------------------------
+
+        TsneGpu tsneGpu;
+
+        //tsneGpu.tests();
+        
+        glm::mat4 tsneGpuModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
+        
+        #ifdef _WIN32
+        Shader shaderTsneGpu("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
+        #endif
+        #ifdef linux
+        Shader shaderTsneGpu((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
+        #endif
+        
+        tsneGpu.nBodySelect = "naive";
+        Renderable tsneGpuRenderablePoints(GL_POINTS, tsneGpuModel, tsneGpu.TsneParticlesBuffer, &shaderTsneGpu, nullptr);
+        //Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
+        Renderable tsneGpuRenderableForces(GL_LINES, tsneGpuModel, tsneGpu.forceBuffer, &shaderLine2D, nullptr);
+        std::vector<Renderable> tsneGpuRenderables{ tsneGpuRenderablePoints, tsneGpuRenderableForces };
+
+        TsneCamera cameraTsneGpu(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+
+        Scene tsneGpuScene("tsneGpu", &cameraTsneGpu, tsneGpuRenderables);
+       
+        scenes[tsneGpuScene.sceneName] = &tsneGpuScene;
         
         // sceneNames --------------------------------------------------------------------------------------------------------------------------
 
@@ -221,10 +253,8 @@ int main(void)
         }
         
 
-        // one time graph creation -----------------------------------------------------------------------------------------------------------
 
-        TsneGpu tsneGpu;
-        tsneGpu.timeStep();
+        // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepGRAVITY();
@@ -356,6 +386,28 @@ int main(void)
 
                 gravitySim.timeStep();
             }
+            else if (currentSceneName == "tsneGpu")
+            {
+                if (per == 1)
+                    scenes[currentSceneName]->camera->perspective = true;
+                else
+                    scenes[currentSceneName]->camera->perspective = false;
+
+                ImGui::SliderFloat("sim speed", &tsneGpu.timeStepsPerSec, 0.0f, 1000.0f);
+                ImGui::SliderFloat("forceSize", &tsneGpu.forceSize, 0.0f, 200.0f);
+                //ImGui::SliderInt("show tree level", &tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->showLevel, -1, 10);
+                ImGui::SliderInt("follow embedded points", &tsneGpu.follow, 0, 1);
+
+                tsneGpu.timeStep();
+
+                if (tsneGpu.follow == 1)
+                {
+                    auto [left, right, down, up] = tsneGpu.getEdges();
+                    scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
+                    scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+                    //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
+                }
+            }
             else
             {
                 std::cout << "no scene selected" << std::endl;
@@ -396,14 +448,15 @@ int main(void)
 
 
 
-
-
+        gravitySim.cleanup();
         tsne.cleanup();
+        tsneGpu.cleanup();
+        nBodyScenarios.cleanup();
+
         shaderTsne.cleanup();
         shaderGravity.cleanup();
+        shaderTsneGpu.cleanup();
         shaderLine2D.cleanup();
-        gravitySim.cleanup();
-        nBodyScenarios.cleanup();
     }
     
     glfwTerminate();

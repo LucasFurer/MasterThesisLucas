@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../trees/quadtree.h"
+#include "../trees/cpu/quadtree.h"
 //#include <functional>
-#include "../nbodysolvers/nBodySolver.h"
+#include "../nbodysolvers/cpu/nBodySolver.h"
 
 template <typename T>
 class NBodySolverNaive : public NBodySolver<T>

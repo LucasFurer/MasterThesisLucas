@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../trees/quadtreeFMM.h"
-#include "../nbodysolvers/nBodySolver.h"
+#include "../trees/cpu/quadtreeFMM.h"
+#include "../nbodysolvers/cpu/nBodySolver.h"
 
 template <typename T>
 class NBodySolverFMM : public NBodySolver<T>

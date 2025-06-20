@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include "../particles/embeddedPoint.h"
+
 
 #include <Fastor/Fastor.h>
 
