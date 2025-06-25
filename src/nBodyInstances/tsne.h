@@ -1,6 +1,7 @@
 #ifndef TSNE_H
 #define TSNE_H
 
+#include <cmath>
 #include "common.h"
 #include "openGLhelper/buffer.h"
 #include "dataLoaders/loader.h"
@@ -56,7 +57,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
 
         learnRate = 1000.0f;
@@ -182,6 +183,8 @@ public:
                 embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             }
 
+            //costFunction();
+
             embeddedBuffer->updateBuffer(embeddedPoints, pos2DlabelInt);
 
             nBodySolvers[nBodySelect]->updateTree(&embeddedPoints);
@@ -301,6 +304,42 @@ private:
                 attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + (distance * distance)));
             }
         }
+    }
+
+    void costFunction()
+    {
+        float QijTotal = 0.0f;
+        for (int i = 0; i < embeddedPoints.size(); i++)
+        {
+            for (int j = 0; j < embeddedPoints.size(); j++)
+            {
+                glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
+                float distance = glm::length(diff);
+                QijTotal += 1.0f / (1.0f + (distance * distance));
+                //QijTotal += 1.0f + distance * distance;
+            }
+        }
+
+        float totalCost = 0.0f;
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
+            {
+                if (it.col() != it.row())
+                {
+                    glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
+                    float distance = glm::length(diff);
+                    float Qij = (1.0f / (1.0f + (distance * distance))) / QijTotal;
+                    //float Qij = 1.0f / (QijTotal / (1.0f + distance * distance));
+
+                    float Pij = (float)it.value();
+
+                    totalCost += Pij * std::log2(Pij / Qij);
+                }
+            }
+        }
+
+        std::cout << "total cost: " << totalCost << std::endl;
     }
 
 };

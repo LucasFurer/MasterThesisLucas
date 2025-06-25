@@ -65,7 +65,7 @@ public:
 		occupants = initOccupants;
 	}
 
-	QuadTree& operator=(QuadTree&& other) // move assignment operator
+	QuadTree& operator=(QuadTree&& other) noexcept // move assignment operator
 	{
 		if (this != &other) // self-assignment check
 		{

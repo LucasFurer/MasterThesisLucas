@@ -75,7 +75,62 @@ public:
 		occupants = initOccupants;
 	}
 
-	QuadTreeFMM& operator=(QuadTreeFMM&& other) // move assignment operator
+	QuadTreeFMM(const QuadTreeFMM& other) // copy constructor
+	{
+		maxChildren = other.maxChildren;
+		allParticles = other.allParticles;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+		occupants = other.occupants;
+
+		children = other.children;
+		other.children.clear();
+	}
+
+	QuadTreeFMM& operator=(const QuadTreeFMM& other) // copy assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			allParticles = other.allParticles;
+			centreOfMass = other.centreOfMass;
+			totalMass = other.totalMass;
+			dipole = other.dipole;
+			quadrupole = other.quadrupole;
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+			occupants = other.occupants;
+
+			for (QuadTreeFMM* child : children) { delete child; }
+			children.clear();
+
+			children.reserve(other.children.size());
+			for (const QuadTreeFMM* child : other.children) { children.push_back(new QuadTreeFMM(*child)); }
+		}
+		return *this;
+	}
+
+	QuadTreeFMM(QuadTreeFMM&& other) noexcept // move constructor
+	{
+		maxChildren = other.maxChildren;
+		allParticles = other.allParticles;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+		occupants = std::move(other.occupants);
+
+		children = std::move(other.children);
+		other.children.clear();
+	}
+
+	QuadTreeFMM& operator=(QuadTreeFMM&& other) noexcept // move assignment operator
 	{
 		if (this != &other) // self-assignment check
 		{
@@ -100,7 +155,7 @@ public:
 		return *this;
 	}
 
-	~QuadTreeFMM()
+	~QuadTreeFMM() // destructor
 	{
 		for (QuadTreeFMM* quadTreeFMM : children)
 		{

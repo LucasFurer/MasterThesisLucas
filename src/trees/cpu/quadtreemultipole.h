@@ -33,9 +33,9 @@ public:
 
 	std::vector<QuadTreeMultiPole*> children; // maybe change to no a pointer
 
-	QuadTreeMultiPole() {}
+	QuadTreeMultiPole() {} // empty constructor
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles) // root constructor
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -61,7 +61,7 @@ public:
 		std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = createTree();
 	}
 
-	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner) // secondary constructor
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -72,16 +72,82 @@ public:
 		occupants = initOccupants;
 	}
 
-	QuadTreeMultiPole& operator=(QuadTreeMultiPole&& other) // move assignment operator
+	QuadTreeMultiPole(const QuadTreeMultiPole& other) // copy constructor
+	{
+		maxChildren = other.maxChildren;
+		allParticles = other.allParticles;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+		occupants = other.occupants;
+
+		children = other.children;
+		other.children.clear();
+	}
+
+	QuadTreeMultiPole& operator=(const QuadTreeMultiPole& other) // copy assignment operator
 	{
 		if (this != &other) // self-assignment check
 		{
 			maxChildren = other.maxChildren;
-			allParticles = std::move(other.allParticles);
+			allParticles = other.allParticles;
+			centreOfMass = other.centreOfMass;
+			totalMass = other.totalMass;
+			dipole = other.dipole;
+			quadrupole = other.quadrupole;
+			lowestCorner = other.lowestCorner;
+			highestCorner = other.highestCorner;
+			occupants = other.occupants;
+
+			for (QuadTreeMultiPole* child : children)
+			{
+				delete child;
+			}
+			children.clear();
+
+			children.reserve(other.children.size());
+			for (const QuadTreeMultiPole* child : other.children)
+			{
+				children.push_back(new QuadTreeMultiPole(*child));
+			}
+		}
+		return *this;
+	}
+
+	QuadTreeMultiPole(QuadTreeMultiPole&& other) noexcept // move constructor
+	{
+		maxChildren = other.maxChildren;
+		allParticles = other.allParticles;
+		other.allParticles = nullptr;
+		centreOfMass = other.centreOfMass;
+		totalMass = other.totalMass;
+		dipole = other.dipole;
+		quadrupole = other.quadrupole;
+		lowestCorner = other.lowestCorner;
+		highestCorner = other.highestCorner;
+		occupants = std::move(other.occupants);
+
+		children = std::move(other.children);
+		other.children.clear();
+	}
+
+	QuadTreeMultiPole& operator=(QuadTreeMultiPole&& other) noexcept // move assignment operator
+	{
+		if (this != &other) // self-assignment check
+		{
+			maxChildren = other.maxChildren;
+			//allParticles = std::move(other.allParticles);
+			allParticles = other.allParticles;
 			other.allParticles = nullptr;
 
-			totalMass = other.totalMass;
 			centreOfMass = other.centreOfMass;
+			totalMass = other.totalMass;
+
+			dipole = other.dipole;
+			quadrupole = other.quadrupole;
 
 			lowestCorner = other.lowestCorner;
 			highestCorner = other.highestCorner;
@@ -94,7 +160,7 @@ public:
 		return *this;
 	}
 
-	~QuadTreeMultiPole()
+	~QuadTreeMultiPole() // destructor
 	{
 		for (QuadTreeMultiPole* quadTreeBHMP : children)
 		{

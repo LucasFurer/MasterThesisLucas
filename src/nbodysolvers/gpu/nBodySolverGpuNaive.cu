@@ -90,16 +90,24 @@ void cudaComputeForcesNaive(float& accumulator, std::vector<T>& particles, std::
     //int gridSize = (N + blockSize - 1) / blockSize;
     ////myKernelFunction << <gridSize, blockSize >> > (...);
 
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
     // Kernel launch
-    //std::cout << "calling kernel" << std::endl;
+    cudaEventRecord(start);
     cudaComputeForcesKernel<<<numBlocks, blockSize>>>(d_accumulator, d_particles, d_indexTracker, N);
     //cudaComputeForcesKernel<<<gridSize, blockSize>>>(d_accumulator, d_particles, d_indexTracker, N);
+    cudaEventRecord(stop);
 
     // Copy result back to host
     cudaMemcpy(&accumulator,        d_accumulator,  sizeof(float),   cudaMemcpyDeviceToHost);
     cudaMemcpy(gpuParticles.data(), d_particles,    N * sizeof(GpuTsneParticle2D),   cudaMemcpyDeviceToHost);
-    cudaMemcpy(indexTracker.data(), d_indexTracker, N * sizeof(int), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(indexTracker.data(), d_indexTracker, N * sizeof(int), cudaMemcpyDeviceToHost);
+
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
     for (int i = 0; i < N; i++)
     {
