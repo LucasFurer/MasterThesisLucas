@@ -1,32 +1,37 @@
 #pragma once
 
 #include "particles/tsneParticle2D.h"
-#include "nbodysolvers/gpu/nBodySolverGpuNaive.h"
-#include "nbodysolvers/gpu/nBodySolverGpuBH.h"
+//#include "nbodysolvers/gpu/nBodySolverGpuNaive.h"
+//#include "nbodysolvers/gpu/nBodySolverGpuBH.h"
+#include "../../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
+#include "../../structs/sparseEntry2D.h"
+
+
 
 class TsneGpu
 {
 public:
-    std::vector<int> indexTracker;
-    std::vector<int> indexTrackerPrev;
+    //std::vector<int> indexTracker;
+    //std::vector<int> indexTrackerPrev;
 
-    std::vector<TsneParticle2D> tsneParticles;
-    std::vector<TsneParticle2D> tsneParticlesPrev;
-    std::vector<TsneParticle2D> tsneParticlesPrevPrev;
-    Buffer* TsneParticlesBuffer;
+    std::vector<TsneParticle2D> tsneParticlesToShow;
+    //std::vector<TsneParticle2D> tsneParticles;
+    //std::vector<TsneParticle2D> tsneParticlesPrev;
+    //std::vector<TsneParticle2D> tsneParticlesPrevPrev;
+    Buffer* TsneParticlesBuffer; // essential
 
-    Buffer* forceBuffer;
+    Buffer* forceBuffer; // essential
     float forceSize = 1.0f;
 
     //std::vector<LineSegment2D> lineSegments;
     //Buffer* boxBuffer = new Buffer();
     //int showLevel = 0;
 
-    std::map<std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolvers;
+    std::map<std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolvers; // std::map<std::string, NBodySolverGpu<TsneParticle2D>*>
     std::string nBodySelect = "naive";
 
-    float learnRate;
-    float accelerationRate;
+    //float learnRate;
+    //float accelerationRate;
 
     float timeStepsPerSec = 0.0f;
     float lastTimeUpdated = 0.0f;
@@ -42,8 +47,8 @@ public:
         int TsneParticlesSize = 10000;
         float perplexity = 30.0f;
 
-        learnRate = 1000.0f;
-        accelerationRate = 0.5f;
+        //learnRate = 1000.0f;
+        //accelerationRate = 0.5f;
 
 
         #ifdef _WIN32
@@ -56,54 +61,47 @@ public:
         #endif
 
         labels = Loader::loadLabels(labelsPath.string());
-        Pmatrix = Loader::loadPmatrix(fileName.string());
-
-        indexTracker.resize(TsneParticlesSize);
-        indexTrackerPrev.resize(TsneParticlesSize);
-
-        tsneParticles.resize(TsneParticlesSize);
-        tsneParticlesPrev.resize(TsneParticlesSize);
-        tsneParticlesPrevPrev.resize(TsneParticlesSize);
-
-        //srand(time(NULL));
-        srand(1952732);
-        float sizeParam = 2.0f;
+        int* labelsArr = new int[TsneParticlesSize];
         for (int i = 0; i < TsneParticlesSize; i++)
         {
-            float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-
-
-            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            labelsArr[i] = labels[i];
+        }
+        Pmatrix = Loader::loadPmatrix(fileName.string());
+        SparseEntry2D* sparseMatrix = new SparseEntry2D[Pmatrix.nonZeros()];
+        int indexSparse = 0;
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
             {
-                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                //std::cout << "col: " << it.col() << ", row: " << it.row() << ", value: " << it.value() << std::endl;
+                sparseMatrix[indexSparse] = SparseEntry2D(it.col(), it.row(), it.value());
+                indexSparse++;
             }
-
-
-            glm::vec2 pos = glm::vec2(
-                powf(sizeParam * randX, 1.0f),
-                powf(sizeParam * randY, 1.0f)
-            );
-
-            int lab = labels[i];
-
-            indexTracker[i] = i;
-            indexTrackerPrev[i] = i;
-
-            tsneParticles[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
-            tsneParticlesPrev[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
-            tsneParticlesPrevPrev[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
         }
 
-        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TSNEGPUnaiveKernal);
+
+
+        tsneParticlesToShow.resize(TsneParticlesSize);
+        //indexTracker.resize(TsneParticlesSize);
+        //indexTrackerPrev.resize(TsneParticlesSize);
+
+        //tsneParticles.resize(TsneParticlesSize);
+        //tsneParticlesPrev.resize(TsneParticlesSize);
+        //tsneParticlesPrevPrev.resize(TsneParticlesSize);
+
+        //srand(time(NULL));
+
+
+        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrix, Pmatrix.nonZeros(), labelsArr, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
-        
 
-        TsneParticlesBuffer = new Buffer(Pos2FloatLab1Int::particlesToVertexPos2Col3(tsneParticles), pos2DlabelInt, GL_DYNAMIC_DRAW); // implement Pos2floatAcc2floatLab1Int
 
-        forceBuffer = new Buffer(VertexPos2Col3::particlesToVertexPos2Col3(tsneParticles, forceSize), pos2DCol3D, GL_DYNAMIC_DRAW);
+        nBodySolvers[nBodySelect]->getParticles(tsneParticlesToShow);
+
+
+        TsneParticlesBuffer = new Buffer(Pos2FloatLab1Int::particlesToVertexPos2Col3(tsneParticlesToShow), pos2DlabelInt, GL_DYNAMIC_DRAW); // implement Pos2floatAcc2floatLab1Int
+        forceBuffer = new Buffer(VertexPos2Col3::particlesToVertexPos2Col3(tsneParticlesToShow, forceSize), pos2DCol3D, GL_DYNAMIC_DRAW);
     }
 
     ~TsneGpu()
@@ -111,7 +109,7 @@ public:
         delete TsneParticlesBuffer;
         delete forceBuffer;
 
-        for (std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolverPointer : nBodySolvers)
+        for (std::pair<const std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolverPointer : nBodySolvers) // std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*>
         {
             delete nBodySolverPointer.second;
         }
@@ -122,9 +120,9 @@ public:
         TsneParticlesBuffer->cleanup();
         forceBuffer->cleanup();
 
-        for (std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolver : nBodySolvers)
+        for (std::pair<const std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolver : nBodySolvers)
         {
-            nBodySolver.second->cleanup();
+            //nBodySolver.second->cleanup();
         }
     }
 
@@ -132,30 +130,34 @@ public:
     {
         if (glfwGetTime() - lastTimeUpdated >= 1.0f / timeStepsPerSec)
         {
+            //std::cout << "test int: " << nBodySolvers["naive"]->testT.position.x << std::endl;
+
             lastTimeUpdated = glfwGetTime();
 
-            updateDerivative();
+            //updateDerivative();
 
-            tsneParticlesPrev.swap(tsneParticlesPrevPrev);
-            tsneParticles.swap(tsneParticlesPrev);
+            //tsneParticlesPrev.swap(tsneParticlesPrevPrev);
+            //tsneParticles.swap(tsneParticlesPrev);
 
-            for (int i = 0; i < tsneParticles.size(); i++)
-            {
-                tsneParticles[indexTracker[i]].position = tsneParticlesPrev[indexTracker[i]].position + learnRate * tsneParticlesPrev[indexTracker[i]].derivative + accelerationRate * (tsneParticlesPrev[indexTracker[i]].position - tsneParticlesPrevPrev[indexTrackerPrev[i]].position);
-                tsneParticles[indexTracker[i]].label = tsneParticlesPrev[indexTracker[i]].label;
-                tsneParticles[indexTracker[i]].ID = tsneParticlesPrev[indexTracker[i]].ID;
-            }
-            indexTrackerPrev = indexTracker;
+            //for (int i = 0; i < tsneParticles.size(); i++)
+            //{
+            //    tsneParticles[indexTracker[i]].position = tsneParticlesPrev[indexTracker[i]].position + learnRate * tsneParticlesPrev[indexTracker[i]].derivative + accelerationRate * (tsneParticlesPrev[indexTracker[i]].position - tsneParticlesPrevPrev[indexTrackerPrev[i]].position);
+            //    tsneParticles[indexTracker[i]].label = tsneParticlesPrev[indexTracker[i]].label;
+            //    tsneParticles[indexTracker[i]].ID = tsneParticlesPrev[indexTracker[i]].ID;
+            //}
+            //indexTrackerPrev = indexTracker;
 
+            nBodySolvers[nBodySelect]->timeStep();
 
-            TsneParticlesBuffer->updateBuffer(Pos2FloatLab1Int::particlesToVertexPos2Col3(tsneParticles), pos2DlabelInt);
-            
+            nBodySolvers[nBodySelect]->getParticles(tsneParticlesToShow);
+
+            TsneParticlesBuffer->updateBuffer(Pos2FloatLab1Int::particlesToVertexPos2Col3(tsneParticlesToShow), pos2DlabelInt);
             //nBodySolvers[nBodySelect]->updateTree(tsneParticles, indexTracker);
-
-            forceBuffer->updateBuffer(VertexPos2Col3::particlesToVertexPos2Col3(tsneParticles, forceSize), pos2DCol3D);
+            forceBuffer->updateBuffer(VertexPos2Col3::particlesToVertexPos2Col3(tsneParticlesToShow, forceSize), pos2DCol3D);
         }
     }
 
+    /*
     void tests()
     {
         int maxIterations = 2;
@@ -168,8 +170,8 @@ public:
 
             float accumulator = 0.0f;
             float accumulatorOther = 0.0f;
-            nBodySolvers["naive"]->solveNbody(accumulator, tsneParticles, indexTracker);
-            nBodySolvers["naive"]->solveNbody(accumulatorOther, tsneParticlesOther, indexTracker); // other thing
+            //nBodySolvers["naive"]->solveNbody(accumulator, tsneParticles, indexTracker);
+            //nBodySolvers["naive"]->solveNbody(accumulatorOther, tsneParticlesOther, indexTracker); // other thing
 
             totalError += getMSE(tsneParticles, tsneParticlesOther);
 
@@ -190,6 +192,7 @@ public:
 
         std::cout << "average error: " << averageError << std::endl;
     }
+    */
 
     std::tuple<float, float, float, float> getEdges()
     {
@@ -198,18 +201,22 @@ public:
         float right = std::numeric_limits<float>::min();
         float up = std::numeric_limits<float>::min();
 
-        for (int i = 0; i < tsneParticles.size(); i++)
+        for (int i = 0; i < tsneParticlesToShow.size(); i++)
         {
-            if (tsneParticles[i].position.x < left) { left = tsneParticles[i].position.x; }
-            if (tsneParticles[i].position.x > right) { right = tsneParticles[i].position.x; }
-            if (tsneParticles[i].position.y < down) { down = tsneParticles[i].position.y; }
-            if (tsneParticles[i].position.y > up) { up = tsneParticles[i].position.y; }
+            float posX = tsneParticlesToShow[i].position.x;
+            float posY = tsneParticlesToShow[i].position.y;
+            
+            left  = std::min(posX, left);
+            right = std::max(posX, right);
+            down  = std::min(posY, down);
+            up    = std::max(posY, up);
         }
 
         return std::make_tuple(left, right, down, up);
     }
 
 private:
+    /*
     void updateDerivative()
     {
         updateDerivativeRepulsive();
@@ -220,7 +227,7 @@ private:
     void updateDerivativeRepulsive()
     {
         float accumulator = 0.0f;
-        nBodySolvers[nBodySelect]->solveNbody(accumulator, tsneParticles, indexTracker);
+        //nBodySolvers[nBodySelect]->solveNbody(accumulator, tsneParticles, indexTracker);
 
         for (TsneParticle2D& tsneParticle2D : tsneParticles)
             tsneParticle2D.derivative *= -(1.0f / accumulator);
@@ -257,4 +264,5 @@ private:
         float NMSE = MSE / divide;
         return NMSE;
     }
+    */
 };

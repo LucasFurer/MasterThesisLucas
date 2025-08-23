@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../nbodysolvers/gpu/nBodySolverGpu.h"
@@ -77,3 +78,4 @@ void TSNEGPUnaiveKernal(float& accumulator, TsneParticle2D& passiveParticle, Tsn
 
 	passiveParticle.derivative += oneOverDistance * oneOverDistance * diff;
 }
+*/

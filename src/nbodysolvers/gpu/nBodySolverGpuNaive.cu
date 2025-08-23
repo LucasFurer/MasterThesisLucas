@@ -1,130 +1,297 @@
-#include <iostream>
+#pragma once
+
 #include "../../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
+#include "../../nbodysolvers/gpu/cudaHelper.cuh"
+
+#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "../../particles/tsneParticle2D.h"
+#include "../../structs/sparseEntry2D.h"
+
+#include <Eigen/Sparse>
+#include <Eigen/Eigen>
+#include <unsupported/Eigen/SparseExtra>
+#include <Eigen/Core>
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <filesystem>
 
 
-//template <typename T>
-__global__ 
-void cudaComputeForcesKernel(float* accumulator, GpuTsneParticle2D* particles, int* indexTracker, int N)
+
+
+template <typename T>
+__global__
+void cudaTsneStepRep(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
-    float localAccumulator = 0.0f;
-
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-    for (int i = index; i < N; i += stride)
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < tsneParticlesSize)
     {
-        //particles[indexTracker[i]].derivative = make_float2(0.0f,0.0f);
-        //*accumulator = 1.0f;
+        sumStorage[i] = 0.0f;
+        tsneParticles[i].derivative = glm::vec2(0.0f);
 
-        for (int j = 0; j < N; j++)
+        for (int j = 0; j < tsneParticlesSize; j++)
         {
             if (i != j)
             {
-                GpuTsneParticle2D passiveParticle = particles[indexTracker[i]];
-                GpuTsneParticle2D activeParticle = particles[indexTracker[j]];
-
                 float softening = 1.0f;
 
-                float diffX = activeParticle.position.x - passiveParticle.position.x;
-                float diffY = activeParticle.position.y - passiveParticle.position.y;
-                float distance = sqrt(diffX * diffX + diffY * diffY);//glm::length(diff);
+                glm::vec2 diff = tsneParticles[j].position - tsneParticles[i].position;
+
+                float distance = glm::length(diff);
 
                 float oneOverDistance = 1.0f / (softening + (distance * distance));
-                localAccumulator += oneOverDistance;
-                //atomicAdd(accumulator, oneOverDistance);
-                //accumulator += 1.0f * oneOverDistance;
-                //*accumulator = 1.0f;
+                sumStorage[i] += 1.0f * oneOverDistance;
 
-                passiveParticle.derivative.x += oneOverDistance* oneOverDistance* diffX;
-                passiveParticle.derivative.y += oneOverDistance* oneOverDistance* diffY;
-
-                particles[indexTracker[i]].derivative.x = passiveParticle.derivative.x;
-                particles[indexTracker[i]].derivative.y = passiveParticle.derivative.y;
-
+                tsneParticles[i].derivative += oneOverDistance * oneOverDistance * diff;
             }
         }
+
+        //tsneParticles[i].derivative = glm::vec2(0.0f);
+    }
+}
+
+
+template <unsigned int blockSize>
+__device__ void warpReduce(volatile float* sdata, int tId)
+{
+    if (blockSize >= 64) sdata[tId] += sdata[tId + 32];
+    if (blockSize >= 32) sdata[tId] += sdata[tId + 16];
+    if (blockSize >= 16) sdata[tId] += sdata[tId + 8];
+    if (blockSize >= 8) sdata[tId] += sdata[tId + 4];
+    if (blockSize >= 4) sdata[tId] += sdata[tId + 2];
+    if (blockSize >= 2) sdata[tId] += sdata[tId + 1];
+}
+
+template <typename T, unsigned int blockSize>
+__global__
+void cudaTsneStepSum(int sumInAmount, const float* sumIn, float* sumOut)
+{
+    extern __shared__ float sdata[];
+
+    unsigned int tId = threadIdx.x;
+    unsigned int inId = blockIdx.x * (blockSize * 2) + threadIdx.x; // blockSize * 2 because we add from current block and the next one
+    unsigned int gridSize = blockSize * 2 * gridDim.x; // we have less blocks than we need so we can sum from what is not covered by them
+
+    // load and add data into shared memory
+    sdata[tId] = 0.0f;
+    while (inId < sumInAmount)
+    {
+        sdata[tId] += ((inId < sumInAmount) ? sumIn[inId] : 0.0f) + ((inId + blockSize < sumInAmount) ? sumIn[inId + blockSize] : 0.0f);
+        //sdata[tId] += sumIn[inId] + sumIn[inId + blockSize]; // can do this if array is power of blocksize * 2
+        inId += gridSize;
     }
 
+    __syncthreads();
 
-    atomicAdd(accumulator, localAccumulator);
+    // take half the shared memory and let it sum the other half
+    // unrolled for loop for every possible block size
+    if (blockSize >= 1024)
+        if (tId < 512) { sdata[tId] += sdata[tId + 512]; __syncthreads(); }
+
+    if (blockSize >= 512)
+        if (tId < 256) { sdata[tId] += sdata[tId + 256]; __syncthreads(); }
+
+    if (blockSize >= 256)
+        if (tId < 128) { sdata[tId] += sdata[tId + 128]; __syncthreads(); }
+
+    if (blockSize >= 128)
+        if (tId < 64) { sdata[tId] += sdata[tId + 64];   __syncthreads(); }
+
+    // within a warp (which is 32) we dont have to sync up
+    if (tId < 32) { warpReduce<blockSize>(sdata, tId); }
+
+    // write shared memory result back to output
+    if (tId == 0) { sumOut[blockIdx.x] = sdata[0]; }
 }
 
 template <typename T>
-void cudaComputeForcesNaive(float& accumulator, std::vector<T>& particles, std::vector<int>& indexTracker)
+__global__
+void cudaTsneStepAtt(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
-    int N = particles.size();
-
-    // Allocate device memory
-    float* d_accumulator;
-    GpuTsneParticle2D* d_particles;
-    int* d_indexTracker;
-
-    cudaMalloc(&d_accumulator,  sizeof(float));
-    cudaMalloc(&d_particles,    N * sizeof(T));
-    cudaMalloc(&d_indexTracker, N * sizeof(int));
-
-    std::vector<GpuTsneParticle2D> gpuParticles(N);
-    for (int i = 0; i < N; i++) 
-        gpuParticles[i] = GpuTsneParticle2D(particles[i].position, particles[i].derivative, particles[i].label, particles[i].ID);
-    
-
-    // Copy from host to device
-    cudaMemcpy(d_accumulator,  &accumulator,        sizeof(float),   cudaMemcpyHostToDevice);
-    cudaMemcpy(d_particles,    gpuParticles.data(), N * sizeof(GpuTsneParticle2D),   cudaMemcpyHostToDevice);
-    cudaMemcpy(d_indexTracker, indexTracker.data(), N * sizeof(int), cudaMemcpyHostToDevice);
-
-    int blockSize = 256;
-    int numBlocks = (N + blockSize - 1) / blockSize;
-    //cudaOccupancyMaxPotentialBlockSize(&blockSize, &numBlocks, cudaComputeForcesKernel);
-
-    //int minGridSize = 0;
-    //int blockSize = 0;
-    //cudaOccupancyMaxPotentialBlockSize(
-    //    &minGridSize,       // Output: minimum number of blocks to achieve max occupancy
-    //    &blockSize,         // Output: block size to use
-    //    cudaComputeForcesKernel    // Your kernel
-    //);
-    //int gridSize = (N + blockSize - 1) / blockSize;
-    ////myKernelFunction << <gridSize, blockSize >> > (...);
-
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    // Kernel launch
-    cudaEventRecord(start);
-    cudaComputeForcesKernel<<<numBlocks, blockSize>>>(d_accumulator, d_particles, d_indexTracker, N);
-    //cudaComputeForcesKernel<<<gridSize, blockSize>>>(d_accumulator, d_particles, d_indexTracker, N);
-    cudaEventRecord(stop);
-
-    // Copy result back to host
-    cudaMemcpy(&accumulator,        d_accumulator,  sizeof(float),   cudaMemcpyDeviceToHost);
-    cudaMemcpy(gpuParticles.data(), d_particles,    N * sizeof(GpuTsneParticle2D),   cudaMemcpyDeviceToHost);
-    //cudaMemcpy(indexTracker.data(), d_indexTracker, N * sizeof(int), cudaMemcpyDeviceToHost);
-
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-
-    for (int i = 0; i < N; i++)
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < tsneParticlesSize)
     {
-        particles[i].derivative = glm::vec2(gpuParticles[i].derivative.x, gpuParticles[i].derivative.y);
-        //std::cout << "gpuParticles outputX: " << gpuParticles[i].derivative.x << " gpuParticles outputY: " << gpuParticles[i].derivative.y << std::endl;
-        //std::cout << "particles outputX: " << particles[i].derivative.x << " particles outputY: " << particles[i].derivative.y << std::endl;
+        tsneParticles[i].derivative *= -(1.0f / sumStorage[0]); // finish of the repulsive force
+
+        // calculate attractive force
+        
+
+        tsneParticles[i].position = tsneParticles[i].position + learnRate * tsneParticles[i].derivative;
+        //tsneParticlesPrevPrev[i] = tsneParticlesPrev[i];
+        //tsneParticlesPrev[i] = tsneParticles[i];
+
+        //tsneParticles[indexTracker[i]].position = tsneParticlesPrev[indexTracker[i]].position + learnRate * tsneParticlesPrev[indexTracker[i]].derivative + accelerationRate * (tsneParticlesPrev[indexTracker[i]].position - tsneParticlesPrevPrev[indexTrackerPrev[i]].position);
+        //tsneParticles[indexTracker[i]].label = tsneParticlesPrev[indexTracker[i]].label;
+        //tsneParticles[indexTracker[i]].ID = tsneParticlesPrev[indexTracker[i]].ID;
     }
-
-    // copy results parameters
-    //accumulator = *d_accumulator;
-    //particles.assign(particles, particles + N);
-    //indexTracker.assign(indexTracker, indexTracker + N);
-
-    // Free device memory
-    cudaFree(d_accumulator);
-    cudaFree(d_particles);
-    cudaFree(d_indexTracker);
 }
 
-template void cudaComputeForcesNaive<TsneParticle2D>(float& accumulator, std::vector<TsneParticle2D>& particles, std::vector<int>& indexTracker);
+
+template <class T>
+NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntry2D* initSparseMatrix, size_t initSparseMatrixSize, int* initLabels, float initLearnRate, float initAccelerationRate)
+{
+    // initialize static memory
+    tsneParticlesSize = initTsneParticlesSize;
+    learnRate = initLearnRate;
+    accelerationRate = initAccelerationRate;
+
+    // initialize dynamic memory on host
+    int* indexTrackerToBuffer;
+    int* indexTrackerPrevToBuffer;
+
+    TsneParticle2D* tsneParticlesToBuffer;
+    TsneParticle2D* tsneParticlesPrevToBuffer;
+    TsneParticle2D* tsneParticlesPrevPrevToBuffer;
+
+    cudaMallocHost((void**)&indexTrackerToBuffer,          tsneParticlesSize * sizeof(int));
+    cudaMallocHost((void**)&indexTrackerPrevToBuffer,      tsneParticlesSize * sizeof(int));
+
+    cudaMallocHost((void**)&tsneParticlesToBuffer,         tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMallocHost((void**)&tsneParticlesPrevToBuffer,     tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMallocHost((void**)&tsneParticlesPrevPrevToBuffer, tsneParticlesSize * sizeof(TsneParticle2D));
+
+    // initialize dynamic memory on device
+    cudaMalloc(&sparseMatrix,          initSparseMatrixSize * sizeof(SparseEntry2D));
+    cudaMalloc(&labels,                tsneParticlesSize * sizeof(int));
+
+    cudaMalloc(&indexTracker,          tsneParticlesSize * sizeof(int));
+    cudaMalloc(&indexTrackerPrev,      tsneParticlesSize * sizeof(int));
+
+    cudaMalloc(&tsneParticles,         tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMalloc(&tsneParticlesPrev,     tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMalloc(&tsneParticlesPrevPrev, tsneParticlesSize * sizeof(TsneParticle2D));
+        
+    // create multiple sum storages
+    {
+        int reductionAmount = (SUMblockSize * 2) * SUMgridReductionAmount;
+
+        // count how many different sum storages we need
+        sumStorageAmount = 1;
+        int amountTracker = tsneParticlesSize;
+        while (amountTracker > 1)
+        {
+            sumStorageAmount++;
+            amountTracker = divUp(amountTracker, reductionAmount);
+        }
+
+        // allocate space for them
+        sumStorages = (float**)malloc(sumStorageAmount * sizeof(float*));
+        sumStoragesAmounts = (int*)malloc(sumStorageAmount * sizeof(int));
+
+        // create the actual device memory for the sum storage
+        amountTracker = tsneParticlesSize;
+        for (int i = 0; i < sumStorageAmount; i++)
+        {
+            checkCuda(cudaMalloc(&sumStorages[i], amountTracker * sizeof(float)));
+            sumStoragesAmounts[i] = amountTracker;
+
+            amountTracker = divUp(amountTracker, reductionAmount);
+        }
+    }
+
+    // fill host memory with values
+    srand(1952732);
+    //srand(time(NULL));
+    float sizeParam = 2.0f;
+    for (int i = 0; i < tsneParticlesSize; i++)
+    {
+        float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+        float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+        while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+        {
+            randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+        }
+
+        glm::vec2 pos = glm::vec2(
+            powf(sizeParam * randX, 1.0f),
+            powf(sizeParam * randY, 1.0f)
+        );
+
+        int lab = initLabels[i];
+
+        indexTrackerToBuffer[i] = i;
+        indexTrackerPrevToBuffer[i] = i;
+
+        tsneParticlesToBuffer[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
+        tsneParticlesPrevToBuffer[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
+        tsneParticlesPrevPrevToBuffer[i] = TsneParticle2D(pos, glm::vec2(0.0f), lab, i);
+    }
+
+    // copy host to device
+    cudaMemcpy(sparseMatrix, initSparseMatrix,                       initSparseMatrixSize * sizeof(SparseEntry2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(labels, initLabels,                                   tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+
+    cudaMemcpy(indexTracker, indexTrackerToBuffer,                   tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(indexTrackerPrev, indexTrackerPrevToBuffer,           tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+
+    cudaMemcpy(tsneParticles, tsneParticlesToBuffer,                 tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(tsneParticlesPrev, tsneParticlesPrevToBuffer,         tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(tsneParticlesPrevPrev, tsneParticlesPrevPrevToBuffer, tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+
+    // free host memory
+    delete[] initSparseMatrix;
+    delete[] initLabels;
+
+    cudaFreeHost(indexTrackerToBuffer);
+    cudaFreeHost(indexTrackerPrevToBuffer);
+
+    cudaFreeHost(tsneParticlesToBuffer);
+    cudaFreeHost(tsneParticlesPrevToBuffer);
+    cudaFreeHost(tsneParticlesPrevPrevToBuffer);
+}
+
+template <class T>
+NBodySolverGpuNaive<T>::~NBodySolverGpuNaive()
+{
+    cudaFree(sparseMatrix);
+    cudaFree(labels);
+
+    cudaFree(indexTracker);
+    cudaFree(indexTrackerPrev);
+
+    cudaFree(tsneParticles);
+    cudaFree(tsneParticlesPrev);
+    cudaFree(tsneParticlesPrevPrev);
+
+    for (int i = 0; i < sumStorageAmount; i++)
+        checkCuda(cudaFree(sumStorages[i]));
+    free(sumStorages);
+    free(sumStoragesAmounts);
+}
+
+template <class T>
+void NBodySolverGpuNaive<T>::timeStep()
+{
+    std::cout << "call timestep" << std::endl;
+
+    int blockSize = 256;
+    int numBlocks = divUp(tsneParticlesSize, blockSize);
+
+    cudaTsneStepRep<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrix, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[0], tsneParticlesSize, learnRate, accelerationRate);
+    
+    for (int i = 0; i < sumStorageAmount - 1; i++)
+    {
+        int sumNumBlocks = divUp(sumStoragesAmounts[i], (SUMblockSize * 2) * SUMgridReductionAmount);
+        cudaTsneStepSum<TsneParticle2D, 128><<<sumNumBlocks, SUMblockSize, SUMblockSize * sizeof(float) + 1>>>(sumStoragesAmounts[i], sumStorages[i], sumStorages[i+1]);
+    }
+
+    cudaTsneStepAtt<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrix, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[sumStorageAmount-1], tsneParticlesSize, learnRate, accelerationRate);
+}
+
+template <class T>
+void NBodySolverGpuNaive<T>::getParticles(std::vector<TsneParticle2D>& result)
+{
+    std::cout << "im getting particles" << std::endl;
+    
+    cudaMemcpy(result.data(), tsneParticles, tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyDeviceToHost);
+}
+
+
+// Explicit instantiation (required for templates in .cu)
+template class NBodySolverGpuNaive<TsneParticle2D>;
+template __global__ void cudaTsneStepRep<TsneParticle2D>(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
+template __global__ void cudaTsneStepSum<TsneParticle2D, 128>(int sumInAmount, const float* sumIn, float* sumOut);
+template __global__ void cudaTsneStepAtt<TsneParticle2D>(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);

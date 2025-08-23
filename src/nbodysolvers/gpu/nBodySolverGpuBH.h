@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 template <typename T>
@@ -67,3 +68,4 @@ public:
 //
 //	passiveParticle.derivative += oneOverDistance * oneOverDistance * diff;
 //}
+*/
