@@ -23,7 +23,7 @@
 
 template <typename T>
 __global__
-void cudaTsneStepRep(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
+void cudaTsneStepRep(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < tsneParticlesSize)
@@ -108,7 +108,7 @@ void cudaTsneStepSum(int sumInAmount, const float* sumIn, float* sumOut)
 
 template <typename T>
 __global__
-void cudaTsneStepAtt(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
+void cudaTsneStepAtt(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < tsneParticlesSize)
@@ -116,6 +116,17 @@ void cudaTsneStepAtt(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker
         tsneParticles[i].derivative *= -(1.0f / sumStorage[0]); // finish of the repulsive force
 
         // calculate attractive force
+        for (int j = sparseMatrixColumnIndexStart[i]; j < sparseMatrixColumnIndexStart[i + 1]; j++)
+        {
+            int colIndex = indexTracker[i];
+            int rowIndex = indexTracker[sparseMatrixCSC[j].row];
+
+            glm::vec2 diff = tsneParticles[colIndex].position - tsneParticles[rowIndex].position;
+            float distance = glm::length(diff);
+
+            tsneParticles[colIndex].derivative += -(float)sparseMatrixCSC[j].val * (diff / (1.0f + (distance * distance)));
+        }
+        
         
 
         tsneParticles[i].position = tsneParticles[i].position + learnRate * tsneParticles[i].derivative;
@@ -130,10 +141,11 @@ void cudaTsneStepAtt(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker
 
 
 template <class T>
-NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntry2D* initSparseMatrix, size_t initSparseMatrixSize, int* initLabels, float initLearnRate, float initAccelerationRate)
+NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, int* initLabels, float initLearnRate, float initAccelerationRate)
 {
     // initialize static memory
     tsneParticlesSize = initTsneParticlesSize;
+    sparseMatrixCSCSize = initSparseMatrixCSCSize;
     learnRate = initLearnRate;
     accelerationRate = initAccelerationRate;
 
@@ -153,15 +165,16 @@ NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEnt
     cudaMallocHost((void**)&tsneParticlesPrevPrevToBuffer, tsneParticlesSize * sizeof(TsneParticle2D));
 
     // initialize dynamic memory on device
-    cudaMalloc(&sparseMatrix,          initSparseMatrixSize * sizeof(SparseEntry2D));
-    cudaMalloc(&labels,                tsneParticlesSize * sizeof(int));
+    cudaMalloc(&sparseMatrixCSC,              initSparseMatrixCSCSize * sizeof(SparseEntryCSC2D));
+    cudaMalloc(&sparseMatrixColumnIndexStart, (tsneParticlesSize + 1) * sizeof(int));
+    cudaMalloc(&labels,                       tsneParticlesSize * sizeof(int));
 
-    cudaMalloc(&indexTracker,          tsneParticlesSize * sizeof(int));
-    cudaMalloc(&indexTrackerPrev,      tsneParticlesSize * sizeof(int));
+    cudaMalloc(&indexTracker,                 tsneParticlesSize * sizeof(int));
+    cudaMalloc(&indexTrackerPrev,             tsneParticlesSize * sizeof(int));
 
-    cudaMalloc(&tsneParticles,         tsneParticlesSize * sizeof(TsneParticle2D));
-    cudaMalloc(&tsneParticlesPrev,     tsneParticlesSize * sizeof(TsneParticle2D));
-    cudaMalloc(&tsneParticlesPrevPrev, tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMalloc(&tsneParticles,                tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMalloc(&tsneParticlesPrev,            tsneParticlesSize * sizeof(TsneParticle2D));
+    cudaMalloc(&tsneParticlesPrevPrev,        tsneParticlesSize * sizeof(TsneParticle2D));
         
     // create multiple sum storages
     {
@@ -221,18 +234,20 @@ NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEnt
     }
 
     // copy host to device
-    cudaMemcpy(sparseMatrix, initSparseMatrix,                       initSparseMatrixSize * sizeof(SparseEntry2D), cudaMemcpyHostToDevice);
-    cudaMemcpy(labels, initLabels,                                   tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(sparseMatrixCSC, initSparseMatrixCSC,                           initSparseMatrixCSCSize * sizeof(SparseEntryCSC2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(sparseMatrixColumnIndexStart, initSparseMatrixColumnIndexStart, (tsneParticlesSize + 1) * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(labels, initLabels,                                             tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(indexTracker, indexTrackerToBuffer,                   tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(indexTrackerPrev, indexTrackerPrevToBuffer,           tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(indexTracker, indexTrackerToBuffer,                             tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(indexTrackerPrev, indexTrackerPrevToBuffer,                     tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(tsneParticles, tsneParticlesToBuffer,                 tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
-    cudaMemcpy(tsneParticlesPrev, tsneParticlesPrevToBuffer,         tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
-    cudaMemcpy(tsneParticlesPrevPrev, tsneParticlesPrevPrevToBuffer, tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(tsneParticles, tsneParticlesToBuffer,                           tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(tsneParticlesPrev, tsneParticlesPrevToBuffer,                   tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
+    cudaMemcpy(tsneParticlesPrevPrev, tsneParticlesPrevPrevToBuffer,           tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyHostToDevice);
 
     // free host memory
-    delete[] initSparseMatrix;
+    delete[] initSparseMatrixCSC;
+    delete[] initSparseMatrixColumnIndexStart;
     delete[] initLabels;
 
     cudaFreeHost(indexTrackerToBuffer);
@@ -246,7 +261,8 @@ NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEnt
 template <class T>
 NBodySolverGpuNaive<T>::~NBodySolverGpuNaive()
 {
-    cudaFree(sparseMatrix);
+    cudaFree(sparseMatrixCSC);
+    cudaFree(sparseMatrixColumnIndexStart);
     cudaFree(labels);
 
     cudaFree(indexTracker);
@@ -265,33 +281,32 @@ NBodySolverGpuNaive<T>::~NBodySolverGpuNaive()
 template <class T>
 void NBodySolverGpuNaive<T>::timeStep()
 {
-    std::cout << "call timestep" << std::endl;
-
     int blockSize = 256;
     int numBlocks = divUp(tsneParticlesSize, blockSize);
 
-    cudaTsneStepRep<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrix, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[0], tsneParticlesSize, learnRate, accelerationRate);
-    
-    for (int i = 0; i < sumStorageAmount - 1; i++)
+    for (int r = 0; r < 1; r++)
     {
-        int sumNumBlocks = divUp(sumStoragesAmounts[i], (SUMblockSize * 2) * SUMgridReductionAmount);
-        cudaTsneStepSum<TsneParticle2D, 128><<<sumNumBlocks, SUMblockSize, SUMblockSize * sizeof(float) + 1>>>(sumStoragesAmounts[i], sumStorages[i], sumStorages[i+1]);
-    }
+        cudaTsneStepRep<TsneParticle2D> << <numBlocks, blockSize >> > (sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[0], tsneParticlesSize, learnRate, accelerationRate);
 
-    cudaTsneStepAtt<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrix, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[sumStorageAmount-1], tsneParticlesSize, learnRate, accelerationRate);
+        for (int i = 0; i < sumStorageAmount - 1; i++)
+        {
+            int sumNumBlocks = divUp(sumStoragesAmounts[i], (SUMblockSize * 2) * SUMgridReductionAmount);
+            cudaTsneStepSum<TsneParticle2D, 128> << <sumNumBlocks, SUMblockSize, SUMblockSize * sizeof(float) + 1 >> > (sumStoragesAmounts[i], sumStorages[i], sumStorages[i + 1]);
+        }
+
+        cudaTsneStepAtt<TsneParticle2D> << <numBlocks, blockSize >> > (sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[sumStorageAmount - 1], tsneParticlesSize, learnRate, accelerationRate);
+    }
 }
 
 template <class T>
 void NBodySolverGpuNaive<T>::getParticles(std::vector<TsneParticle2D>& result)
 {
-    std::cout << "im getting particles" << std::endl;
-    
     cudaMemcpy(result.data(), tsneParticles, tsneParticlesSize * sizeof(TsneParticle2D), cudaMemcpyDeviceToHost);
 }
 
 
 // Explicit instantiation (required for templates in .cu)
 template class NBodySolverGpuNaive<TsneParticle2D>;
-template __global__ void cudaTsneStepRep<TsneParticle2D>(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
+template __global__ void cudaTsneStepRep<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
 template __global__ void cudaTsneStepSum<TsneParticle2D, 128>(int sumInAmount, const float* sumIn, float* sumOut);
-template __global__ void cudaTsneStepAtt<TsneParticle2D>(SparseEntry2D* sparseMatrix, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
+template __global__ void cudaTsneStepAtt<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);

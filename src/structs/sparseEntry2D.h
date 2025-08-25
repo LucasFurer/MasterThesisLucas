@@ -3,38 +3,38 @@
 struct SparseEntryCSC2D
 {
     int row;
-    float value;
+    float val;
 
     SparseEntryCSC2D()
     {
         row = 0;
-        value = 0.0f;
+        val = 0.0f;
     }
 
-    SparseEntryCSC2D(int initRow, float initValue)
+    SparseEntryCSC2D(int initRow, float initVal)
     {
         row = initRow;
-        value = initValue;
+        val = initVal;
     }
 };
 
-struct SparseEntry2D
+struct SparseEntryCOO2D
 {
-    int i;
-    int j;
-    float value;
+    int col;
+    int row;
+    float val;
 
-    SparseEntry2D()
+    SparseEntryCOO2D()
     {
-        i = 0;
-        j = 0;
-        value = 0.0f;
+        col = 0;
+        row = 0;
+        val = 0.0f;
     }
 
-    SparseEntry2D(int initI, int initJ, float initValue)
+    SparseEntryCOO2D(int initCol, int initRow, float initVal)
     {
-        i = initI;
-        j = initJ;
-        value = initValue;
+        col = initCol;
+        row = initRow;
+        val = initVal;
     }
 };

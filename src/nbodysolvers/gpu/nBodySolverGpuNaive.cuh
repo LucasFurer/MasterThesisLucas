@@ -17,7 +17,10 @@ template <class T>
 class NBodySolverGpuNaive
 {
 public:
-    SparseEntry2D* sparseMatrix;
+    SparseEntryCSC2D* sparseMatrixCSC;
+    size_t sparseMatrixCSCSize;
+    int* sparseMatrixColumnIndexStart;
+
     int* labels;
 
     int* indexTracker;
@@ -38,7 +41,7 @@ public:
     float accelerationRate;
 
 
-    NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntry2D* initSparseMatrix, size_t initSparseMatrixSize, int* initLabels, float initLearnRate, float initAccelerationRate);
+    NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, int* initLabels, float initLearnRate, float initAccelerationRate);
     ~NBodySolverGpuNaive();
 
     void timeStep();

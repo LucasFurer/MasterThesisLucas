@@ -8,6 +8,8 @@
 
 
 
+
+
 class TsneGpu
 {
 public:
@@ -44,13 +46,12 @@ public:
 
     TsneGpu()
     {
+        // set parameters for t-SNE data input
         int TsneParticlesSize = 10000;
         float perplexity = 30.0f;
 
-        //learnRate = 1000.0f;
-        //accelerationRate = 0.5f;
 
-
+        // get the path of the labels and sparse matrix
         #ifdef _WIN32
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/label_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path() / ("data/P_matrix_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".mtx");
@@ -60,26 +61,59 @@ public:
         std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         #endif
 
+        // load the labels and sparse matrix
         labels = Loader::loadLabels(labelsPath.string());
         int* labelsArr = new int[TsneParticlesSize];
         for (int i = 0; i < TsneParticlesSize; i++)
         {
             labelsArr[i] = labels[i];
         }
+
         Pmatrix = Loader::loadPmatrix(fileName.string());
-        SparseEntry2D* sparseMatrix = new SparseEntry2D[Pmatrix.nonZeros()];
+        std::vector<SparseEntryCOO2D> sparseMatrixCOO = std::vector<SparseEntryCOO2D>(Pmatrix.nonZeros());
         int indexSparse = 0;
         for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
         {
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
             {
                 //std::cout << "col: " << it.col() << ", row: " << it.row() << ", value: " << it.value() << std::endl;
-                sparseMatrix[indexSparse] = SparseEntry2D(it.col(), it.row(), it.value());
+                sparseMatrixCOO[indexSparse] = SparseEntryCOO2D(it.col(), it.row(), it.value());
                 indexSparse++;
             }
         }
 
+        // sort the sparse matrix entries so we can put it into a CSC structure
+        std::sort(sparseMatrixCOO.begin(), sparseMatrixCOO.end(),
+            [](const SparseEntryCOO2D& a, const SparseEntryCOO2D& b) 
+            {
+                if (a.col == b.col) 
+                {
+                    return a.row < b.row;
+                }
+                return a.col < b.col;
+            }
+        );
 
+        // put the COO entries in a CSC format
+        SparseEntryCSC2D* sparseMatrixCSC = new SparseEntryCSC2D[sparseMatrixCOO.size()];
+        for (int i = 0; i < sparseMatrixCOO.size(); i++)
+        {
+            sparseMatrixCSC[i] = SparseEntryCSC2D(sparseMatrixCOO[i].row, sparseMatrixCOO[i].val);
+        }
+
+        // since we use the CSC format we lose the col data and thus we use this array to keep track
+        int* sparseMatrixColumnIndexStart = new int[TsneParticlesSize + 1];
+        sparseMatrixColumnIndexStart[0] = 0;
+
+        int sparseMatrixCOOIndex = 0;
+        for (int c = 0; c < TsneParticlesSize; c++)
+        {
+            while (sparseMatrixCOOIndex < sparseMatrixCOO.size() && sparseMatrixCOO[sparseMatrixCOOIndex].col == c)
+            {
+                sparseMatrixCOOIndex++;
+            }
+            sparseMatrixColumnIndexStart[c + 1] = sparseMatrixCOOIndex;
+        }
 
         tsneParticlesToShow.resize(TsneParticlesSize);
         //indexTracker.resize(TsneParticlesSize);
@@ -91,8 +125,10 @@ public:
 
         //srand(time(NULL));
 
+        //sparseMatrixCSC with size sparseMatrixCOO.size()
+        //sparseMatrixColumnIndexStart with size TsneParticlesSize + 1
 
-        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrix, Pmatrix.nonZeros(), labelsArr, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
+        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labelsArr, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
 
