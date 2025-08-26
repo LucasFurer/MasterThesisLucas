@@ -18,16 +18,41 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <filesystem>
 
+__global__
+void cudaTsneStepShuffle(int* indexTracker, TsneParticle2D* tsneParticles, int tsneParticlesSize)
+{
+    curandState state;
+    int seed = 23;
+    curand_init(seed, 0, 0, &state);
 
+    for (int i = 0; i < tsneParticlesSize; i++)
+    {
+        int indexA = curand(&state) % tsneParticlesSize;
+        int indexB = curand(&state) % tsneParticlesSize;
+
+        if (indexA != indexB)
+        { 
+            int tempTracker = indexTracker[tsneParticles[indexA].ID];
+            indexTracker[tsneParticles[indexA].ID] = indexTracker[tsneParticles[indexB].ID];
+            indexTracker[tsneParticles[indexB].ID] = tempTracker;
+
+            TsneParticle2D tempParticle = tsneParticles[indexA];
+            tsneParticles[indexA] = tsneParticles[indexB];
+            tsneParticles[indexB] = tempParticle;
+        }
+    }
+}
 
 
 template <typename T>
 __global__
-void cudaTsneStepRep(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
+void cudaTsneStepRep(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < tsneParticlesSize)
     {
+        //int indexI = indexTracker[i];
+
         sumStorage[i] = 0.0f;
         tsneParticles[i].derivative = glm::vec2(0.0f);
 
@@ -35,6 +60,8 @@ void cudaTsneStepRep(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSi
         {
             if (i != j)
             {
+                //int indexJ = indexTracker[j];
+
                 float softening = 1.0f;
 
                 glm::vec2 diff = tsneParticles[j].position - tsneParticles[i].position;
@@ -47,8 +74,6 @@ void cudaTsneStepRep(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSi
                 tsneParticles[i].derivative += oneOverDistance * oneOverDistance * diff;
             }
         }
-
-        //tsneParticles[i].derivative = glm::vec2(0.0f);
     }
 }
 
@@ -106,19 +131,23 @@ void cudaTsneStepSum(int sumInAmount, const float* sumIn, float* sumOut)
     if (tId == 0) { sumOut[blockIdx.x] = sdata[0]; }
 }
 
+
 template <typename T>
 __global__
-void cudaTsneStepAtt(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
+void cudaTsneStepAtt(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
     if (i < tsneParticlesSize)
     {
-        tsneParticles[i].derivative *= -(1.0f / sumStorage[0]); // finish of the repulsive force
+        int colIndex = indexTracker[i];
+
+        // finish of the repulsive force
+        tsneParticles[colIndex].derivative *= -(1.0f / sumStorage[0]);
 
         // calculate attractive force
         for (int j = sparseMatrixColumnIndexStart[i]; j < sparseMatrixColumnIndexStart[i + 1]; j++)
         {
-            int colIndex = indexTracker[i];
             int rowIndex = indexTracker[sparseMatrixCSC[j].row];
 
             glm::vec2 diff = tsneParticles[colIndex].position - tsneParticles[rowIndex].position;
@@ -127,21 +156,44 @@ void cudaTsneStepAtt(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSi
             tsneParticles[colIndex].derivative += -(float)sparseMatrixCSC[j].val * (diff / (1.0f + (distance * distance)));
         }
         
-        
 
-        tsneParticles[i].position = tsneParticles[i].position + learnRate * tsneParticles[i].derivative;
-        //tsneParticlesPrevPrev[i] = tsneParticlesPrev[i];
-        //tsneParticlesPrev[i] = tsneParticles[i];
+        //int indexTrackerResult = indexTracker[i];
+        //int indexTrackerPrevResult = indexTrackerPrev[i];
+        //if (tsneParticles[indexTrackerResult].ID != tsneParticlesPrev[indexTrackerPrevResult].ID)
+        //{
+        //    while (true)
+        //    {
 
-        //tsneParticles[indexTracker[i]].position = tsneParticlesPrev[indexTracker[i]].position + learnRate * tsneParticlesPrev[indexTracker[i]].derivative + accelerationRate * (tsneParticlesPrev[indexTracker[i]].position - tsneParticlesPrevPrev[indexTrackerPrev[i]].position);
-        //tsneParticles[indexTracker[i]].label = tsneParticlesPrev[indexTracker[i]].label;
-        //tsneParticles[indexTracker[i]].ID = tsneParticlesPrev[indexTracker[i]].ID;
+        //    }
+        //}
+
+
+
+
+        // apply the derivative to new position
+        int indexTrackerResult = indexTracker[i];
+        int indexTrackerPrevResult = indexTrackerPrev[i];
+
+        // make room in tsneParticles for the new values
+        tsneParticlesPrevPrev[indexTrackerPrevResult] = tsneParticlesPrev[indexTrackerPrevResult];
+        tsneParticlesPrev[indexTrackerResult] = tsneParticles[indexTrackerResult];
+
+        tsneParticles[indexTrackerResult].position = tsneParticlesPrev[indexTrackerResult].position + learnRate * tsneParticlesPrev[indexTrackerResult].derivative;
+        tsneParticles[indexTrackerResult].label = tsneParticlesPrev[indexTrackerResult].label;
+        tsneParticles[indexTrackerResult].ID = tsneParticlesPrev[indexTrackerResult].ID;
+
+        //tsneParticles[indexTrackerResult].position = tsneParticlesPrev[indexTrackerResult].position + learnRate * tsneParticlesPrev[indexTrackerResult].derivative + accelerationRate * (tsneParticlesPrev[indexTrackerResult].position - tsneParticlesPrevPrev[indexTrackerPrevResult].position);
+        //tsneParticles[indexTrackerResult].label = tsneParticlesPrev[indexTrackerResult].label;
+        //tsneParticles[indexTrackerResult].ID = tsneParticlesPrev[indexTrackerResult].ID;
+
+        // copy indices to the prev
+        indexTrackerPrev[i] = indexTracker[i];
     }
 }
 
 
 template <class T>
-NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, int* initLabels, float initLearnRate, float initAccelerationRate)
+NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, std::vector<uint8_t>& initLabels, float initLearnRate, float initAccelerationRate)
 {
     // initialize static memory
     tsneParticlesSize = initTsneParticlesSize;
@@ -236,7 +288,6 @@ NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEnt
     // copy host to device
     cudaMemcpy(sparseMatrixCSC, initSparseMatrixCSC,                           initSparseMatrixCSCSize * sizeof(SparseEntryCSC2D), cudaMemcpyHostToDevice);
     cudaMemcpy(sparseMatrixColumnIndexStart, initSparseMatrixColumnIndexStart, (tsneParticlesSize + 1) * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(labels, initLabels,                                             tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMemcpy(indexTracker, indexTrackerToBuffer,                             tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(indexTrackerPrev, indexTrackerPrevToBuffer,                     tsneParticlesSize * sizeof(int), cudaMemcpyHostToDevice);
@@ -248,7 +299,6 @@ NBodySolverGpuNaive<T>::NBodySolverGpuNaive(int initTsneParticlesSize, SparseEnt
     // free host memory
     delete[] initSparseMatrixCSC;
     delete[] initSparseMatrixColumnIndexStart;
-    delete[] initLabels;
 
     cudaFreeHost(indexTrackerToBuffer);
     cudaFreeHost(indexTrackerPrevToBuffer);
@@ -284,17 +334,19 @@ void NBodySolverGpuNaive<T>::timeStep()
     int blockSize = 256;
     int numBlocks = divUp(tsneParticlesSize, blockSize);
 
+    cudaTsneStepShuffle<<<1, 1>>>(indexTracker, tsneParticles, tsneParticlesSize);
+
     for (int r = 0; r < 1; r++)
     {
-        cudaTsneStepRep<TsneParticle2D> << <numBlocks, blockSize >> > (sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[0], tsneParticlesSize, learnRate, accelerationRate);
+        cudaTsneStepRep<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[0], tsneParticlesSize, learnRate, accelerationRate);
 
         for (int i = 0; i < sumStorageAmount - 1; i++)
         {
             int sumNumBlocks = divUp(sumStoragesAmounts[i], (SUMblockSize * 2) * SUMgridReductionAmount);
-            cudaTsneStepSum<TsneParticle2D, 128> << <sumNumBlocks, SUMblockSize, SUMblockSize * sizeof(float) + 1 >> > (sumStoragesAmounts[i], sumStorages[i], sumStorages[i + 1]);
+            cudaTsneStepSum<TsneParticle2D, /*replace 128 with SUMblockSize*/128><<<sumNumBlocks, SUMblockSize, SUMblockSize * sizeof(float) + 1>>>(sumStoragesAmounts[i], sumStorages[i], sumStorages[i + 1]);
         }
 
-        cudaTsneStepAtt<TsneParticle2D> << <numBlocks, blockSize >> > (sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, labels, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[sumStorageAmount - 1], tsneParticlesSize, learnRate, accelerationRate);
+        cudaTsneStepAtt<TsneParticle2D><<<numBlocks, blockSize>>>(sparseMatrixCSC, sparseMatrixCSCSize, sparseMatrixColumnIndexStart, indexTracker, indexTrackerPrev, tsneParticles, tsneParticlesPrev, tsneParticlesPrevPrev, sumStorages[sumStorageAmount - 1], tsneParticlesSize, learnRate, accelerationRate);
     }
 }
 
@@ -307,6 +359,6 @@ void NBodySolverGpuNaive<T>::getParticles(std::vector<TsneParticle2D>& result)
 
 // Explicit instantiation (required for templates in .cu)
 template class NBodySolverGpuNaive<TsneParticle2D>;
-template __global__ void cudaTsneStepRep<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
+template __global__ void cudaTsneStepRep<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
 template __global__ void cudaTsneStepSum<TsneParticle2D, 128>(int sumInAmount, const float* sumIn, float* sumOut);
-template __global__ void cudaTsneStepAtt<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* labels, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);
+template __global__ void cudaTsneStepAtt<TsneParticle2D>(SparseEntryCSC2D* sparseMatrixCSC, size_t sparseMatrixCSCSize, int* sparseMatrixColumnIndexStart, int* indexTracker, int* indexTrackerPrev, TsneParticle2D* tsneParticles, TsneParticle2D* tsneParticlesPrev, TsneParticle2D* tsneParticlesPrevPrev, float* sumStorage, int tsneParticlesSize, float learnRate, float accelerationRate);

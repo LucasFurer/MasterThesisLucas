@@ -63,11 +63,11 @@ public:
 
         // load the labels and sparse matrix
         labels = Loader::loadLabels(labelsPath.string());
-        int* labelsArr = new int[TsneParticlesSize];
-        for (int i = 0; i < TsneParticlesSize; i++)
-        {
-            labelsArr[i] = labels[i];
-        }
+        //int* labelsArr = new int[TsneParticlesSize];
+        //for (int i = 0; i < TsneParticlesSize; i++)
+        //{
+        //    labelsArr[i] = labels[i];
+        //}
 
         Pmatrix = Loader::loadPmatrix(fileName.string());
         std::vector<SparseEntryCOO2D> sparseMatrixCOO = std::vector<SparseEntryCOO2D>(Pmatrix.nonZeros());
@@ -128,7 +128,7 @@ public:
         //sparseMatrixCSC with size sparseMatrixCOO.size()
         //sparseMatrixColumnIndexStart with size TsneParticlesSize + 1
 
-        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labelsArr, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
+        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
 

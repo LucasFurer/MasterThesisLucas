@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <curand_kernel.h>
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include <device_launch_parameters.h>
@@ -41,7 +42,7 @@ public:
     float accelerationRate;
 
 
-    NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, int* initLabels, float initLearnRate, float initAccelerationRate);
+    NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, std::vector<uint8_t>& initLabels, float initLearnRate, float initAccelerationRate);
     ~NBodySolverGpuNaive();
 
     void timeStep();
