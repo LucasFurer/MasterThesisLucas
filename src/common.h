@@ -1,5 +1,11 @@
 #pragma once
 
+#include <glad/glad.h>
+#include "openGLhelper/buffer.h"
+#include "openGLhelper/shader.h"
+#include "openGLhelper/texture.h"
+
+
 enum AccelerationType 
 {
     naive,

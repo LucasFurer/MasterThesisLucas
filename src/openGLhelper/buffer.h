@@ -1,9 +1,11 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <glad/glad.h>
 //#include "common.h"
 #include "../particles/embeddedPoint.h"
 #include <vector>
+#include <iostream>
 
 enum DataType
 {
@@ -29,7 +31,7 @@ public:
 
 	// constructor --------------------------------------------------------------------------------------------------------
 
-	Buffer()
+	Buffer() // maybe dont create buffers on an empty buffer object because who is going to clean this up
 	{
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);

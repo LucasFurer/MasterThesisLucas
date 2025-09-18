@@ -4,6 +4,8 @@
 //#include "nbodysolvers/gpu/nBodySolverGpuNaive.h"
 //#include "nbodysolvers/gpu/nBodySolverGpuBH.h"
 #include "../../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
+#include "../../nbodysolvers/gpu/nBodySolverGpuBH.cuh"
+#include "../../nbodysolvers/gpu/nBodySolverGpu.cuh"
 #include "../../structs/sparseEntry2D.h"
 
 
@@ -29,8 +31,8 @@ public:
     //Buffer* boxBuffer = new Buffer();
     //int showLevel = 0;
 
-    std::map<std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolvers; // std::map<std::string, NBodySolverGpu<TsneParticle2D>*>
-    std::string nBodySelect = "naive";
+    std::map<std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolvers; // std::map<std::string, NBodySolverGpu<TsneParticle2D>*>
+    std::string nBodySelect = "BH";
 
     //float learnRate;
     //float accelerationRate;
@@ -47,7 +49,7 @@ public:
     TsneGpu()
     {
         // set parameters for t-SNE data input
-        int TsneParticlesSize = 10000;
+        int TsneParticlesSize = 60000;
         float perplexity = 30.0f;
 
 
@@ -128,9 +130,12 @@ public:
         //sparseMatrixCSC with size sparseMatrixCOO.size()
         //sparseMatrixColumnIndexStart with size TsneParticlesSize + 1
 
-        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f); // TSNEGPUnaiveKernal
+        nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f);
+        nBodySolvers["BH"] = new NBodySolverGpuBH<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f, 8);
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
+        delete[] sparseMatrixCSC;
+        delete[] sparseMatrixColumnIndexStart;
 
 
         nBodySolvers[nBodySelect]->getParticles(tsneParticlesToShow);
@@ -145,7 +150,7 @@ public:
         delete TsneParticlesBuffer;
         delete forceBuffer;
 
-        for (std::pair<const std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolverPointer : nBodySolvers) // std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*>
+        for (std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolverPointer : nBodySolvers) // std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*>
         {
             delete nBodySolverPointer.second;
         }
@@ -156,9 +161,9 @@ public:
         TsneParticlesBuffer->cleanup();
         forceBuffer->cleanup();
 
-        for (std::pair<const std::string, NBodySolverGpuNaive<TsneParticle2D>*> nBodySolver : nBodySolvers)
+        for (std::pair<const std::string, NBodySolverGpu<TsneParticle2D>*> nBodySolver : nBodySolvers)
         {
-            //nBodySolver.second->cleanup();
+            nBodySolver.second->cleanup();
         }
     }
 
@@ -188,7 +193,7 @@ public:
             nBodySolvers[nBodySelect]->getParticles(tsneParticlesToShow);
 
             TsneParticlesBuffer->updateBuffer(Pos2FloatLab1Int::particlesToVertexPos2Col3(tsneParticlesToShow), pos2DlabelInt);
-            //nBodySolvers[nBodySelect]->updateTree(tsneParticles, indexTracker);
+            //nBodySolvers[nBodySelect]->getTree();
             forceBuffer->updateBuffer(VertexPos2Col3::particlesToVertexPos2Col3(tsneParticlesToShow, forceSize), pos2DCol3D);
         }
     }

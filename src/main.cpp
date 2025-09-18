@@ -223,11 +223,11 @@ int main(void)
         Shader shaderTsneGpu((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsneGpu.nBodySelect = "naive";
+        tsneGpu.nBodySelect = "BH";
         Renderable tsneGpuRenderablePoints(GL_POINTS, tsneGpuModel, tsneGpu.TsneParticlesBuffer, &shaderTsneGpu, nullptr);
-        //Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
+        Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneGpuRenderableForces(GL_LINES, tsneGpuModel, tsneGpu.forceBuffer, &shaderLine2D, nullptr);
-        std::vector<Renderable> tsneGpuRenderables{ tsneGpuRenderablePoints, tsneGpuRenderableForces };
+        std::vector<Renderable> tsneGpuRenderables{ tsneGpuRenderablePoints, tsneGpuRenderableLines, tsneGpuRenderableForces };
 
         TsneCamera cameraTsneGpu(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 

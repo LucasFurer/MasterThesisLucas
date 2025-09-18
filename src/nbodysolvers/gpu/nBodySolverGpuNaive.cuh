@@ -1,21 +1,14 @@
 #pragma once
 
-#include <cuda_runtime.h>
-#include <curand_kernel.h>
-#include <iostream>
-#include <GLFW/glfw3.h>
-#include <device_launch_parameters.h>
-#include <chrono>
-#include <cstdint>
-#include <string>
 #include <vector>
 #include "../../particles/tsneParticle2D.h"
 #include "../../structs/sparseEntry2D.h"
+#include "../../nbodysolvers/gpu/nBodySolverGpu.cuh"
 
 
 
 template <class T>
-class NBodySolverGpuNaive
+class NBodySolverGpuNaive : public NBodySolverGpu<T>
 {
 public:
     SparseEntryCSC2D* sparseMatrixCSC;
@@ -43,8 +36,9 @@ public:
 
 
     NBodySolverGpuNaive(int initTsneParticlesSize, SparseEntryCSC2D* initSparseMatrixCSC, size_t initSparseMatrixCSCSize, int* initSparseMatrixColumnIndexStart, std::vector<uint8_t>& initLabels, float initLearnRate, float initAccelerationRate);
-    ~NBodySolverGpuNaive();
+    ~NBodySolverGpuNaive() override;
 
-    void timeStep();
-    void getParticles(std::vector<TsneParticle2D>& result);
+    void timeStep() override;
+    void getParticles(std::vector<TsneParticle2D>& result) override;
+    void getTree() override;
 };

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../trees/cpu/quadtree.h"
-//#include <functional>
 #include "../nbodysolvers/cpu/nBodySolver.h"
 
 template <typename T>
