@@ -49,7 +49,7 @@ public:
     TsneGpu()
     {
         // set parameters for t-SNE data input
-        int TsneParticlesSize = 60000;
+        int TsneParticlesSize = 10000;
         float perplexity = 30.0f;
 
 
@@ -131,7 +131,7 @@ public:
         //sparseMatrixColumnIndexStart with size TsneParticlesSize + 1
 
         nBodySolvers["naive"] = new NBodySolverGpuNaive<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f);
-        nBodySolvers["BH"] = new NBodySolverGpuBH<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f, 8);
+        nBodySolvers["BH"] = new NBodySolverGpuBH<TsneParticle2D>(TsneParticlesSize, sparseMatrixCSC, sparseMatrixCOO.size(), sparseMatrixColumnIndexStart, labels, 1000.0f, 0.2f, 6);
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
         delete[] sparseMatrixCSC;
