@@ -385,8 +385,8 @@ public:
 
     void errorTimestepTSNE()
     {
-        int errorMeasurementAmount = 100; // how many iterations to run the simulation
-        int dataAmount = 10000; // use this many particles
+        int errorMeasurementAmount = 50; // how many iterations to run the simulation
+        int dataAmount = 1000; // use this many particles
         float setTheta = 1.0f; // approximation parameter
 
         perplexity = 30.0f;
@@ -1249,12 +1249,12 @@ public:
 
     void calculationtimeErrorTSNE()
     {
-        int averageOverAmount = 50; //50; // average the error over this many time steps
+        int averageOverAmount = 25; //50; // average the error over this many time steps
         int dataAmount = 1000; // use this many particles
 
         
         // set graph size
-        int thetaDiversityAmount = 20; //20;
+        int thetaDiversityAmount = 10; //20;
         float thetaDiffSize = 2.0f; // size of theta, so 1.0f means that theta will range between (offset, offset + size)
         float thetaOffset = 0.3f;
 

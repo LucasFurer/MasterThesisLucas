@@ -34,7 +34,7 @@
 
 
 #define _CRTDBG_MAP_ALLOC
-#include<iostream>
+#include <iostream>
 #include <crtdbg.h>
 
 #ifdef _DEBUG
@@ -167,7 +167,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMMiter";
+        tsne.nBodySelect = "FMM";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -223,7 +223,7 @@ int main(void)
         Shader shaderTsneGpu((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsneGpu.nBodySelect = "BH";
+        tsneGpu.nBodySelect = "naive";
         Renderable tsneGpuRenderablePoints(GL_POINTS, tsneGpuModel, tsneGpu.TsneParticlesBuffer, &shaderTsneGpu, nullptr);
         Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneGpuRenderableForces(GL_LINES, tsneGpuModel, tsneGpu.forceBuffer, &shaderLine2D, nullptr);

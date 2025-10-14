@@ -1,7 +1,11 @@
 #pragma once
 
-#include "../trees/cpu/quadTreeNodeFMMiter.h"
-#include "../nbodysolvers/cpu/nBodySolver.h"
+#include <functional>
+#include <vector>
+#include <glm/glm.hpp>
+#include "../../trees/cpu/quadTreeNodeFMMiter.h"
+#include "../../nbodysolvers/cpu/nBodySolver.h"
+#include "nBodySolver.h"
 
 template <typename T>
 struct IntPair
@@ -35,27 +39,23 @@ class NBodySolverFMMiter : public NBodySolver<T>
 public:
     QuadTreeNodeFMMiter<T> root;
 
-    //std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> kernelInteract;
     std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> kernelInteractNodeNode;
     std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> kernelInteractNodeParticle;
-    std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> kernelInteractParticleNode;
-    std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> kernelInteractParticleParticle;
+    std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> kernelInteractParticleNode;
+    std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> kernelInteractParticleParticle;
 
-    //std::stack<IntPair<T>> interactionList;
     std::vector<IntPair<T>> interactionList;
 
     NBodySolverFMMiter
     (
-        //std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> initKernelInteract,
         std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> initKernelInteractNodeNode,
         std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> initKernelInteractNodeParticle,
-        std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> initKernelInteractParticleNode,
-        std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*, std::vector<glm::vec2>*)> initKernelInteractParticleParticle,
+        std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> initKernelInteractParticleNode,
+        std::function<void(float*, QuadTreeNodeFMMiter<T>*, QuadTreeNodeFMMiter<T>*)> initKernelInteractParticleParticle,
         int initMaxChildren,
         float initTheta
     )
     {
-        //kernelInteract = initKernelInteract;
         kernelInteractNodeNode = initKernelInteractNodeNode;
         kernelInteractNodeParticle = initKernelInteractNodeParticle;
         kernelInteractParticleNode = initKernelInteractParticleNode;
@@ -88,30 +88,19 @@ public:
 private:
     void getFMMAcc(float* total, std::vector<glm::vec2>* forces, float theta, std::vector<T>* embeddedPoints)
     {
-        //std::stack<IntPair<T>>().swap(interactionList);
         interactionList.clear();
-
-        //interactionList.push(IntPair<T>(&root, &root));
         interactionList.push_back(IntPair<T>(&root, &root));
         
-
-        //while (!interactionList.empty())
         while (interactionList.size() != 0)
         {
-            //IntPair currentPair = interactionList.top();
-            //interactionList.pop();
             IntPair currentPair = interactionList.back();
             interactionList.pop_back();
-
-
 
             float LA = currentPair.A->highestCorner.x - currentPair.A->lowestCorner.x;
             float LB = currentPair.B->highestCorner.x - currentPair.B->lowestCorner.x;
 
             glm::vec2 nodeDiff = currentPair.A->centreOfMass - currentPair.B->centreOfMass;
             float distanceNodeNode = glm::length(nodeDiff);
-
-            //bool closenessCondition = (LA + LB) / distanceNodeNode < theta;
 
 
             if (currentPair.A->children.size() != 0)
@@ -122,13 +111,11 @@ private:
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
                         kernelInteractNodeNode(total, currentPair.A, currentPair.B);
-                        //kernelInteractNodeNode(total, currentPair.B, currentPair.A);
                     }
                     else
                     {
                         //std::vector<IntPair<T>> addedPairs; // slow symmetric method
                         //addedPairs.reserve(16);
-
                         //for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children)
                         //{
                         //    for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
@@ -143,16 +130,19 @@ private:
                         //    }
                         //}
 
-                        for (int i = 0; i < currentPair.A->children.size(); i++) // fast symmetric method
+                        if (currentPair.A == currentPair.B)
                         {
-                            if (currentPair.A == currentPair.B)
+                            for (int i = 0; i < currentPair.A->children.size(); i++) // fast symmetric method
                             {
                                 for (int j = i; j < currentPair.B->children.size(); j++)
                                 {
                                     interactionList.push_back(IntPair<T>(currentPair.A->children[i], currentPair.B->children[j]));
                                 }
                             }
-                            else
+                        }
+                        else
+                        {
+                            for (int i = 0; i < currentPair.A->children.size(); i++) // fast symmetric method
                             {
                                 for (int j = 0; j < currentPair.B->children.size(); j++)
                                 {
@@ -161,13 +151,7 @@ private:
                             }
                         }
 
-                        //for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterA : currentPair.A->children) // normal unsymmetric method
-                        //{
-                        //    for (QuadTreeNodeFMMiter<T>* quadTreeNodeFMMiterB : currentPair.B->children)
-                        //    {
-                        //        interactionList.push_back(IntPair<T>(quadTreeNodeFMMiterA, quadTreeNodeFMMiterB));
-                        //    }
-                        //}
+
                     }
                 }
                 else // Node Particle interaction
@@ -176,7 +160,7 @@ private:
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
                         kernelInteractNodeParticle(total, currentPair.A, currentPair.B);
-                        kernelInteractParticleNode(total, currentPair.B, currentPair.A, forces); // remove this for unsymmetric method
+                        kernelInteractParticleNode(total, currentPair.B, currentPair.A);
                     }
                     else
                     {
@@ -193,8 +177,8 @@ private:
                 {
                     if ((LA + LB) / distanceNodeNode < theta)
                     {
-                        kernelInteractParticleNode(total, currentPair.A, currentPair.B, forces);
-                        kernelInteractNodeParticle(total, currentPair.B, currentPair.A); // remove this for unsymmetric method
+                        kernelInteractParticleNode(total, currentPair.A, currentPair.B);
+                        kernelInteractNodeParticle(total, currentPair.B, currentPair.A);
                     }
                     else
                     {
@@ -208,8 +192,8 @@ private:
                 {
                     if (distanceNodeNode != 0.0f) // nodes with the same position will not be calculated since it will result in nonsense, this also prevents self interaction
                     {
-                        kernelInteractParticleParticle(total, currentPair.A, currentPair.B, forces);
-                        kernelInteractParticleParticle(total, currentPair.B, currentPair.A, forces); // remove this for unsymmetric method
+                        kernelInteractParticleParticle(total, currentPair.A, currentPair.B);
+                        kernelInteractParticleParticle(total, currentPair.B, currentPair.A);
                     }
                 }
             }
@@ -270,20 +254,20 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
         {
             {
                 MB0 * ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
-                MB0 * ((R.y) * D2 + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
+                MB0 * ((R.y) * D2 + R.x * R.x * R.y * D3)              // i = 0, j = 0, k = 1
             },
             {
-                MB0 * ((R.y) * D2 + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
-                MB0 * ((R.x) * D2 + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
+                MB0 * ((R.y) * D2 + R.x * R.y * R.x * D3),             // i = 0, j = 1, k = 0
+                MB0 * ((R.x) * D2 + R.x * R.y * R.y * D3)              // i = 0, j = 1, k = 1
             }
         },
         {
             {
-                MB0 * ((R.y) * D2 + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
-                MB0 * ((R.x) * D2 + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
+                MB0 * ((R.y) * D2 + R.y * R.x * R.x * D3),             // i = 1, j = 0, k = 0
+                MB0 * ((R.x) * D2 + R.y * R.x * R.y * D3)              // i = 1, j = 0, k = 1
             },
             {
-                MB0 * ((R.x) * D2 + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
+                MB0 * ((R.x) * D2 + R.y * R.y * R.x * D3),             // i = 1, j = 1, k = 0
                 MB0 * ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
             }
         }
@@ -317,13 +301,9 @@ void TSNEFMMiterInteractionKernalNodeNode(float* accumulator, QuadTreeNodeFMMite
         MB0* (R.y* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    // ---------------------------------------------------------------------
-
-
     activeNode->C1 += C1other;
     activeNode->C2 += C2;
     activeNode->C3 += -C3;
-    
 }
 
 
@@ -391,7 +371,7 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
 }
 
 
-void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFMMiter<EmbeddedPoint>* passiveNode, QuadTreeNodeFMMiter<EmbeddedPoint>* activeNode, std::vector<glm::vec2>* forces)
+void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFMMiter<EmbeddedPoint>* passiveNode, QuadTreeNodeFMMiter<EmbeddedPoint>* activeNode)
 {
     float softening = 1.0f;
 
@@ -422,11 +402,10 @@ void TSNEFMMiterInteractionKernalParticleNode(float* accumulator, QuadTreeNodeFM
     };
 
     passiveNode->C1 += C1;
-    //(*forces)[passiveNode->id] += glm::vec2(C1(0), C1(1));
 }
 
 
-void TSNEFMMiterInteractionKernalParticleParticle(float* accumulator, QuadTreeNodeFMMiter<EmbeddedPoint>* passiveNode, QuadTreeNodeFMMiter<EmbeddedPoint>* activeNode, std::vector<glm::vec2>* forces)
+void TSNEFMMiterInteractionKernalParticleParticle(float* accumulator, QuadTreeNodeFMMiter<EmbeddedPoint>* passiveNode, QuadTreeNodeFMMiter<EmbeddedPoint>* activeNode)
 {
     float softening = 1.0f;
 
@@ -447,9 +426,6 @@ void TSNEFMMiterInteractionKernalParticleParticle(float* accumulator, QuadTreeNo
 
 
     passiveNode->C1 += C1;
-
-    //activeNode->C1 += -C1;
-    //(*forces)[passiveNode->id] += D1 * R;
 }
 
 
