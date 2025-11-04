@@ -1,12 +1,10 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_CUDA
-#define GLM_FORCE_INLINE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp> // remove
-#include <glm/gtc/type_ptr.hpp> // remove
+//#define GLM_ENABLE_EXPERIMENTAL
+//#define GLM_FORCE_CUDA
+//#define GLM_FORCE_INLINE
 
+#include <glm/glm.hpp>
 #include <cuda_runtime.h>
 
 

@@ -1,5 +1,4 @@
-#ifndef NBODYSIM_H
-#define NBODYSIM_H
+#pragma once
 /*
 #include "trees/octree.h"
 #include "ffthelper.h"
@@ -366,4 +365,4 @@ private:
 };
 */
 
-#endif
+

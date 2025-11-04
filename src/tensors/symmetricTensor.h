@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 //template <typename T>
 class SymmetricTensor

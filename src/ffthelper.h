@@ -1,5 +1,4 @@
-#ifndef FFTHELPER_H
-#define FFTHELPER_H
+#pragma once
 
 #define REAL 0
 #define IMAG 1
@@ -63,9 +62,6 @@ public:
 private:
 };
 
-
-
-#endif
 
 /*
 //code for in main

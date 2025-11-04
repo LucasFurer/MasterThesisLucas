@@ -1,14 +1,26 @@
+// change powf to std::pow
 #pragma once
+
+#include <glm/glm.hpp>
 #include <vector>
-#include "particles/particle3D.h"
-#include "openGLhelper/buffer.h"
-#include "nbodysolvers/cpu/nBodySolverNaive.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHut.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
-#include "nbodysolvers/cpu/nBodySolverMultiPole.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
-#include "nbodysolvers/cpu/nBodySolverFMM.h"
-#include "nbodysolvers/cpu/nBodySolver.h"
+#include <map>
+#include <string>
+#include <utility>
+#include <GLFW/glfw3.h>
+#include <iostream>
+#include <cmath> 
+#include <cstdlib> // for srand but maybe delete this
+
+#include "../particles/particle2D.h"
+#include "../openGLhelper/buffer.h"
+#include "../nbodysolvers/cpu/nBodySolver.h"
+#include "../nbodysolvers/cpu/nBodySolverNaive.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHut.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
+#include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverFMM.h"
+#include "../common.h"
 
 class GravitySim
 {

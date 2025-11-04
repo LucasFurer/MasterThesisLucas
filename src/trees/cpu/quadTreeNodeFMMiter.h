@@ -1,5 +1,12 @@
 #pragma once
 
+#include <glm/glm.hpp>
+#include <algorithm>
+#include <vector>
+#include <iostream>
+#include <Fastor/Fastor.h>
+#include <utility>
+
 template <typename T>
 class QuadTreeNodeFMMiter
 {

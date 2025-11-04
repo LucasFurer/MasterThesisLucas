@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "../../particles/tsneParticle2D.h"
 #include "../../structs/sparseEntry2D.h"
 #include "../../common.h"

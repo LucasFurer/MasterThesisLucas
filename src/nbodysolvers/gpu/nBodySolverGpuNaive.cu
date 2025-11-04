@@ -6,15 +6,20 @@
 #include <device_launch_parameters.h>
 #include <cstdint>
 #include <string>
-
+#include <cmath>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <cstddef>
 
-#include "../../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
-#include "../../nbodysolvers/gpu/cudaHelper.cuh"
+#include "nBodySolverGpuNaive.cuh"
+#include "cudaHelper.cuh"
 #include "../../particles/tsneParticle2D.h"
 #include "../../structs/sparseEntry2D.h"
+#include "../../common.h"
+
+
+
+
 
 __global__
 void cudaTsneNaiveStepShuffle(int* indexTracker, TsneParticle2D* tsneParticles, int tsneParticlesSize)

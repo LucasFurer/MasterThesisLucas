@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <cassert>
+#include <cstdio> // old c stuff
 
 static inline int divUp(int a, int b)
 {

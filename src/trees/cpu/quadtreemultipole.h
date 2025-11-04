@@ -1,17 +1,11 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <algorithm>
 #include <vector>
 #include <iostream>
-
-
 #include <Fastor/Fastor.h>
-
-//#include <Fastor/Fastor.h>
+#include <utility>
 
 template <typename T>
 class QuadTreeMultiPole

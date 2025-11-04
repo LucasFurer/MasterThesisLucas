@@ -1,7 +1,15 @@
 #pragma once
 
-#include "../trees/cpu/quadtree.h"
-#include "../nbodysolvers/cpu/nBodySolver.h"
+#include <functional>
+#include <glm/glm.hpp>
+#include <utility>
+#include <vector>
+
+#include "../../common.h"
+#include "nBodySolver.h"
+#include "../../trees/cpu/quadtree.h"
+#include "../../particles/embeddedPoint.h"
+#include "../../particles/Particle2D.h"
 
 template <typename T>
 class NBodySolverBarnesHut : public NBodySolver<T>

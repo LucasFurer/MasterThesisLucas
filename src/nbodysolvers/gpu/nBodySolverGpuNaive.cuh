@@ -1,10 +1,14 @@
 #pragma once
 
+#include <cuda_runtime.h>
+#include <curand_kernel.h>
 #include <vector>
+#include <cstddef> // for size_t
+#include <cstdint> // for uint8_t
+
 #include "../../particles/tsneParticle2D.h"
 #include "../../structs/sparseEntry2D.h"
-#include "../../nbodysolvers/gpu/nBodySolverGpu.cuh"
-
+#include "nBodySolverGpu.cuh"
 
 
 template <class T>

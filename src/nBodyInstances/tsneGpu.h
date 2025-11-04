@@ -1,12 +1,22 @@
 #pragma once
 
-#include "particles/tsneParticle2D.h"
-//#include "nbodysolvers/gpu/nBodySolverGpuNaive.h"
-//#include "nbodysolvers/gpu/nBodySolverGpuBH.h"
-#include "../../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
-#include "../../nbodysolvers/gpu/nBodySolverGpuBH.cuh"
-#include "../../nbodysolvers/gpu/nBodySolverGpu.cuh"
-#include "../../structs/sparseEntry2D.h"
+#include <map>
+#include <string>
+#include <vector>
+#include <filesystem>
+#include <unsupported/Eigen/SparseExtra>
+#include <GLFW/glfw3.h>
+#include <limits>
+#include <algorithm>
+
+#include "../common.h"
+#include "../structs/sparseEntry2D.h"
+#include "../openGLhelper/buffer.h"
+#include "../particles/tsneParticle2D.h"
+#include "../nbodysolvers/gpu/nBodySolverGpuNaive.cuh"
+#include "../nbodysolvers/gpu/nBodySolverGpuBH.cuh"
+#include "../nbodysolvers/gpu/nBodySolverGpu.cuh"
+#include "../structs/sparseEntry2D.h"
 
 
 
@@ -51,12 +61,13 @@ public:
         // set parameters for t-SNE data input
         int TsneParticlesSize = 10000;
         float perplexity = 30.0f;
+        std::string dataSet = "MNIST_digits";
 
 
         // get the path of the labels and sparse matrix
         #ifdef _WIN32
-        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/label_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path() / ("data/P_matrix_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(TsneParticlesSize) + "/label_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(TsneParticlesSize) + "/P_matrix_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         #endif
         #ifdef linux
         std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(TsneParticlesSize) + "_perp" + std::to_string((int)perplexity) + ".bin");

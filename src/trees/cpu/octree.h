@@ -1,14 +1,15 @@
-#ifndef OCTREE_H
-#define OCTREE_H
+#pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <algorithm>
+#include <cstddef>
 #include <vector>
+#include <limits>
+#include <algorithm>
+#include <utility>
 #include <iostream>
-#include "../particles/particle3D.h"
+
+
+#include "../../particles/particle3D.h"
 
 struct LineSegment
 {
@@ -312,5 +313,3 @@ private:
 int OctTree::maxChildren = 1;
 Particle3D* OctTree::allParticles = nullptr;
 std::size_t OctTree::allParticlesSize = 0;
-
-#endif

@@ -1,6 +1,13 @@
-#ifndef SCENE_H
-#define SCENE_H
+#pragma once
 
+#include <string>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+
+#include "../cameras/camera.h"
+#include "../../common.h"
 
 //#include "cameras/camera.h"
 //#include "shader.h"
@@ -88,4 +95,3 @@ public:
 private:
 
 };
-#endif

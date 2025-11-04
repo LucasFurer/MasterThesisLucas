@@ -1,5 +1,11 @@
 #pragma once
 
+#include <vector>
+#include <glm/glm.hpp>
+
+#include "../../openGLhelper/buffer.h"
+
+
 template <typename T>
 class NBodySolver
 {

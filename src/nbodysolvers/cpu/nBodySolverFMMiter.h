@@ -1,11 +1,16 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 #include <glm/glm.hpp>
-#include "../../trees/cpu/quadTreeNodeFMMiter.h"
-#include "../../nbodysolvers/cpu/nBodySolver.h"
+#include <utility>
+#include <vector>
+#include <Fastor/Fastor.h>
+
+#include "../../common.h"
 #include "nBodySolver.h"
+#include "../../trees/cpu/quadTreeNodeFMMiter.h"
+#include "../../particles/embeddedPoint.h"
+#include "../../particles/Particle2D.h"
 
 template <typename T>
 struct IntPair

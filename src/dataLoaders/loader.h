@@ -1,9 +1,13 @@
-#ifndef LOADER_H
-#define LOADER_H
+#pragma once
 
 #include <unsupported/Eigen/SparseExtra>
-//#include <Eigen/Sparse>
-//#include <unsupported/Eigen/src/SparseExtra/MarketIO.h>
+#include <vector>
+#include <algorithm>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <ios>
+#include <iterator>
 
 class Loader
 {
@@ -51,13 +55,13 @@ public:
 
     static Eigen::SparseMatrix<double> loadPmatrix(std::string path)
     {
+        Eigen::SparseMatrix<double> Pmatrix;
+
         std::ifstream file(path);
         if (file.is_open())
         {
-            Eigen::SparseMatrix<double> Pmatrix;
             Eigen::loadMarket(Pmatrix, path);
             std::cout << "Matrix loaded successfully!" << std::endl;
-            return Pmatrix;
             //Pmatrix.coeff(i, j)
             //Pmatrix.rows()
             //Pmatrix.cols()
@@ -67,8 +71,7 @@ public:
             std::cerr << "Failed to open " + (std::string)path + " file!" << std::endl;
         }
 
-        Eigen::SparseMatrix<double> test;//remove this
-        return test;
+        return Pmatrix;
     }
 
 private:
@@ -80,7 +83,6 @@ private:
     }
 
 };
-#endif
 
 //call like this
 //std::filesystem::path currentPath = std::filesystem::current_path();

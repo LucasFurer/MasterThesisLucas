@@ -1,7 +1,9 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#pragma once
 
-#include "stb_image.h"
+#include <glad/glad.h>
+#include <iostream>
+
+#include "../stb_image.h"
 
 class Texture
 {
@@ -108,4 +110,3 @@ public:
 private:
 
 };
-#endif

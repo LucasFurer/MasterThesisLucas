@@ -1,13 +1,11 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include "../particles/embeddedPoint.h"
+#include <limits>
+#include <utility>
 
 template <typename T>
 class QuadTreeBarnesHutReverse

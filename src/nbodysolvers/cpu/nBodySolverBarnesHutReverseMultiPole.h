@@ -1,8 +1,16 @@
 #pragma once
 
-#include "../trees/cpu/quadTreeBarnesHutReverseMultiPole.h"
-#include "../particles/particle2D.h"
-#include "../nbodysolvers/cpu/nBodySolver.h"
+#include <functional>
+#include <glm/glm.hpp>
+#include <utility>
+#include <vector>
+#include <Fastor/Fastor.h>
+
+#include "../../common.h"
+#include "nBodySolver.h"
+#include "../../trees/cpu/quadTreeBarnesHutReverseMultiPole.h"
+#include "../../particles/embeddedPoint.h"
+#include "../../particles/Particle2D.h"
 
 template <typename T>
 class NBodySolverBarnesHutReverseMultiPole : public NBodySolver<T>

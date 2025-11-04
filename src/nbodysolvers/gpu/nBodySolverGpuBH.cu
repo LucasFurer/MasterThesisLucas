@@ -1,25 +1,31 @@
-//#pragma once
+#pragma once
 
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <iostream>
 #include <device_launch_parameters.h>
-#include <cstdint>
+#include <cstdint> // for uint8_t
 #include <string>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
+#include <iostream>
+#include <cstddef>
 
 #define GLM_ENABLE_EXPERIMENTAL
 //#define GLM_FORCE_CUDA
 //#define GLM_FORCE_INLINE
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+//#include <glm/gtx/string_cast.hpp>
 
-#include "../../nbodysolvers/gpu/nBodySolverGpuBH.cuh"
-#include "../../nbodysolvers/gpu/cudaHelper.cuh"
+#include "nBodySolverGpuBH.cuh"
+#include "cudaHelper.cuh"
 #include "../../particles/tsneParticle2D.h"
 #include "../../structs/sparseEntry2D.h"
 #include "../../trees/gpu/quadTreeGpuBH.cuh"
+#include "../../common.h"
 
 
 // reduction functions -----------------------------------------------------------------------------------------------------------

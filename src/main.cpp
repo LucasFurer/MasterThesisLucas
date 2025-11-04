@@ -1,36 +1,20 @@
 #define GLM_ENABLE_EXPERIMENTAL
-#define E 2.71828182845904523536 // std::numbers::pi_v<double>
+//#define E 2.71828182845904523536 // std::numbers::pi_v<double>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <filesystem>
-#include <iostream>
 #include <string>
-#include "stb_image.h"
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/component_wise.hpp>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 #include <vector>
-#include <fstream>
+#include <iostream>
 #include <map>
-#include <Eigen/Sparse>
-#include <Eigen/Eigen>
-#include <unsupported/Eigen/SparseExtra>
-#include <Eigen/Core>
-#include <unsupported/Eigen/CXX11/Tensor>
-#include <Fastor/Fastor.h>
-#include <algorithm>
-#include <random>
-#include <format>
-#include <math.h>
-#include <numbers>
-#include <queue>
-#include <stack>
+#include <filesystem>
+#include "stb_image.h"
+#include <chrono>
+
 
 
 #define _CRTDBG_MAP_ALLOC
@@ -44,31 +28,19 @@
 
 
 #include "openGLhelper/shader.h"
+#include "openGLhelper/scene.h"
+#include "openGLhelper/buffer.h"
+#include "openGLhelper/texture.h"
 #include "cameras/camera.h"
 #include "cameras/normalCamera.h"
 #include "cameras/tsneCamera.h"
-#include "codeData/data.h"
-#include "openGLhelper/buffer.h"
-#include "openGLhelper/texture.h"
-#include "particles/particle3D.h"
-#include "particles/particle2D.h"
-#include "particles/embeddedPoint.h"
-#include "particles/tsneParticle2D.h"
-#include "common.h"
-#include "ffthelper.h"
-#include "visquad.h"
-#include "openGLhelper/scene.h"
 #include "nBodyInstances/tsne.h"
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
 #include "nBodyInstances/nBodyScenarios.h"
-#include "nbodysolvers/cpu/nBodySolver.h"
-#include "nbodysolvers/cpu/nBodySolverNaive.h"
-#include "nbodysolvers/cpu/nBodySolverFMM.h"
-#include "trees/cpu/quadtreeFMM.h"
-#include "nbodysolvers/cpu/nBodySolver.h"
-#include "nbodysolvers/gpu/nBodySolverGpu.h"
-
+#include "common.h"
+#include "codeData/data.h"
+#include "visualization/multipoleVis.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -143,13 +115,21 @@ int main(void)
         std::string currentSceneName = "tsne";
 
 
-
+        
 
         #ifdef _WIN32
-        Shader shaderLine2D("shaders/shaderLine2D.vs", "shaders/shaderLine2D.fs");
+        Shader shaderLine2D
+        (
+            ((std::filesystem::current_path() / "shaders" / "shaderLine2D.vs").string()).c_str(),
+            ((std::filesystem::current_path() / "shaders" / "shaderLine2D.fs").string()).c_str()
+        );
         #endif
         #ifdef linux
-        Shader shaderLine2D((std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str());
+        Shader shaderLine2D
+        (
+            (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.vs").c_str(), 
+            (std::filesystem::current_path().parent_path().string() + "/shaders/shaderLine2D.fs").c_str()
+        );
         #endif
 
 
@@ -256,20 +236,47 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         NBodyScenarios nBodyScenarios;
+        std::cout << "starting tests--------------------------" << std::endl;
+
+        std::vector<float> perpValues{};
+        for (float val : perpValues)
+        {
+            float perp = val;
+            std::string dataSet = "MNIST_fashion";
+            int dataSize = 10000;
+
+            std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
+            nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
+            std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end - start;
+            std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
+
+            start = std::chrono::high_resolution_clock::now();
+            nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = end - start;
+            std::cout << "calculationtimeThetaTSNE test done in: " << elapsed.count() << std::endl;
+
+            start = std::chrono::high_resolution_clock::now();
+            nBodyScenarios.errorThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 825 sec
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = end - start;
+            std::cout << "errorThetaTSNE test done in: " << elapsed.count() << std::endl;
+
+            start = std::chrono::high_resolution_clock::now();
+            nBodyScenarios.calculationtimeErrorTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 885 sec
+            end = std::chrono::high_resolution_clock::now();
+            elapsed = end - start;
+            std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
+        }
+        std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
+
+
         //nBodyScenarios.errorTimestepGRAVITY();
-        ////nBodyScenarios.errorTimestepTSNE();
-
         //nBodyScenarios.errorTimestepGRAVITYFMMtest();
-
         //nBodyScenarios.calculationtimeThetaGRAVITY();
-        //nBodyScenarios.calculationtimeThetaTSNE();
-
         //nBodyScenarios.errorThetaGRAVITY();
-        //nBodyScenarios.errorThetaTSNE();
-
         //nBodyScenarios.calculationtimeErrorGRAVITY();
-        ////nBodyScenarios.calculationtimeErrorTSNE();
-
 
         //nBodyScenarios.testNodeNode();
 

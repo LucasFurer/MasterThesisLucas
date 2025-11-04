@@ -1,17 +1,27 @@
-#ifndef TSNE_H
-#define TSNE_H
+#pragma once
 
+#include <iostream>
+#include <map>
+#include <vector>
 #include <cmath>
-#include "common.h"
-#include "openGLhelper/buffer.h"
-#include "dataLoaders/loader.h"
-#include "nbodysolvers/cpu/nBodySolverNaive.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHut.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
-#include "nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
-#include "nbodysolvers/cpu/nBodySolverMultiPole.h"
-#include "nbodysolvers/cpu/nBodySolverFMM.h"
-#include "nbodysolvers/cpu/nBodySolverFMMiter.h"
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <unsupported/Eigen/SparseExtra>
+#include <limits>
+
+#include "../particles/embeddedPoint.h"
+#include "../openGLhelper/buffer.h"
+#include "../common.h"
+#include "../openGLhelper/buffer.h"
+#include "../dataLoaders/loader.h"
+#include "../nbodysolvers/cpu/nBodySolverNaive.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHut.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
+#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverFMM.h"
+#include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 
 
 class TSNE
@@ -59,18 +69,19 @@ public:
 	{
         int dataAmount = 10000;
         float perplexity = 30.0f;
+        std::string dataSet = "MNIST_digits";
+        //std::string dataSet = "CIFAR10";
 
         learnRate = 1000.0f;
-        accelerationRate = 0.5f;
+        //accelerationRate = 0.5f;
 
         timeStepsPerSec = 0.0f;
 
         lastTimeUpdated = 0.0f;
 
-        
         #ifdef _WIN32
-        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         #endif
         #ifdef linux
         std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
@@ -172,11 +183,16 @@ public:
         {
             lastTimeUpdated = glfwGetTime();
 
-            updateDerivativeNaive();
+            updateDerivative();
 
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
             embeddedPoints.swap(embeddedPointsPrev);
 
+            float accelerationRate = 0.8f;
+            if (globalTimeStep < 250)
+            {
+                accelerationRate = 0.5f;
+            }
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
@@ -216,7 +232,7 @@ public:
 
 private:
 
-    void updateDerivativeNaive()
+    void updateDerivative()
     {
         //checkError();
         
@@ -301,7 +317,14 @@ private:
                 glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
                 float distance = glm::length(diff);
 
-                attractForce[it.col()] += -(float)it.value() * (diff / (1.0f + (distance * distance)));
+                float exageration = 1.0f;
+                if (globalTimeStep < 250)
+                {
+                    exageration = 4.0f;
+                }
+
+
+                attractForce[it.col()] += -exageration * (float)it.value() * (diff / (1.0f + (distance * distance)));
             }
         }
     }
@@ -343,5 +366,3 @@ private:
     }
 
 };
-
-#endif

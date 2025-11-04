@@ -1,10 +1,17 @@
 #pragma once
 
-//#include <Eigen/Core>
-//#include <unsupported/Eigen/CXX11/Tensor>
-#include "trees/cpu/quadtreemultipole.h"
+#include <functional>
+#include <glm/glm.hpp>
+#include <utility>
+#include <vector>
 #include <Fastor/Fastor.h>
-#include "nbodysolvers/cpu/nBodySolver.h"
+
+
+#include "../../common.h"
+#include "nBodySolver.h"
+#include "../../trees/cpu/quadtreemultipole.h"
+#include "../../particles/embeddedPoint.h"
+#include "../../particles/Particle2D.h"
 
 template <typename T>
 class NBodySolverMultiPole : public NBodySolver<T>
@@ -154,41 +161,41 @@ private:
 
 
 
-glm::vec2 contractTensor(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
-{
-    glm::vec2 result(0.0f);
+//glm::vec2 contractTensor(Eigen::Tensor<float, 2> Q2, Eigen::Tensor<float, 3> D3)
+//{
+//    glm::vec2 result(0.0f);
+//
+//    for (int i = 0; i < 2; i++)
+//    {
+//        for (int j = 0; j < 2; j++)
+//        {
+//            for (int k = 0; k < 2; k++)
+//            {
+//                result[k] += Q2(i, j) * D3(i, j, k);
+//            }
+//        }
+//    }
+//
+//    return result;
+//}
 
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < 2; j++)
-        {
-            for (int k = 0; k < 2; k++)
-            {
-                result[k] += Q2(i, j) * D3(i, j, k);
-            }
-        }
-    }
-
-    return result;
-}
-
-glm::vec2 contractArray(glm::mat2 Q2, std::array<std::array<std::array<float, 2>, 2>, 2>& D3)
-{
-    glm::vec2 result(0.0f);
-
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < 2; j++)
-        {
-            for (int k = 0; k < 2; k++)
-            {
-                result[k] += Q2[i][j] * D3[i][j][k];
-            }
-        }
-    }
-
-    return result;
-}
+//glm::vec2 contractArray(glm::mat2 Q2, std::array<std::array<std::array<float, 2>, 2>, 2>& D3)
+//{
+//    glm::vec2 result(0.0f);
+//
+//    for (int i = 0; i < 2; i++)
+//    {
+//        for (int j = 0; j < 2; j++)
+//        {
+//            for (int k = 0; k < 2; k++)
+//            {
+//                result[k] += Q2[i][j] * D3[i][j][k];
+//            }
+//        }
+//    }
+//
+//    return result;
+//}
 
 
 

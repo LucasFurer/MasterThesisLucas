@@ -1,16 +1,15 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 
-#include <glad/glad.h> // include glad to get all the required OpenGL headers
-
+#include <glad/glad.h>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+
+//#include <glm/gtc/matrix_transform.hpp>
 
 
 class Shader
@@ -24,7 +23,7 @@ public:
     }
 
     // constructor reads and builds the shader
-    Shader(const char* vertexPath, const char* fragmentPath)
+    Shader(const char* vertexPath, const char* fragmentPath) // change const char* to std::string
     {
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
@@ -155,5 +154,3 @@ public:
             }
         }
 };
-
-#endif

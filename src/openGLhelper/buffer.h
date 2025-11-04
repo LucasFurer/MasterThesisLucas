@@ -1,11 +1,9 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#pragma once
 
 #include <glad/glad.h>
-//#include "common.h"
-#include "../particles/embeddedPoint.h"
 #include <vector>
 #include <iostream>
+#include <cstddef>
 
 enum DataType
 {
@@ -273,5 +271,3 @@ public:
 
 private:
 };
-
-#endif
