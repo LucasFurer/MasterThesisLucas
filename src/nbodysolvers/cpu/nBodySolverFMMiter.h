@@ -350,20 +350,20 @@ void TSNEFMMiterInteractionKernalNodeParticle(float* accumulator, QuadTreeNodeFM
         {
             {
                 (R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3, // i = 0, j = 0, k = 0
-                (R.y) * D2 + R.x * R.x * R.y * D3  // i = 0, j = 0, k = 1
+                (R.y) * D2 + R.x * R.x * R.y * D3              // i = 0, j = 0, k = 1
             },
             {
-                (R.y) * D2 + R.x * R.y * R.x * D3, // i = 0, j = 1, k = 0
-                (R.x) * D2 + R.x * R.y * R.y * D3  // i = 0, j = 1, k = 1
+                (R.y) * D2 + R.x * R.y * R.x * D3,             // i = 0, j = 1, k = 0
+                (R.x) * D2 + R.x * R.y * R.y * D3              // i = 0, j = 1, k = 1
             }
         },
         {
             {
-                (R.y) * D2 + R.y * R.x * R.x * D3, // i = 1, j = 0, k = 0
-                (R.x) * D2 + R.y * R.x * R.y * D3  // i = 1, j = 0, k = 1
+                (R.y) * D2 + R.y * R.x * R.x * D3,             // i = 1, j = 0, k = 0
+                (R.x) * D2 + R.y * R.x * R.y * D3              // i = 1, j = 0, k = 1
             },
             {
-                (R.x) * D2 + R.y * R.y * R.x * D3, // i = 1, j = 1, k = 0
+                (R.x) * D2 + R.y * R.y * R.x * D3,             // i = 1, j = 1, k = 0
                 (R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3  // i = 1, j = 1, k = 1
             }
         }

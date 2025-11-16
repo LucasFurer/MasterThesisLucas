@@ -281,7 +281,8 @@ int main(void)
         //nBodyScenarios.testNodeNode();
 
         std::cout << "im done with nBodyScenarios!" << std::endl;
-
+        MultipoleVis::initMultipoleVisData();
+        MultipoleVis::testFMMtoBH();
 
 
 
