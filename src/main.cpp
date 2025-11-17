@@ -238,19 +238,19 @@ int main(void)
         NBodyScenarios nBodyScenarios;
         std::cout << "starting tests--------------------------" << std::endl;
 
-        std::vector<float> perpValues{};
+        std::vector<float> perpValues{30.0f};
         for (float val : perpValues)
         {
             float perp = val;
-            std::string dataSet = "MNIST_fashion";
-            int dataSize = 10000;
+            std::string dataSet = "MNIST_digits";
+            int dataSize = 1000;
 
             std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
             nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
             std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = end - start;
             std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
-
+            /*
             start = std::chrono::high_resolution_clock::now();
             nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
             end = std::chrono::high_resolution_clock::now();
@@ -268,6 +268,7 @@ int main(void)
             end = std::chrono::high_resolution_clock::now();
             elapsed = end - start;
             std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
+            */
         }
         std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
 
