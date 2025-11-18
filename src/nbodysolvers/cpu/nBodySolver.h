@@ -10,9 +10,9 @@ template <typename T>
 class NBodySolver
 {
 public:
-	std::vector<LineSegment2D> lineSegments;
+	//std::vector<LineSegment2D> lineSegments;
 	Buffer* boxBuffer = new Buffer();
-	int showLevel = 0;
+	//int showLevel = 0;
 
 	int maxChildren;
 	float theta;

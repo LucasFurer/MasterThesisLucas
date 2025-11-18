@@ -16,9 +16,6 @@
 //#define GLM_FORCE_CUDA
 //#define GLM_FORCE_INLINE
 #include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtc/type_ptr.hpp>
-//#include <glm/gtx/string_cast.hpp>
 
 #include "nBodySolverGpuBH.cuh"
 #include "cudaHelper.cuh"
