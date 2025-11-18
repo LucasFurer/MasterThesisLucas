@@ -147,11 +147,12 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "BH";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
-        Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
-        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
+        //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
+        //Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
+        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
+        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -163,29 +164,28 @@ int main(void)
         
         // gravity --------------------------------------------------------------------------------------------------------------------------
 
-        GravitySim gravitySim(10000); 
-        
-        glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
+        //GravitySim gravitySim(10000); 
+        //
+        //glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
 
-        #ifdef _WIN32
-        Shader shaderGravity("shaders/shaderPos2Dvel2Dcol3D.vs", "shaders/shaderPos2Dvel2Dcol3D.fs");
-        #endif
-        #ifdef linux
-        Shader shaderGravity((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
-        #endif
+        //#ifdef _WIN32
+        //Shader shaderGravity("shaders/shaderPos2Dvel2Dcol3D.vs", "shaders/shaderPos2Dvel2Dcol3D.fs");
+        //#endif
+        //#ifdef linux
+        //Shader shaderGravity((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
+        //#endif
 
-        gravitySim.nBodySelect = "FMM";
-        Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
-        Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
-        std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines, gravityRenderableForces };
+        //gravitySim.nBodySelect = "FMM";
+        //Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
+        //Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
+        //Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
+        //std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines, gravityRenderableForces };
 
-        TsneCamera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
+        //TsneCamera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
-        Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
+        //Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
 
-        scenes[gravityScene.sceneName] = &gravityScene;
-        //scenes.push_back(&gravityScene);
+        //scenes[gravityScene.sceneName] = &gravityScene;
 
 
         // gpu solver tests ------------------------------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ int main(void)
         NBodyScenarios nBodyScenarios;
         std::cout << "starting tests--------------------------" << std::endl;
 
-        std::vector<float> perpValues{30.0f};
+        std::vector<float> perpValues{};
         for (float val : perpValues)
         {
             float perp = val;
@@ -372,8 +372,8 @@ int main(void)
                 //    static_cast<int>(sceneNames.size())
                 //);
                 ImGui::SliderFloat("sim speed", &tsne.timeStepsPerSec, 0.0f, 1000.0f);
-                ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
-                ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
+                //ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
+                //ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
                 tsne.timeStep();
@@ -386,14 +386,14 @@ int main(void)
                     //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
                 }
             }
-            else if (currentSceneName == "gravity")
-            {
-                ImGui::SliderFloat("sim speed", &gravitySim.timeStepsPerSec, 0.0f, 1000.0f);
-                ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
-                ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
+            //else if (currentSceneName == "gravity")
+            //{
+            //    ImGui::SliderFloat("sim speed", &gravitySim.timeStepsPerSec, 0.0f, 1000.0f);
+            //    ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
+            //    ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
 
-                gravitySim.timeStep();
-            }
+            //    gravitySim.timeStep();
+            //}
             else if (currentSceneName == "tsneGpu")
             {
                 if (per == 1)
@@ -456,13 +456,13 @@ int main(void)
 
 
 
-        gravitySim.cleanup();
+        //gravitySim.cleanup();
         tsne.cleanup();
         tsneGpu.cleanup();
         nBodyScenarios.cleanup();
 
         shaderTsne.cleanup();
-        shaderGravity.cleanup();
+        //shaderGravity.cleanup();
         shaderTsneGpu.cleanup();
         shaderLine2D.cleanup();
     }

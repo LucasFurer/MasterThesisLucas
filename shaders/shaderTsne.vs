@@ -1,7 +1,9 @@
 #version 330 core
 
 layout (location = 0) in vec2 aPos;
-layout (location = 1) in int aLab;
+layout (location = 1) in vec2 aDer;
+layout (location = 2) in int aLab;
+layout (location = 3) in int aId;
 
 out vec3 FragPos;  
 out vec3 FragCol;  

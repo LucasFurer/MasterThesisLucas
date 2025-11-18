@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "../particles/embeddedPoint.h"
+#include "../particles/tsnePoint2D.h"
 #include "../openGLhelper/buffer.h"
 #include "../common.h"
 #include "../openGLhelper/buffer.h"
@@ -27,19 +28,19 @@
 class TSNE
 {
 public:
-    std::vector<EmbeddedPoint> embeddedPoints;
-    std::vector<EmbeddedPoint> embeddedPointsPrev;
-    std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
+    std::vector<TsnePoint2D> embeddedPoints;
+    std::vector<TsnePoint2D> embeddedPointsPrev;
+    std::vector<TsnePoint2D> embeddedPointsPrevPrev;
     Buffer* embeddedBuffer;
 
     Buffer* forceBuffer;
     float forceSize = 1.0f;
 
-    std::vector<glm::vec2> embeddedDerivative;
-    std::vector<glm::vec2> attractForce;
-    std::vector<glm::vec2> repulsForce;
+    //std::vector<glm::vec2> embeddedDerivative;
+    //std::vector<glm::vec2> attractForce;
+    //std::vector<glm::vec2> repulsForce;
 
-    std::vector<glm::vec2> errorCompare;
+    //std::vector<glm::vec2> errorCompare;
 
     std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolvers;
     std::string nBodySelect = "naive";
@@ -53,16 +54,16 @@ public:
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
     //std::vector<std::vector<float>> Qmatrix;
-    float Qsum;
+    //float Qsum;
 
     int follow = 1;
-    float totalError = 0.0f;
+    //float totalError = 0.0f;
     int timeCounter = 0;
 
-    float totalError1 = 0.0f;
-    float totalError2 = 0.0f;
-    float maxError1 = 0.0f;
-    float maxError2 = 0.0f;
+    //float totalError1 = 0.0f;
+    //float totalError2 = 0.0f;
+    //float maxError1 = 0.0f;
+    //float maxError2 = 0.0f;
     int globalTimeStep = 0;
     
 	TSNE()
@@ -98,11 +99,11 @@ public:
         embeddedPointsPrev.resize(dataAmount);
         embeddedPointsPrevPrev.resize(dataAmount);
 
-        embeddedDerivative.resize(dataAmount);
-        attractForce.resize(dataAmount);
-        repulsForce.resize(dataAmount);
+        //embeddedDerivative.resize(dataAmount);
+        //attractForce.resize(dataAmount);
+        //repulsForce.resize(dataAmount);
 
-        errorCompare.resize(dataAmount);
+        //errorCompare.resize(dataAmount);
 
         //srand(time(NULL));
         srand(1952732);
@@ -127,37 +128,37 @@ public:
 
             int lab = labels[i];
             
-            embeddedPoints[i] = EmbeddedPoint(pos, lab);
-            embeddedPointsPrev[i] = EmbeddedPoint(pos, lab);
-            embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
+            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
         }
 
         nBodySolvers["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
         nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f); 
-        nBodySolvers["BH"]->updateTree(&embeddedPoints);
-        nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHR"]->updateTree(&embeddedPoints);
-        nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHMP"]->updateTree(&embeddedPoints);
-        nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
-        nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-        nBodySolvers["FMM"]->updateTree(&embeddedPoints);
+        //nBodySolvers["BH"]->updateTree(&embeddedPoints);
+        //nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["BHR"]->updateTree(&embeddedPoints);
+        //nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["BHMP"]->updateTree(&embeddedPoints);
+        //nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
+        //nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+        //nBodySolvers["FMM"]->updateTree(&embeddedPoints);
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
-        nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
-        nBodySolvers["FMMiter"]->updateTree(&embeddedPoints);
+        //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
+        //nBodySolvers["FMMiter"]->updateTree(&embeddedPoints);
 
-        embeddedBuffer = new Buffer(embeddedPoints, pos2DlabelInt, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);
 
-        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
-        forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
+        //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
+        //forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
 	
 	~TSNE()
 	{
         delete embeddedBuffer;
-        delete forceBuffer;
+        //delete forceBuffer;
 
         for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolverPointer : nBodySolvers)
         {
@@ -168,7 +169,7 @@ public:
     void cleanup()
     {
         embeddedBuffer->cleanup();
-        forceBuffer->cleanup();
+        //forceBuffer->cleanup();
 
         for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolvers)
         {
@@ -196,17 +197,18 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrevPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].derivative = embeddedPointsPrevPrev[i].derivative; // for showing the derivatives
             }
 
             //costFunction();
 
-            embeddedBuffer->updateBuffer(embeddedPoints, pos2DlabelInt);
+            embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1Int1);
 
-            nBodySolvers[nBodySelect]->updateTree(&embeddedPoints);
+            //nBodySolvers[nBodySelect]->updateTree(&embeddedPoints);
 
-            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
-            forceBuffer->updateBuffer(forceLines, pos2DCol3D);
+            //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
+            //forceBuffer->updateBuffer(forceLines, pos2DCol3D);
 
             globalTimeStep++;
         }
@@ -234,82 +236,83 @@ private:
 
     void updateDerivative()
     {
+        for (TsnePoint2D embeddedPoint : embeddedPoints)
+            embeddedPoint.derivative = glm::vec2(0.0f); // reset derivative for iteration
+
         //checkError();
         
         updateRepulsive();
         
         updateAttractive();
 
-        std::fill(embeddedDerivative.begin(), embeddedDerivative.end(), glm::vec2(0.0f, 0.0f));
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            embeddedDerivative[i] = attractForce[i] - repulsForce[i];
-        }
+        //std::fill(embeddedDerivative.begin(), embeddedDerivative.end(), glm::vec2(0.0f, 0.0f));
+        //for (int i = 0; i < embeddedPoints.size(); i++)
+        //{
+        //    embeddedDerivative[i] = attractForce[i] - repulsForce[i];
+        //}
 
     }
 
-    void checkError()
-    {
-        float QijTotalNaive = 0.0f;
-        
-        nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
+    //void checkError()
+    //{
+    //    float QijTotalNaive = 0.0f;
+    //    
+    //    nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
 
 
-        float QijTotalCompare = 0.0f;
-        nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-        float error1 = 0.0f;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            error1 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-        }
-        error1 /= embeddedPoints.size();
-        totalError1 += error1;
-        if (error1 > maxError1) { maxError1 = error1; }
+    //    float QijTotalCompare = 0.0f;
+    //    nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
+    //    float error1 = 0.0f;
+    //    for (int i = 0; i < embeddedPoints.size(); i++)
+    //    {
+    //        error1 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
+    //    }
+    //    error1 /= embeddedPoints.size();
+    //    totalError1 += error1;
+    //    if (error1 > maxError1) { maxError1 = error1; }
 
-        QijTotalCompare = 0.0f;
-        nBodySolvers["FMM"]->theta = 1.0f;
-        nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-        float error2 = 0.0f;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            error2 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-        }
-        error2 /= embeddedPoints.size();
-        totalError2 += error2;
-        if (error2 > maxError2) { maxError2 = error2; }
+    //    QijTotalCompare = 0.0f;
+    //    nBodySolvers["FMM"]->theta = 1.0f;
+    //    nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
+    //    float error2 = 0.0f;
+    //    for (int i = 0; i < embeddedPoints.size(); i++)
+    //    {
+    //        error2 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
+    //    }
+    //    error2 /= embeddedPoints.size();
+    //    totalError2 += error2;
+    //    if (error2 > maxError2) { maxError2 = error2; }
 
 
 
-        std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
-        std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
+    //    std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
+    //    std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
 
-        std::cout << "max error1:                  " << maxError1 << std::endl;
-        std::cout << "max error2:                  " << maxError2 << std::endl;
+    //    std::cout << "max error1:                  " << maxError1 << std::endl;
+    //    std::cout << "max error2:                  " << maxError2 << std::endl;
 
-        std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
-        std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
+    //    std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
+    //    std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
 
-        std::cout << "global time step: " << globalTimeStep << std::endl;
+    //    std::cout << "global time step: " << globalTimeStep << std::endl;
 
-        std::cout << "------------------------------------------------------" << std::endl;
-    }
+    //    std::cout << "------------------------------------------------------" << std::endl;
+    //}
 
     void updateRepulsive()
     {
         float QijTotal = 0.0f;
 
-        nBodySolvers[nBodySelect]->solveNbody(&QijTotal, &repulsForce, &embeddedPoints);
+        //nBodySolvers[nBodySelect]->solveNbody(&QijTotal, &embeddedPoints);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            repulsForce[i] *= (1.0f / QijTotal);
+            //embeddedPoints[i].derivative *= (1.0f / QijTotal);
         }
     }
 
     void updateAttractive()
     {
-        std::fill(attractForce.begin(), attractForce.end(), glm::vec2(0.0f, 0.0f));
-
         for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
         { 
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
@@ -323,8 +326,7 @@ private:
                     exageration = 4.0f;
                 }
 
-
-                attractForce[it.col()] += -exageration * (float)it.value() * (diff / (1.0f + (distance * distance)));
+                //embeddedPoints[it.col()].derivative += -exageration * (float)it.value() * (diff / (1.0f + (distance * distance)));
             }
         }
     }
