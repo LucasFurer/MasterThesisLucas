@@ -67,7 +67,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";

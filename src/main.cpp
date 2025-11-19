@@ -147,7 +147,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "naive";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -238,7 +238,7 @@ int main(void)
         NBodyScenarios nBodyScenarios;
         std::cout << "starting tests--------------------------" << std::endl;
 
-        std::vector<float> perpValues{30.0f};
+        std::vector<float> perpValues{};
         for (float val : perpValues)
         {
             float perp = val;
