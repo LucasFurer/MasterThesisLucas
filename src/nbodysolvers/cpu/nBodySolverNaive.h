@@ -16,11 +16,11 @@ template <typename T>
 class NBodySolverNaive : public NBodySolver<T>
 {
 public:
-    std::function<void(float&, std::vector<T>&, int, int)> kernel;
+    std::function<void(float&, T&, T&)> kernel;
 
     NBodySolverNaive() {}
 
-    NBodySolverNaive(std::function<void(float&, std::vector<T>&, int, int)> initKernel)
+    NBodySolverNaive(std::function<void(float&, T&, T&)> initKernel)
     {
         kernel = initKernel;
     }
@@ -38,7 +38,7 @@ public:
                     if (i != j)
                     {
 
-                        kernel(total, points, i, j);
+                        kernel(total, points[i], points[j]);
 
                     }
                 }
@@ -54,18 +54,18 @@ private:
 
 };
 
-void TSNEnaiveKernal(float& total, std::vector<TsnePoint2D>& points, int i, int j)
+void TSNEnaiveKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = points[i].position - points[j].position;
+    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff);
 
     float forceDecay = 1.0f / (1.0f + (dist * dist));
     total += forceDecay;
 
-    points[i].derivative += forceDecay * forceDecay * diff;
+    sinkPoint.derivative += forceDecay * forceDecay * diff;
 }
 
-//void GRAVITYnaiveKernal(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
+//void GRAVITYnaiveKernel(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
 //{
 //    float softening = 0.1f; // should be 1.0f for t-SNE
 //
