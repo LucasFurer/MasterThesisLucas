@@ -42,7 +42,7 @@ public:
 
     //std::vector<glm::vec2> errorCompare;
 
-    std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolvers;
+    std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolvers;
     std::string nBodySelect = "naive";
 
     float learnRate;
@@ -68,12 +68,12 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
 
-        learnRate = 1000.0f;
+        learnRate = 250.0f;
         //accelerationRate = 0.5f;
 
         timeStepsPerSec = 0.0f;
@@ -133,7 +133,7 @@ public:
             embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
         }
 
-        nBodySolvers["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
+        nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernal);
         //nBodySolvers["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f); 
         //nBodySolvers["BH"]->updateTree(&embeddedPoints);
         //nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
@@ -160,7 +160,7 @@ public:
         delete embeddedBuffer;
         //delete forceBuffer;
 
-        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolverPointer : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolverPointer : nBodySolvers)
         {
             delete nBodySolverPointer.second;
         }
@@ -171,7 +171,7 @@ public:
         embeddedBuffer->cleanup();
         //forceBuffer->cleanup();
 
-        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolvers)
+        for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolver : nBodySolvers)
         {
             nBodySolver.second->cleanup();
         }
@@ -197,7 +197,7 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrevPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrevPrev[i].derivative;// +accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
                 embeddedPoints[i].derivative = embeddedPointsPrevPrev[i].derivative; // for showing the derivatives
             }
 
@@ -303,11 +303,11 @@ private:
     {
         float QijTotal = 0.0f;
 
-        //nBodySolvers[nBodySelect]->solveNbody(&QijTotal, &embeddedPoints);
+        nBodySolvers[nBodySelect]->solveNbody(QijTotal, embeddedPoints);
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            //embeddedPoints[i].derivative *= (1.0f / QijTotal);
+            embeddedPoints[i].derivative *= (4.0f / QijTotal);
         }
     }
 
@@ -317,8 +317,8 @@ private:
         { 
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
             {
-                glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
-                float distance = glm::length(diff);
+                glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
+                float dist = glm::length(diff);
 
                 float exageration = 1.0f;
                 if (globalTimeStep < 250)
@@ -326,7 +326,7 @@ private:
                     exageration = 4.0f;
                 }
 
-                //embeddedPoints[it.col()].derivative += -exageration * (float)it.value() * (diff / (1.0f + (distance * distance)));
+                embeddedPoints[it.col()].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
     }

@@ -147,7 +147,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "BH";
+        tsne.nBodySelect = "naive";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
         //Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -235,42 +235,42 @@ int main(void)
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
-        NBodyScenarios nBodyScenarios;
-        std::cout << "starting tests--------------------------" << std::endl;
+        //NBodyScenarios nBodyScenarios;
+        //std::cout << "starting tests--------------------------" << std::endl;
 
-        std::vector<float> perpValues{};
-        for (float val : perpValues)
-        {
-            float perp = val;
-            std::string dataSet = "MNIST_digits";
-            int dataSize = 1000;
+        //std::vector<float> perpValues{};
+        //for (float val : perpValues)
+        //{
+        //    float perp = val;
+        //    std::string dataSet = "MNIST_digits";
+        //    int dataSize = 1000;
 
-            std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
-            nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
-            std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = end - start;
-            std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
-            /*
-            start = std::chrono::high_resolution_clock::now();
-            nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
-            end = std::chrono::high_resolution_clock::now();
-            elapsed = end - start;
-            std::cout << "calculationtimeThetaTSNE test done in: " << elapsed.count() << std::endl;
+        //    std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
+        //    nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
+        //    std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
+        //    std::chrono::duration<double> elapsed = end - start;
+        //    std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
+        //    /*
+        //    start = std::chrono::high_resolution_clock::now();
+        //    nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
+        //    end = std::chrono::high_resolution_clock::now();
+        //    elapsed = end - start;
+        //    std::cout << "calculationtimeThetaTSNE test done in: " << elapsed.count() << std::endl;
 
-            start = std::chrono::high_resolution_clock::now();
-            nBodyScenarios.errorThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 825 sec
-            end = std::chrono::high_resolution_clock::now();
-            elapsed = end - start;
-            std::cout << "errorThetaTSNE test done in: " << elapsed.count() << std::endl;
+        //    start = std::chrono::high_resolution_clock::now();
+        //    nBodyScenarios.errorThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 825 sec
+        //    end = std::chrono::high_resolution_clock::now();
+        //    elapsed = end - start;
+        //    std::cout << "errorThetaTSNE test done in: " << elapsed.count() << std::endl;
 
-            start = std::chrono::high_resolution_clock::now();
-            nBodyScenarios.calculationtimeErrorTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 885 sec
-            end = std::chrono::high_resolution_clock::now();
-            elapsed = end - start;
-            std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
-            */
-        }
-        std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
+        //    start = std::chrono::high_resolution_clock::now();
+        //    nBodyScenarios.calculationtimeErrorTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 885 sec
+        //    end = std::chrono::high_resolution_clock::now();
+        //    elapsed = end - start;
+        //    std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
+        //    */
+        //}
+        //std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
 
 
         //nBodyScenarios.errorTimestepGRAVITY();
@@ -281,9 +281,9 @@ int main(void)
 
         //nBodyScenarios.testNodeNode();
 
-        std::cout << "im done with nBodyScenarios!" << std::endl;
-        MultipoleVis::initMultipoleVisData();
-        MultipoleVis::testFMMtoBH();
+        //std::cout << "im done with nBodyScenarios!" << std::endl;
+        //MultipoleVis::initMultipoleVisData();
+        //MultipoleVis::testFMMtoBH();
 
 
 
@@ -459,7 +459,7 @@ int main(void)
         //gravitySim.cleanup();
         tsne.cleanup();
         tsneGpu.cleanup();
-        nBodyScenarios.cleanup();
+        //nBodyScenarios.cleanup();
 
         shaderTsne.cleanup();
         //shaderGravity.cleanup();
