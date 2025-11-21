@@ -33,8 +33,11 @@ public:
     std::vector<TsnePoint2D> embeddedPointsPrevPrev;
     Buffer* embeddedBuffer;
 
-    Buffer* forceBuffer;
+    int nodeLevelToShow = 0;
+    Buffer* nodeBuffer;
+
     float forceSize = 1.0f;
+    Buffer* forceBuffer;
 
     //std::vector<glm::vec2> embeddedDerivative;
     //std::vector<glm::vec2> attractForce;
@@ -68,7 +71,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -151,6 +154,13 @@ public:
 
         embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);
 
+        std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
+        //std::vector<LineSegment2D> lineSegments = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
+        //std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
+        //nodeBuffer = new Buffer();
+        //nodeBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
+        nodeBuffer = new Buffer(nodesBufferData, pos2DCol3D, GL_DYNAMIC_DRAW);
+        
         //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
         //forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
 	}
@@ -158,6 +168,7 @@ public:
 	~TSNE()
 	{
         delete embeddedBuffer;
+        delete nodeBuffer;
         //delete forceBuffer;
 
         for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolverPointer : nBodySolvers)
@@ -169,6 +180,7 @@ public:
     void cleanup()
     {
         embeddedBuffer->cleanup();
+        nodeBuffer->cleanup();
         //forceBuffer->cleanup();
 
         for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolver : nBodySolvers)
@@ -206,6 +218,10 @@ public:
             embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1Int1);
 
             nBodySolvers[nBodySelect]->updateTree(embeddedPoints);
+            std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
+            //std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
+            //nodeBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
+            nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
 
             //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
             //forceBuffer->updateBuffer(forceLines, pos2DCol3D);
@@ -244,13 +260,6 @@ private:
         updateRepulsive();
         
         updateAttractive();
-
-        //std::fill(embeddedDerivative.begin(), embeddedDerivative.end(), glm::vec2(0.0f, 0.0f));
-        //for (int i = 0; i < embeddedPoints.size(); i++)
-        //{
-        //    embeddedDerivative[i] = attractForce[i] - repulsForce[i];
-        //}
-
     }
 
     //void checkError()
@@ -258,8 +267,8 @@ private:
     //    float QijTotalNaive = 0.0f;
     //    
     //    nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
-
-
+    //
+    //
     //    float QijTotalCompare = 0.0f;
     //    nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
     //    float error1 = 0.0f;
@@ -270,7 +279,7 @@ private:
     //    error1 /= embeddedPoints.size();
     //    totalError1 += error1;
     //    if (error1 > maxError1) { maxError1 = error1; }
-
+    //
     //    QijTotalCompare = 0.0f;
     //    nBodySolvers["FMM"]->theta = 1.0f;
     //    nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
@@ -282,20 +291,20 @@ private:
     //    error2 /= embeddedPoints.size();
     //    totalError2 += error2;
     //    if (error2 > maxError2) { maxError2 = error2; }
-
-
-
+    //
+    //
+    //
     //    std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
     //    std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
-
+    //
     //    std::cout << "max error1:                  " << maxError1 << std::endl;
     //    std::cout << "max error2:                  " << maxError2 << std::endl;
-
+    //
     //    std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
     //    std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
-
+    //
     //    std::cout << "global time step: " << globalTimeStep << std::endl;
-
+    //
     //    std::cout << "------------------------------------------------------" << std::endl;
     //}
 

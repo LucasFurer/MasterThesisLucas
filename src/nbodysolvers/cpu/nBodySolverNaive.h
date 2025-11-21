@@ -48,7 +48,7 @@ public:
 
     void updateTree(std::vector<T>& points) override {}
 
-    std::vector<LineSegment2D> getNodesBufferData(int level) override { return std::vector<LineSegment2D>(); }
+    std::vector<VertexPos2Col3> getNodesBufferData(int level) override { return std::vector<VertexPos2Col3>(); }
 
 private:
 

@@ -149,10 +149,10 @@ int main(void)
         
         tsne.nBodySelect = "BH";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
-        //Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nBodySolvers[tsne.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
+        Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         //Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
         //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
-        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints };
+        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -373,7 +373,7 @@ int main(void)
                 //);
                 ImGui::SliderFloat("sim speed", &tsne.timeStepsPerSec, 0.0f, 1000.0f);
                 //ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
-                //ImGui::SliderInt("show tree level", &tsne.nBodySolvers[tsne.nBodySelect]->showLevel, -1, 10);
+                ImGui::SliderInt("show tree level", &tsne.nodeLevelToShow, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
                 tsne.timeStep();

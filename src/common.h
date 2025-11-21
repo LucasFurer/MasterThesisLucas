@@ -1,7 +1,10 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <vector>
 #include <iostream>
 
@@ -151,6 +154,16 @@ struct LineSegment2D
 			result.push_back(VertexPos2Col3(lineSegment.pointB, lineSegment.colorB));
 			result.push_back(VertexPos2Col3(lineSegment.pointE, lineSegment.colorE));
 		}
+		return result;
+	}
+
+	std::string toString()
+	{
+		std::string result = 
+			"lineSegment of depth: " + std::to_string(depth) + "\n" +
+			"begin: " + glm::to_string(pointB) + ", color: " + glm::to_string(colorB) + "\n" +
+			"end:   " + glm::to_string(pointE) + ", color: " + glm::to_string(colorE) + "\n";
+
 		return result;
 	}
 };

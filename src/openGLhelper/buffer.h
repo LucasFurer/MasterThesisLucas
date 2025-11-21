@@ -79,16 +79,23 @@ public:
 	template <typename T>
 	void updateBuffer(const std::vector<T>& toBuffer, DataType dataType)
 	{
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
 		std::size_t dataSize = toBuffer.size() * sizeof(T);
 
 		if (elementAmount != toBuffer.size())
 		{
-			std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			//std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			glBufferData(GL_ARRAY_BUFFER, dataSize, toBuffer.data(), GL_DYNAMIC_DRAW); // change this so gl dynamic draw is a parameter!!!!!!!!!!!!!!!!!!!!!!!!!
+			elementAmount = toBuffer.size();
+		}
+		else
+		{
+			glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, toBuffer.data());
 		}
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, toBuffer.data());
+
 
 		/*
 		switch (dataType)
