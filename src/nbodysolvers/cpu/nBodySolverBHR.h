@@ -83,10 +83,10 @@ private:
         }
         else
         {
-            for (QuadTreeBarnesHutReverse<T>* childQuadTree : node->children)
+            for (QuadTreeBarnesHutReverse<T>* child : node->children)
             {
 
-                traverseBHR(total, childQuadTree, point, theta);
+                traverseBHR(total, child, point, theta);
 
             }
         }

@@ -20,7 +20,7 @@
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
-#include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverBHMP.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 
@@ -141,12 +141,13 @@ public:
         nBodySolvers["BH"]->updateTree(embeddedPoints);
         nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, 10, 1.0f);
         nBodySolvers["BHR"]->updateTree(embeddedPoints);
-        //nBodySolvers["BHMP"] = new NBodySolverMultiPole<TsnePoint2D>(&TSNEmultiPoleParticleNodeKernel, &TSNEmultiPoleParticleParticleKernel, 10, 1.0f);
-        //nBodySolvers["BHMP"]->updateTree(&embeddedPoints);
+        nBodySolvers["BHMP"] = new NBodySolverBHMP<TsnePoint2D>(&TSNEBHMPPNKernel, &TSNEBHMPPPKernel, 10, 1.0f);
+        nBodySolvers["BHMP"]->updateTree(embeddedPoints);
         //nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<TsnePoint2D>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernel, &TSNEbarnesHutReverseMultiPoleParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
         //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernel, &TSNEFMMParticleNodeKernel, &TSNEFMMNodeParticleKernel, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMM"]->updateTree(&embeddedPoints);
+        
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernelNodeNode, &TSNEFMMiterInteractionKernelNodeParticle, &TSNEFMMiterInteractionKernelParticleNode, &TSNEFMMiterInteractionKernelParticleParticle, 10, 1.0f);
