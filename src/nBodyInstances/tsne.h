@@ -18,7 +18,7 @@
 #include "../dataLoaders/loader.h"
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
-#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
+#include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
 #include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
@@ -71,12 +71,12 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
 
-        learnRate = 250.0f;
+        learnRate = 200.0f;
         //accelerationRate = 0.5f;
 
         timeStepsPerSec = 0.0f;
@@ -139,26 +139,22 @@ public:
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, 10, 1.0f);
         nBodySolvers["BH"]->updateTree(embeddedPoints);
-        //nBodySolvers["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernel, &TSNEbarnesHutReverseParticleParticleKernel, 10, 1.0f);
-        //nBodySolvers["BHR"]->updateTree(&embeddedPoints);
-        //nBodySolvers["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernel, &TSNEmultiPoleParticleParticleKernel, 10, 1.0f);
+        nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, 10, 1.0f);
+        nBodySolvers["BHR"]->updateTree(embeddedPoints);
+        //nBodySolvers["BHMP"] = new NBodySolverMultiPole<TsnePoint2D>(&TSNEmultiPoleParticleNodeKernel, &TSNEmultiPoleParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["BHMP"]->updateTree(&embeddedPoints);
-        //nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernel, &TSNEbarnesHutReverseMultiPoleParticleParticleKernel, 10, 1.0f);
+        //nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<TsnePoint2D>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernel, &TSNEbarnesHutReverseMultiPoleParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
-        //nBodySolvers["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernel, &TSNEFMMParticleNodeKernel, &TSNEFMMNodeParticleKernel, &TSNEFMMParticleParticleKernel, 10, 1.0f);
+        //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernel, &TSNEFMMParticleNodeKernel, &TSNEFMMNodeParticleKernel, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMM"]->updateTree(&embeddedPoints);
-        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
-        //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernel, 10, 1.0f);
-        //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernelNodeNode, &TSNEFMMiterInteractionKernelNodeParticle, &TSNEFMMiterInteractionKernelParticleNode, &TSNEFMMiterInteractionKernelParticleParticle, 10, 1.0f);
+        //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
+        //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);
+        //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernelNodeNode, &TSNEFMMiterInteractionKernelNodeParticle, &TSNEFMMiterInteractionKernelParticleNode, &TSNEFMMiterInteractionKernelParticleParticle, 10, 1.0f);
         //nBodySolvers["FMMiter"]->updateTree(&embeddedPoints);
 
         embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);
 
         std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-        //std::vector<LineSegment2D> lineSegments = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-        //std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
-        //nodeBuffer = new Buffer();
-        //nodeBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
         nodeBuffer = new Buffer(nodesBufferData, pos2DCol3D, GL_DYNAMIC_DRAW);
         
         //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
@@ -209,8 +205,8 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrevPrev[i].derivative;// +accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-                embeddedPoints[i].derivative = embeddedPointsPrevPrev[i].derivative; // for showing the derivatives
+                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+                embeddedPoints[i].derivative = embeddedPointsPrev[i].derivative; // for showing the derivatives
             }
 
             //costFunction();
@@ -219,8 +215,6 @@ public:
 
             nBodySolvers[nBodySelect]->updateTree(embeddedPoints);
             std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-            //std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(lineSegments);
-            //nodeBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
             nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
 
             //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);

@@ -56,10 +56,10 @@ private:
     void traverseBH(float& total, T& point, QuadTree<T>* node, float theta)
     {
         float l = node->highestCorner.x - node->lowestCorner.x;
-        glm::vec2 nodeDiff = point.position - node->centreOfMass;
+        glm::vec2 diff = point.position - node->centreOfMass;
 
 
-        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(nodeDiff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
 
             kernelPN(total, point, node);
