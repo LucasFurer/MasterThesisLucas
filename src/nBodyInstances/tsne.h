@@ -19,7 +19,7 @@
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
-#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+#include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
 #include "../nbodysolvers/cpu/nBodySolverBHMP.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
@@ -71,7 +71,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 1000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -143,10 +143,10 @@ public:
         nBodySolvers["BHR"]->updateTree(embeddedPoints);
         nBodySolvers["BHMP"] = new NBodySolverBHMP<TsnePoint2D>(&TSNEBHMPPNKernel, &TSNEBHMPPPKernel, 10, 1.0f);
         nBodySolvers["BHMP"]->updateTree(embeddedPoints);
-        //nBodySolvers["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<TsnePoint2D>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernel, &TSNEbarnesHutReverseMultiPoleParticleParticleKernel, 10, 1.0f);
-        //nBodySolvers["BHRMP"]->updateTree(&embeddedPoints);
-        //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernel, &TSNEFMMParticleNodeKernel, &TSNEFMMNodeParticleKernel, &TSNEFMMParticleParticleKernel, 10, 1.0f);
-        //nBodySolvers["FMM"]->updateTree(&embeddedPoints);
+        nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
+        nBodySolvers["BHRMP"]->updateTree(embeddedPoints);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 1.0f);
+        nBodySolvers["FMM"]->updateTree(embeddedPoints);
         
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);

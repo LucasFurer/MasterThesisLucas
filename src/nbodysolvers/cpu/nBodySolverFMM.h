@@ -1,492 +1,404 @@
-//#pragma once
-//
-//#include <functional>
-//#include <glm/glm.hpp>
-//#include <utility>
-//#include <vector>
-//#include <Fastor/Fastor.h>
-//
-//#include "../../common.h"
-//#include "nBodySolver.h"
-//#include "../../trees/cpu/quadtreeFMM.h"
-//#include "../../particles/embeddedPoint.h"
-//#include "../../particles/Particle2D.h"
-//
-//template <typename T>
-//class NBodySolverFMM : public NBodySolver<T>
-//{
-//public:
-//    //std::vector<LineSegment2D> lineSegments;
-//    //Buffer* boxBuffer = new Buffer();
-//    //int showLevel = 0;
-//
-//    QuadTreeFMM<T> root;
-//
-//    std::function<void(float*, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNodeNode;
-//    std::function<glm::vec2(float*, T, QuadTreeFMM<T>*)> kernelParticleNode;
-//    std::function<void(float*, QuadTreeFMM<T>*, T)> kernelNodeParticle;
-//    std::function<glm::vec2(float*, T, T)> kernelParticleParticle;
-//
-//    //int maxChildren;
-//    //float theta;
-//
-//    NBodySolverFMM
-//    (
-//        std::function<void(float*, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> initKernelNodeNode,
-//        std::function<glm::vec2(float*, T, QuadTreeFMM<T>*)> initKernelParticleNode,
-//        std::function<void(float*, QuadTreeFMM<T>*, T)> initKernelNodeParticle,
-//        std::function<glm::vec2(float*, T, T)> initKernelParticleParticle,
-//        int initMaxChildren, 
-//        float initTheta
-//    )
-//    {
-//        kernelNodeNode = initKernelNodeNode;
-//        kernelParticleNode = initKernelParticleNode;
-//        kernelNodeParticle = initKernelNodeParticle;
-//        kernelParticleParticle = initKernelParticleParticle;
-//        this->maxChildren = initMaxChildren;
-//        this->theta = initTheta;
-//    }
-//
-//    NBodySolverFMM() {}
-//    
-//    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints) override
-//    {
-//        std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
-//
-//        //updateTree(embeddedPoints);
-//        getFMMAcc(total, forces, &root, &root, this->theta);
-//        //root.divideC();
-//        root.applyForces(forces);
-//    }
-//
-//    void updateTree(std::vector<T>* embeddedPoints)
-//    {
-//        root = std::move(QuadTreeFMM<T>(this->maxChildren, embeddedPoints));
-//        this->lineSegments.clear();
-//        root.getLineSegments(this->lineSegments, 0, this->showLevel);
-//        std::vector<VertexPos2Col3> VertexPos2Col3s = LineSegment2D::LineSegmentToVertexPos2Col3(this->lineSegments);
-//        this->boxBuffer->createVertexBuffer(VertexPos2Col3s, pos2DCol3D, GL_DYNAMIC_DRAW);
-//    }
-//    
-//private:   
-//    void getFMMAccIt()
-//    {
-//
-//    }
-//
-//    void getFMMAcc(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* passiveNode, QuadTreeFMM<T>* activeNode, float theta)
-//    {
-//        float Lpassive = passiveNode->highestCorner.x - passiveNode->lowestCorner.x;
-//        float Lactive = activeNode->highestCorner.x - activeNode->lowestCorner.x;
-//
-//        glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass;
-//        float parCentreDistance = glm::length(nodeDiff);
-//
-//     
-//        if ((Lpassive + Lactive) / parCentreDistance < theta)
-//        {
-//
-//            kernelNodeNode(total, passiveNode, activeNode);
-//
-//        }
-//        else if (passiveNode->children.size() == 0)
-//        {
-//
-//            
-//            //if (activeNode->children.size() == 0) // naive
-//            //{
-//            //    for (int ip : passiveNode->occupants)
-//            //    {
-//            //        for (int ia : activeNode->occupants)
-//            //        {
-//            //            (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
-//            //        }
-//            //    }
-//            //}
-//            //else // split
-//            //{
-//            //    for (QuadTreeFMM<T>* child : activeNode->children)
-//            //    {
-//            //        getFMMAcc(total, forces, passiveNode, child, theta);
-//            //    }
-//            //}
-//            
-//            
-//            for (int passivenodeparticleindex : passiveNode->occupants)
-//            {
-//
-//                getBarnesHutAccActiveTree(total, forces, activeNode, passivenodeparticleindex, theta);
-//
-//            }
-//            
-//        }
-//        else if (activeNode->children.size() == 0)
-//        {
-//
-//
-//            //if (passiveNode->children.size() == 0) // naive
-//            //{
-//            //    for (int ip : passiveNode->occupants)
-//            //    {
-//            //        for (int ia : activeNode->occupants)
-//            //        {
-//            //            (*forces)[ip] += kernelParticleParticle(total, (*passiveNode->allParticles)[ip], (*activeNode->allParticles)[ia]);
-//            //        }
-//            //    }
-//            //}
-//            //else // split
-//            //{
-//            //    for (QuadTreeFMM<T>* child : passiveNode->children)
-//            //    {
-//            //        getFMMAcc(total, forces, child, activeNode, theta);
-//            //    }
-//            //}
-//            
-//            for (int activeNodeParticleIndex : activeNode->occupants)
-//            {
-//
-//                getBarnesHutAccPassiveTree(total, forces, passiveNode, activeNodeParticleIndex, theta);
-//
-//            }
-//            
-//        }
-//        else
-//        {
-//            for (QuadTreeFMM<T>* octTreeFMMPassiveChild : passiveNode->children) // each childpassive in nodepassive do
-//            {
-//                for (QuadTreeFMM<T>* octTreeFMMActiveChild : activeNode->children) // each childactive in nodeactive do
-//                {
-//
-//                    getFMMAcc(total, forces, octTreeFMMPassiveChild, octTreeFMMActiveChild, theta);
-//
-//                }
-//            }
-//        }
-//
-//    }
-//
-//    void getBarnesHutAccActiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* node, int particleIndex, float theta)
-//    {
-//        T particle = (*node->allParticles)[particleIndex];
-//
-//        float l = node->highestCorner.x - node->lowestCorner.x;
-//        glm::vec2 cubeCentre = ((node->highestCorner + node->lowestCorner) / 2.0f);
-//
-//        glm::vec2 nodeDiff = particle.position - node->centreOfMass; // change this
-//        float parCentreDistance = glm::length(nodeDiff);
-//
-//
-//        if (l / parCentreDistance < theta)
-//        {
-//
-//            (*forces)[particleIndex] += kernelParticleNode(total, particle, node);
-//
-//        }
-//        else if (node->children.size() <= 1)
-//        {
-//            for (int i : node->occupants)
-//            {
-//                if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
-//                {
-//
-//                    (*forces)[particleIndex] += kernelParticleParticle(total, particle, (*node->allParticles)[i]);
-//
-//                }
-//            }
-//        }
-//        else
-//        {
-//            for (QuadTreeFMM<T>* octTree : node->children)
-//            {
-//                getBarnesHutAccActiveTree(total, forces, octTree, particleIndex, theta);
-//            }
-//        }
-//    }
-//    
-//    void getBarnesHutAccPassiveTree(float* total, std::vector<glm::vec2>* forces, QuadTreeFMM<T>* node, int particleIndex, float theta)
-//    {
-//        T particle = (*node->allParticles)[particleIndex];
-//
-//        float l = node->highestCorner.x - node->lowestCorner.x;
-//        glm::vec2 nodeDiff = particle.position - node->centreOfMass;
-//
-//
-//        if (l / glm::length(nodeDiff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
-//        {
-//
-//            kernelNodeParticle(total, node, particle);
-//
-//        }
-//        else if (node->children.size() <= 1)
-//        {
-//            for (int i : node->occupants)
-//            {
-//                if (!glm::all(glm::equal((*node->allParticles)[i].position, particle.position)))
-//                {
-//
-//                    (*forces)[i] += kernelParticleParticle(total, (*node->allParticles)[i], particle);
-//                    
-//                }
-//            }
-//        }
-//        else
-//        {
-//            for (QuadTreeFMM<T>* childQuadTree : node->children)
-//            {
-//
-//                getBarnesHutAccPassiveTree(total, forces, childQuadTree, particleIndex, theta);
-//
-//            }
-//        }
-//
-//    }
-//    
-//};
-//
-//
-//
-//// TSNE kernals ----------------------------------------------------------------------------------------------------------------------
-//
-//
-//
-//void TSNEFMMNodeNodeKernalNaive(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
-//{
-//    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeNode->centreOfMass;
-//    float parCentreDistance = glm::length(nodeDiff);
-//
-//    float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
-//    *accumulator += passiveNode->occupants.size() * activeNode->totalMass * oneOverDistance;
-//
-//
-//    passiveNode->tempAccAcc += -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
-//}
-//void TSNEFMMNodeNodeKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, QuadTreeFMM<EmbeddedPoint>* activeNode)
-//{
-//    // prework
-//    float softening = 1.0f;
-//
-//    glm::vec2 R = passiveNode->centreOfMass - activeNode->centreOfMass;
-//    float r = glm::length(R);
-//    float rS = (r*r) + softening;
-//    
-//    float D1 = -1.0f / (rS * rS);
-//    float D2 = 4.0f / (rS * rS * rS);
-//    //float D2 = (4.0f * r) / (rS * rS * rS * rS);
-//    float D3 = -24.0f / (rS * rS * rS * rS);
-//    //float D3 = -(-4.0f + 28*r*r) / (rS * rS * rS * rS * rS * rS);
-//    *accumulator += (passiveNode->totalMass * activeNode->totalMass) / rS;
-//
-//    float MA0 = passiveNode->totalMass;
-//    float MB0 = activeNode->totalMass;
-//    Fastor::Tensor<float, 2, 2> MB2 = activeNode->quadrupole;
-//    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
-//
-//    // calculate the C^m
-//    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-//    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-//    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-//    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
-//
-//    Fastor::Tensor<float, 2> C1 =
-//    {
-//        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-//        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
-//    };
-//
-//    Fastor::Tensor<float, 2, 2> C2 =
-//    {
-//        {
-//            MB0 * (D1 + R.x * R.x * D2),
-//            MB0 * (R.x * R.y * D2)
-//        },
-//        {
-//            MB0 * (R.y * R.x * D2),
-//            MB0 * (D1 + R.y * R.y * D2)
-//        }
-//    };
-//
-//    Fastor::Tensor<float, 2, 2, 2> C3 =
-//    {
-//        {
-//            {
-//                MB0 * ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
-//                MB0 * ((R.y) * D2 + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
-//            },
-//            {
-//                MB0 * ((R.y) * D2 + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
-//                MB0 * ((R.x) * D2 + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
-//            }
-//        },
-//        {
-//            {
-//                MB0 * ((R.y) * D2 + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
-//                MB0 * ((R.x) * D2 + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
-//            },
-//            {
-//                MB0 * ((R.x) * D2 + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
-//                MB0 * ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
-//            }
-//        }
-//    };
-//
-//
-//    passiveNode->C1 += C1;
-//    passiveNode->C2 += C2;
-//    passiveNode->C3 += C3;
-//}
-//
-//
-//glm::vec2 TSNEFMMParticleNodeKernalNaive(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
-//{
-//    glm::vec2 nodeDiff = passiveParticle.position - activeNode->centreOfMass; // change this
-//    float parCentreDistance = glm::length(nodeDiff);
-//
-//    float oneOverDistance = (1.0f / (1.0f + parCentreDistance));
-//    *accumulator += activeNode->totalMass * oneOverDistance;
-//
-//    return -activeNode->totalMass * oneOverDistance * oneOverDistance * nodeDiff;
-//}
-//glm::vec2 TSNEFMMParticleNodeKernal(float* accumulator, EmbeddedPoint passiveParticle, QuadTreeFMM<EmbeddedPoint>* activeNode)
-//{
-//    float softening = 1.0f;
-//
-//    glm::vec2 R = passiveParticle.position - activeNode->centreOfMass;
-//    float r = glm::length(R);
-//    float rS = (r * r) + softening;
-//
-//    float D1 = -1.0f / (rS * rS);
-//    float D2 = 4.0f / (rS * rS * rS);
-//    float D3 = -24.0f / (rS * rS * rS * rS);
-//    *accumulator += activeNode->totalMass / rS;
-//
-//    float MB0 = activeNode->totalMass;
-//    Fastor::Tensor<float, 2, 2> MB2 = activeNode->quadrupole;
-//    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
-//
-//
-//    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-//    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-//    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-//    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
-//
-//    Fastor::Tensor<float, 2> C1 =
-//    {
-//        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-//        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
-//    };
-//
-//    return glm::vec2(C1(0), C1(1));
-//}
-//
-//
-//void TSNEFMMNodeParticleKernalNaive(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
-//{
-//    float softening = 1.0f; // should be 1.0f for t-SNE
-//
-//    glm::vec2 nodeDiff = passiveNode->centreOfMass - activeParticle.position; // change this
-//    float parCentreDistance = glm::length(nodeDiff);
-//
-//    float oneOverDistance = (1.0f / (softening + parCentreDistance));
-//    *accumulator += passiveNode->totalMass * oneOverDistance;
-//
-//    passiveNode->tempAccAcc += -1.0f * oneOverDistance * oneOverDistance * nodeDiff;
-//}
-//void TSNEFMMNodeParticleKernal(float* accumulator, QuadTreeFMM<EmbeddedPoint>* passiveNode, EmbeddedPoint activeParticle)
-//{
-//    // prework
-//    float softening = 1.0f;
-//
-//    glm::vec2 R = passiveNode->centreOfMass - activeParticle.position;
-//    float r = glm::length(R);
-//    float rS = (r * r) + softening;
-//
-//    float D1 = -1.0f / (rS * rS);
-//    float D2 = 4.0f / (rS * rS * rS);
-//    //float D2 = (4.0f * r) / (rS * rS * rS * rS);
-//    float D3 = -24.0f / (rS * rS * rS * rS);
-//    //float D3 = -(-4.0f + 28*r*r) / (rS * rS * rS * rS * rS * rS);
-//    *accumulator += passiveNode->totalMass / rS;
-//
-//    float MA0 = passiveNode->totalMass;
-//    float MB0 = 1.0f; //activeNode->totalMass;
-//    Fastor::Tensor<float, 2, 2> MB2{}; // = activeNode->quadrupole;
-//    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
-//
-//    // calculate the C^m
-//    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-//    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-//    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-//    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
-//
-//    Fastor::Tensor<float, 2> C1 =
-//    {
-//        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-//        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
-//    };
-//
-//    Fastor::Tensor<float, 2, 2> C2 =
-//    {
-//        {
-//            MB0 * (D1 + R.x * R.x * D2),
-//            MB0 * (R.x * R.y * D2)
-//        },
-//        {
-//            MB0 * (R.y * R.x * D2),
-//            MB0 * (D1 + R.y * R.y * D2)
-//        }
-//    };
-//
-//    Fastor::Tensor<float, 2, 2, 2> C3 =
-//    {
-//        {
-//            {
-//                MB0 * ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
-//                MB0 * ((R.y) * D2 + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
-//            },
-//            {
-//                MB0 * ((R.y) * D2 + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
-//                MB0 * ((R.x) * D2 + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
-//            }
-//        },
-//        {
-//            {
-//                MB0 * ((R.y) * D2 + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
-//                MB0 * ((R.x) * D2 + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
-//            },
-//            {
-//                MB0 * ((R.x) * D2 + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
-//                MB0 * ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
-//            }
-//        }
-//    };
-//
-//    passiveNode->C1 += C1;
-//    passiveNode->C2 += C2;
-//    passiveNode->C3 += C3;
-//}
-//
-//
-//glm::vec2 TSNEFMMParticleParticleKernal(float* accumulator, EmbeddedPoint passiveParticle, EmbeddedPoint activeParticle)
-//{
-//    float softening = 1.0f;
-//    glm::vec2 diff = passiveParticle.position - activeParticle.position;
-//    float distance = glm::length(diff);
-//
-//    float oneOverDistance = 1.0f / ((distance * distance) + softening);
-//    *accumulator += 1.0f * oneOverDistance;
-//    return -1.0f * oneOverDistance * oneOverDistance * diff;
-//}
-//
-//
-//
-//
-//
-//
-//// gravity kernals ----------------------------------------------------------------------------------------------------------------------
-//
-//
-//
+#pragma once
+
+#include <functional>
+#include <glm/glm.hpp>
+#include <utility>
+#include <vector>
+#include <Fastor/Fastor.h>
+
+#include "../../common.h"
+#include "nBodySolver.h"
+#include "../../trees/cpu/quadtreeFMM.h"
+#include "../../particles/embeddedPoint.h"
+#include "../../particles/tsnePoint2D.h"
+#include "../../particles/Particle2D.h"
+
+template <typename T>
+class NBodySolverFMM : public NBodySolver<T>
+{
+public:
+    QuadTreeFMM<T> root;
+
+    std::function<void(float&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNN;
+    std::function<void(float&, T&, QuadTreeFMM<T>*)> kernelPN;
+    std::function<void(float&, QuadTreeFMM<T>*, T&)> kernelNP;
+    std::function<void(float&, T&, T&)> kernelPP;
+
+    NBodySolverFMM() {}
+
+    NBodySolverFMM
+    (
+        std::function<void(float&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> initKernelNN,
+        std::function<void(float&, T&, QuadTreeFMM<T>*)> initKernelPN,
+        std::function<void(float&, QuadTreeFMM<T>*, T&)> initKernelNP,
+        std::function<void(float&, T&, T&)> initKernelPP,
+        int initMaxChildren, 
+        float initTheta
+    )
+    {
+        kernelNN = initKernelNN;
+        kernelPN = initKernelPN;
+        kernelNP = initKernelNP;
+        kernelPP = initKernelPP;
+        this->maxChildren = initMaxChildren;
+        this->theta = initTheta;
+    }
+    
+    void solveNbody(float& total, std::vector<T>& points) override
+    {
+        traverseFMM(total, points, &root, &root, this->theta);
+
+        root.applyForces(points);
+    }
+
+    void updateTree(std::vector<T>& points) override
+    {
+        root = std::move(QuadTreeFMM<T>(this->maxChildren, &points));
+    }
+
+    std::vector<VertexPos2Col3> getNodesBufferData(int nodeLevelToShow) override
+    {
+        std::vector<VertexPos2Col3> result;
+        root.getNodesBufferData(result, 0, nodeLevelToShow);
+        return result;
+    }
+    
+private:   
+    void traverseFMM(float& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, float theta)
+    {
+        float Lsink = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
+        float Lsource = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
+
+        glm::vec2 diff = sinkNode->centreOfMass - sourceNode->centreOfMass;
+        float dist = glm::length(diff);
+
+     
+        if ((Lsink + Lsource) / dist < theta)
+        {
+
+            kernelNN(total, sinkNode, sourceNode);
+
+        }
+        else if (sinkNode->children.size() == 0)
+        {
+            for (int sinkNodePointindex : sinkNode->occupants)
+            {
+
+                traverseBHMP(total, points[sinkNodePointindex], sourceNode, theta);
+
+            }
+        }
+        else if (sourceNode->children.size() == 0)
+        {
+            for (int sourceNodeParticleIndex : sourceNode->occupants)
+            {
+
+                traverseBHRMP(total, sinkNode, points[sourceNodeParticleIndex], theta);
+
+            }
+        }
+        else
+        {
+            for (QuadTreeFMM<T>* sinkNodeChild : sinkNode->children)
+            {
+                for (QuadTreeFMM<T>* sourceNodeChild : sourceNode->children)
+                {
+
+                    traverseFMM(total, points, sinkNodeChild, sourceNodeChild, theta);
+
+                }
+            }
+        }
+
+    }
+
+    void traverseBHMP(float& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, float theta)
+    {
+        float l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
+        glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
+
+        if (l / glm::length(diff) < theta)
+        {
+
+            kernelPN(total, sinkPoint, sourceNode);
+
+        }
+        else if (sourceNode->children.size() <= 1)
+        {
+            for (int i : sourceNode->occupants)
+            {
+                if (!glm::all(glm::equal((*sourceNode->allParticles)[i].position, sinkPoint.position)))
+                {
+
+                    kernelPP(total, sinkPoint, (*sourceNode->allParticles)[i]);
+
+                }
+            }
+        }
+        else
+        {
+            for (QuadTreeFMM<T>* sourceNodeChild : sourceNode->children)
+            {
+                traverseBHMP(total, sinkPoint, sourceNodeChild, theta);
+            }
+        }
+    }
+    
+    void traverseBHRMP(float& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, float theta)
+    {
+        float l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
+        glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
+
+        if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        {
+
+            kernelNP(total, sinkNode, sourcePoint);
+
+        }
+        else if (sinkNode->children.size() <= 1)
+        {
+            for (int i : sinkNode->occupants)
+            {
+                if (!glm::all(glm::equal((*sinkNode->allParticles)[i].position, sourcePoint.position)))
+                {
+
+                    kernelPP(total, (*sinkNode->allParticles)[i], sourcePoint);
+                    
+                }
+            }
+        }
+        else
+        {
+            for (QuadTreeFMM<T>* sinkNodeChild : sinkNode->children)
+            {
+
+                traverseBHRMP(total, sinkNodeChild, sourcePoint, theta);
+
+            }
+        }
+
+    }
+    
+};
+
+
+
+// TSNE kernals ----------------------------------------------------------------------------------------------------------------------
+
+
+
+void TSNEFMMNNKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
+{
+    glm::vec2 diff = sinkNode->centreOfMass - sourceNode->centreOfMass;
+    float dist = glm::length(diff);
+
+    float forceDecay = (1.0f / (1.0f + (dist * dist)));
+    total += sinkNode->totalMass * sourceNode->totalMass * forceDecay;
+
+    sinkNode->tempAccAcc += sourceNode->totalMass * forceDecay * forceDecay * diff;
+}
+void TSNEFMMNNKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
+{
+    glm::vec2 R = sinkNode->centreOfMass - sourceNode->centreOfMass;
+    float r = glm::length(R);
+    float rS = 1.0f + (r*r);
+    
+    float D1 = 1.0f / (rS * rS);
+    float D2 = -4.0f / (rS * rS * rS);
+    float D3 = 24.0f / (rS * rS * rS * rS);
+    total += (sinkNode->totalMass * sourceNode->totalMass) / rS;
+
+    float MA0 = sinkNode->totalMass;
+    float MB0 = sourceNode->totalMass;
+    Fastor::Tensor<float, 2, 2> MB2 = sourceNode->quadrupole;
+    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+
+    // calculate the C^m
+    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    Fastor::Tensor<float, 2, 2> C2 =
+    {
+        {
+            MB0 * (D1 + R.x * R.x * D2),
+            MB0 * (R.x * R.y * D2)
+        },
+        {
+            MB0 * (R.y * R.x * D2),
+            MB0 * (D1 + R.y * R.y * D2)
+        }
+    };
+
+    Fastor::Tensor<float, 2, 2, 2> C3 =
+    {
+        {
+            {
+                MB0 * ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
+                MB0 * ((R.y) * D2 + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
+            },
+            {
+                MB0 * ((R.y) * D2 + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
+                MB0 * ((R.x) * D2 + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
+            }
+        },
+        {
+            {
+                MB0 * ((R.y) * D2 + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
+                MB0 * ((R.x) * D2 + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
+            },
+            {
+                MB0 * ((R.x) * D2 + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
+                MB0 * ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
+            }
+        }
+    };
+
+
+    sinkNode->C1 += C1;
+    sinkNode->C2 += C2;
+    sinkNode->C3 += C3;
+}
+
+
+void TSNEFMMPNKernelNaive(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
+{
+    glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
+    float dist = glm::length(diff);
+
+    float forceDecay = (1.0f / (1.0f + (dist * dist)));
+    total += sourceNode->totalMass * forceDecay;
+
+    sinkPoint.derivative += sourceNode->totalMass * forceDecay * forceDecay * diff;
+}
+void TSNEFMMPNKernel(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
+{
+    glm::vec2 R = sinkPoint.position - sourceNode->centreOfMass;
+    float r = glm::length(R);
+    float rS = 1.0f + (r * r);
+
+    float D1 = 1.0f / (rS * rS);
+    float D2 = -4.0f / (rS * rS * rS);
+    float D3 = 24.0f / (rS * rS * rS * rS);
+    total += sourceNode->totalMass / rS;
+
+    float MB0 = sourceNode->totalMass;
+    Fastor::Tensor<float, 2, 2> MB2 = sourceNode->quadrupole;
+    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+
+
+    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    sinkPoint.derivative += glm::vec2(C1(0), C1(1));
+}
+
+
+void TSNEFMMNPKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+{
+    glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position; // change this
+    float dist = glm::length(diff);
+
+    float forceDecay = (1.0f / (1.0f + (dist * dist)));
+    total += sinkNode->totalMass * forceDecay;
+
+    sinkNode->tempAccAcc += forceDecay * forceDecay * diff;
+}
+void TSNEFMMNPKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+{
+    glm::vec2 R = sinkNode->centreOfMass - sourcePoint.position;
+    float r = glm::length(R);
+    float rS = 1.0f + (r * r);
+
+    float D1 = 1.0f / (rS * rS);
+    float D2 = -4.0f / (rS * rS * rS);
+    float D3 = 24.0f / (rS * rS * rS * rS);
+    total += sinkNode->totalMass / rS;
+
+
+    Fastor::Tensor<float, 2> C1 =
+    {
+        (R.x * D1),
+        (R.y * D1)
+    };
+
+    Fastor::Tensor<float, 2, 2> C2 =
+    {
+        {
+            (D1 + R.x * R.x * D2),
+            (R.x * R.y * D2)
+        },
+        {
+            (R.y * R.x * D2),
+            (D1 + R.y * R.y * D2)
+        }
+    };
+
+    Fastor::Tensor<float, 2, 2, 2> C3 =
+    {
+        {
+            {
+                ((R.x + R.x + R.x) * D2 + R.x * R.x * R.x * D3), // i = 0, j = 0, k = 0
+                ((R.y) * D2 + R.x * R.x * R.y * D3)  // i = 0, j = 0, k = 1
+            },
+            {
+                ((R.y) * D2 + R.x * R.y * R.x * D3), // i = 0, j = 1, k = 0
+                ((R.x) * D2 + R.x * R.y * R.y * D3)  // i = 0, j = 1, k = 1
+            }
+        },
+        {
+            {
+                ((R.y) * D2 + R.y * R.x * R.x * D3), // i = 1, j = 0, k = 0
+                ((R.x) * D2 + R.y * R.x * R.y * D3)  // i = 1, j = 0, k = 1
+            },
+            {
+                ((R.x) * D2 + R.y * R.y * R.x * D3), // i = 1, j = 1, k = 0
+                ((R.y + R.y + R.y) * D2 + R.y * R.y * R.y * D3)  // i = 1, j = 1, k = 1
+            }
+        }
+    };
+
+    sinkNode->C1 += C1;
+    sinkNode->C2 += C2;
+    sinkNode->C3 += C3;
+}
+
+
+void TSNEFMMPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+{
+    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
+    float dist = glm::length(diff);
+
+    float forceDecay = 1.0f / (1.0f + (dist * dist));
+    total += forceDecay;
+
+    sinkPoint.derivative += forceDecay * forceDecay * diff;
+}
+
+
+
+
+
+
+// gravity kernals ----------------------------------------------------------------------------------------------------------------------
+
+
+
 //void GRAVITYFMMNodeNodeKernalNaive(float* accumulator, QuadTreeFMM<Particle2D>* passiveNode, QuadTreeFMM<Particle2D>* activeNode)
 //{
 //    float softening = 0.1f;

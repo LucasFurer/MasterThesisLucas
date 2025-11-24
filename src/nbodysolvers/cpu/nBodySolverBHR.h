@@ -32,7 +32,7 @@ public:
         this->theta = initTheta;
     }
 
-    void solveNbody(float& total, std::vector<T>& points)
+    void solveNbody(float& total, std::vector<T>& points) override
     {
         total = 0.0f;
 
@@ -44,7 +44,7 @@ public:
         cascadeValues(points, &root, glm::vec2(0.0f));
     }
 
-    void updateTree(std::vector<T>& points)
+    void updateTree(std::vector<T>& points) override
     {
         root = std::move(QuadTreeBarnesHutReverse<T>(this->maxChildren, &points));
     }

@@ -264,7 +264,7 @@ public:
 	}
 
 	
-	void applyForces(std::vector<glm::vec2>* forces)
+	void applyForces(std::vector<T>& points)
 	{
 		if (children.size() != 0)
 		{
@@ -323,7 +323,7 @@ public:
 				child->tempAccAcc += tempAccAcc;
 
 				// try to apply forces for the child node
-				child->applyForces(forces);
+				child->applyForces(points);
 			}
 		}
 		else
@@ -345,11 +345,11 @@ public:
 														(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 					
 				//(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
-				(*forces)[i] += glm::vec2(acceleration(0), acceleration(1));
+				points[i].derivative += glm::vec2(acceleration(0), acceleration(1));
 				
 
 
-				(*forces)[i] += tempAccAcc; // delete this once C^N has been fully implemented 
+				points[i].derivative += tempAccAcc; // delete this once C^N has been fully implemented 
 			}
 		}
 	}
@@ -371,56 +371,40 @@ public:
 	}
 	
 
-	void getLineSegments(std::vector<LineSegment2D>& lineSegments, int level, int showLevel)
+	void getNodesBufferData(std::vector<VertexPos2Col3>& nodesBufferData, int level, int showLevel)
 	{
 		if (level == showLevel || showLevel == -1)
 		{
-			glm::vec3 color;
+			const int colorsSize = 7;
+			std::array<glm::vec3, colorsSize> colors{
+				glm::vec3(1.0f, 1.0f, 1.0f),
+				glm::vec3(1.0f, 0.0f, 0.0f),
+				glm::vec3(0.0f, 1.0f, 0.0f),
+				glm::vec3(0.0f, 0.0f, 1.0f),
+				glm::vec3(1.0f, 1.0f, 0.0f),
+				glm::vec3(0.0f, 1.0f, 1.0f),
+				glm::vec3(1.0f, 0.0f, 1.0f)
+			};
 
-			switch (showLevel) {
-			case -1:
-				color = glm::vec3(1.0f, 1.0f, 1.0f);
-				break;
-			case 0:
-				color = glm::vec3(1.0f, 0.0f, 0.0f);
-				break;
-			case 1:
-				color = glm::vec3(0.0f, 1.0f, 0.0f);
-				break;
-			case 2:
-				color = glm::vec3(0.0f, 0.0f, 1.0f);
-				break;
-			case 3:
-				color = glm::vec3(1.0f, 1.0f, 0.0f);
-				break;
-			case 4:
-				color = glm::vec3(0.0f, 1.0f, 1.0f);
-				break;
-			case 5:
-				color = glm::vec3(1.0f, 0.0f, 1.0f);
-				break;
-			default:
-				color = glm::vec3(1.0f, 1.0f, 1.0f);
-			}
+			glm::vec3 color = colors[std::min(showLevel + 1, colorsSize - 1)];
 
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(highestCorner.x, lowestCorner.y), color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(lowestCorner.x, highestCorner.y), color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(lowestCorner.x, lowestCorner.y),   color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, highestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y), glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(lowestCorner.x, highestCorner.y),  color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y),  glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y),  glm::vec2(lowestCorner.x, highestCorner.y),  color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, highestCorner.y),  glm::vec2(highestCorner.x, highestCorner.y), color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(lowestCorner.x, lowestCorner.y),   glm::vec2(highestCorner.x, lowestCorner.y),  color, color, level));
-			//lineSegments.push_back(LineSegment2D(glm::vec2(highestCorner.x, lowestCorner.y),  glm::vec2(highestCorner.x, lowestCorner.y),  color, color, level));
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, lowestCorner.y), color));
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y), color));
+
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, lowestCorner.y), color));
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, highestCorner.y), color));
+
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, highestCorner.y), color));
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, highestCorner.y), color));
+
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y), color));
+			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, highestCorner.y), color));
 		}
 
 
-		for (QuadTreeFMM* octTree : children)
+		for (QuadTreeFMM* child : children)
 		{
-			octTree->getLineSegments(lineSegments, level + 1, showLevel);
+			child->getNodesBufferData(nodesBufferData, level + 1, showLevel);
 		}
 	}
 
