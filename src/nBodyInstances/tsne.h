@@ -71,7 +71,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -145,8 +145,10 @@ public:
         nBodySolvers["BHMP"]->updateTree(embeddedPoints);
         nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 1.0f);
-        nBodySolvers["FMM"]->updateTree(embeddedPoints);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 5u, 1.0f);
+        //nBodySolvers["FMM"]->updateTree(embeddedPoints);
+        float test = 0.0f;
+        nBodySolvers["FMM"]->solveNbody(test, embeddedPoints);
         
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);

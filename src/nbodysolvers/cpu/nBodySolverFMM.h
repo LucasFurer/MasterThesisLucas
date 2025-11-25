@@ -5,10 +5,12 @@
 #include <utility>
 #include <vector>
 #include <Fastor/Fastor.h>
+#include <boost/sort/spreadsort/float_sort.hpp>
 
 #include "../../common.h"
 #include "nBodySolver.h"
 #include "../../trees/cpu/quadtreeFMM.h"
+#include "../../trees/cpu/nodeFMM2D.h"
 #include "../../particles/embeddedPoint.h"
 #include "../../particles/tsnePoint2D.h"
 #include "../../particles/Particle2D.h"
@@ -17,7 +19,10 @@ template <typename T>
 class NBodySolverFMM : public NBodySolver<T>
 {
 public:
-    QuadTreeFMM<T> root;
+    unsigned int treeDepth;
+    std::vector<NodeFMM2D> nodes;
+    std::vector<unsigned int> levelIndex;
+    std::vector<unsigned int> levelSize;
 
     std::function<void(float&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNN;
     std::function<void(float&, T&, QuadTreeFMM<T>*)> kernelPN;
@@ -32,7 +37,8 @@ public:
         std::function<void(float&, T&, QuadTreeFMM<T>*)> initKernelPN,
         std::function<void(float&, QuadTreeFMM<T>*, T&)> initKernelNP,
         std::function<void(float&, T&, T&)> initKernelPP,
-        int initMaxChildren, 
+        int initMaxChildren,
+        unsigned int initTreeDepth,
         float initTheta
     )
     {
@@ -41,25 +47,34 @@ public:
         kernelNP = initKernelNP;
         kernelPP = initKernelPP;
         this->maxChildren = initMaxChildren;
+        initNodesSize(initTreeDepth);
         this->theta = initTheta;
     }
     
     void solveNbody(float& total, std::vector<T>& points) override
     {
-        traverseFMM(total, points, &root, &root, this->theta);
+        //traverseFMM(total, points, &root, &root, this->theta);
 
-        root.applyForces(points);
+        //root.applyForces(points);
+
+        std::vector<float> v = { 3.1f, 1.9f, -2.5f };
+        boost::sort::spreadsort::float_sort(v);
+
+
+        //sortMorton
+
+        createLeafNodes(points);
     }
 
     void updateTree(std::vector<T>& points) override
     {
-        root = std::move(QuadTreeFMM<T>(this->maxChildren, &points));
+        //root = std::move(QuadTreeFMM<T>(this->maxChildren, &points));
     }
 
     std::vector<VertexPos2Col3> getNodesBufferData(int nodeLevelToShow) override
     {
         std::vector<VertexPos2Col3> result;
-        root.getNodesBufferData(result, 0, nodeLevelToShow);
+        //root.getNodesBufferData(result, 0, nodeLevelToShow);
         return result;
     }
     
@@ -179,6 +194,42 @@ private:
 
     }
     
+    void initNodesSize(unsigned int initTreeDepth)
+    {
+        treeDepth = initTreeDepth;
+        levelIndex.resize(treeDepth + 1);
+        levelSize.resize(treeDepth + 1);
+        levelIndex[0] = 0;
+        int nodesSize = 0;
+        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
+        {
+            int currentLevelSize = 1;
+            for (int j = 0; j < i; j++)
+            {
+                currentLevelSize *= 4;
+            }
+            levelSize[i] = currentLevelSize;
+            nodesSize += currentLevelSize;
+
+            int currentDepthStart = 0;
+            for (int j = 0; j <= i; j++)
+            {
+                currentDepthStart += levelSize[j];
+            }
+            if (i + 1 < treeDepth + 1)
+                levelIndex[i + 1] = currentDepthStart;
+        }
+
+        nodes.resize(nodesSize);
+    }
+
+    void createLeafNodes(std::vector<T>& points)
+    {
+        for (int i = 0; i < points.size(); i++)
+        {
+            //points[i]
+        }
+    }
 };
 
 
