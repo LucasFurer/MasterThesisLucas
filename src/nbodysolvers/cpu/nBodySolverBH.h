@@ -40,7 +40,7 @@ public:
         }
     }
 
-    void updateTree(std::vector<T>& points) override
+    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
     {
         root = std::move(QuadTree<T>(this->maxChildren, &points));
     }

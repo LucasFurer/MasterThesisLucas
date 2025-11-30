@@ -46,7 +46,7 @@ public:
         }
     }
 
-    void updateTree(std::vector<T>& points) override {}
+    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override {}
 
     std::vector<VertexPos2Col3> getNodesBufferData(int level) override { return std::vector<VertexPos2Col3>(); }
 

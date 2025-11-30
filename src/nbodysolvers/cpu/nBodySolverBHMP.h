@@ -43,7 +43,7 @@ public:
         }
     }
 
-    void updateTree(std::vector<T>& embeddedPoints) override
+    void updateTree(std::vector<T>& embeddedPoints, glm::vec2 minPos, glm::vec2 maxPos) override
     {
         root = std::move(QuadTreeMultiPole<T>(this->maxChildren, &embeddedPoints));
     }

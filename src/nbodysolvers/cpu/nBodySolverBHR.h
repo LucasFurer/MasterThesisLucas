@@ -44,7 +44,7 @@ public:
         cascadeValues(points, &root, glm::vec2(0.0f));
     }
 
-    void updateTree(std::vector<T>& points) override
+    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
     {
         root = std::move(QuadTreeBarnesHutReverse<T>(this->maxChildren, &points));
     }

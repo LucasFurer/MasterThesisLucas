@@ -1,7 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <Fastor/Fastor.h>
+#include <string>
 
 class NodeFMM2D
 {
@@ -25,9 +27,9 @@ public:
 	NodeFMM2D() :
 		BBcentre(0.0f),
 		BBlength(0.0f),
-		firstChildIndex(0),
-		firstParticleIndex(0),
-		particleIndexAmount(0),
+		firstChildIndex(0u),
+		firstParticleIndex(0u),
+		particleIndexAmount(0u),
 		centreOfMass(0.0f),
 		M0(0.0f),
 		M2(0.0f),
@@ -35,4 +37,18 @@ public:
 		C2(0.0f),
 		C3(0.0f)
 	{}
+
+	std::string toString()
+	{
+		std::string result =
+			"    BBcentre: " + glm::to_string(BBcentre) + "\n" +
+			"    BBlength: " + std::to_string(BBlength) + "\n" +
+			"    firstChildIndex: " + std::to_string(firstChildIndex) + "\n" +
+			"    firstParticleIndex: " + std::to_string(firstParticleIndex) + "\n" +
+			"    particleIndexAmount: " + std::to_string(particleIndexAmount) + "\n" +
+			"    centreOfMass: " + glm::to_string(centreOfMass)
+		;
+
+		return result;
+	}
 };

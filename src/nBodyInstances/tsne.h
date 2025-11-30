@@ -9,6 +9,10 @@
 #include <utility>
 #include <unsupported/Eigen/SparseExtra>
 #include <limits>
+#include <glm/glm.hpp>
+#include <glm/gtx/component_wise.hpp> 
+#include <glm/gtx/string_cast.hpp>
+#include <exception>
 
 #include "../particles/embeddedPoint.h"
 #include "../particles/tsnePoint2D.h"
@@ -33,15 +37,18 @@ public:
     std::vector<TsnePoint2D> embeddedPointsPrevPrev;
     Buffer* embeddedBuffer;
 
+    std::vector<int> indexTracker;
+    std::vector<int> indexTrackerPrev;
+
+    int follow = 1;
+    glm::vec2 minPos;
+    glm::vec2 maxPos;
+
     int nodeLevelToShow = 0;
     Buffer* nodeBuffer;
 
     float forceSize = 1.0f;
     Buffer* forceBuffer;
-
-    //std::vector<glm::vec2> embeddedDerivative;
-    //std::vector<glm::vec2> attractForce;
-    //std::vector<glm::vec2> repulsForce;
 
     //std::vector<glm::vec2> errorCompare;
 
@@ -59,7 +66,7 @@ public:
     //std::vector<std::vector<float>> Qmatrix;
     //float Qsum;
 
-    int follow = 1;
+    
     //float totalError = 0.0f;
     int timeCounter = 0;
 
@@ -77,7 +84,6 @@ public:
         //std::string dataSet = "CIFAR10";
 
         learnRate = 200.0f;
-        //accelerationRate = 0.5f;
 
         timeStepsPerSec = 0.0f;
 
@@ -101,27 +107,26 @@ public:
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
         embeddedPointsPrevPrev.resize(dataAmount);
-
-        //embeddedDerivative.resize(dataAmount);
-        //attractForce.resize(dataAmount);
-        //repulsForce.resize(dataAmount);
+        
+        indexTracker.resize(dataAmount);
+        indexTrackerPrev.resize(dataAmount);
 
         //errorCompare.resize(dataAmount);
 
         //srand(time(NULL));
         srand(1952732);
-        float sizeParam = 2.0f;
+        float sizeParam = 1.0f;
         for (int i = 0; i < dataAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
             float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
 
             
-            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
-            {
-                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            }
+            //while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            //{
+            //    randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            //    randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            //}
             
 
             glm::vec2 pos = glm::vec2(
@@ -134,21 +139,27 @@ public:
             embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
             embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
             embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
+
+            indexTracker[i] = i;
+            indexTrackerPrev[i] = i;
         }
+        updateMinMaxPos();
 
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, 10, 1.0f);
-        nBodySolvers["BH"]->updateTree(embeddedPoints);
+        nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, 10, 1.0f);
-        nBodySolvers["BHR"]->updateTree(embeddedPoints);
+        nBodySolvers["BHR"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHMP"] = new NBodySolverBHMP<TsnePoint2D>(&TSNEBHMPPNKernel, &TSNEBHMPPPKernel, 10, 1.0f);
-        nBodySolvers["BHMP"]->updateTree(embeddedPoints);
+        nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
-        nBodySolvers["BHRMP"]->updateTree(embeddedPoints);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 5u, 1.0f);
-        //nBodySolvers["FMM"]->updateTree(embeddedPoints);
-        float test = 0.0f;
-        nBodySolvers["FMM"]->solveNbody(test, embeddedPoints);
+        nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 2u, 1.0f);
+        nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
+
+        //float test = 0.0f;
+        //nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
+        //nBodySolvers["FMM"]->solveNbody(test, embeddedPoints);
         
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);
@@ -208,15 +219,21 @@ public:
 
             for (int i = 0; i < embeddedPoints.size(); i++)
             {
-                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-                embeddedPoints[i].derivative = embeddedPointsPrev[i].derivative; // for showing the derivatives
+                int indexPrev = indexTracker[i];
+                int indexPrevPrev = indexTrackerPrev[i];
+
+                embeddedPoints[indexPrev] = embeddedPointsPrev[indexPrev];
+                embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative + accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
             }
+
+            indexTrackerPrev.swap(indexTracker);
 
             //costFunction();
 
+            updateMinMaxPos();
             embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1Int1);
 
-            nBodySolvers[nBodySelect]->updateTree(embeddedPoints);
+            nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
             std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
             nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
 
@@ -227,34 +244,38 @@ public:
         }
     }
 
-    std::tuple<float, float, float, float> getEdges()
+    void updateMinMaxPos()
     {
-        float left  = std::numeric_limits<float>::max();
-        float down  = std::numeric_limits<float>::max();
-        float right = std::numeric_limits<float>::min();
-        float up    = std::numeric_limits<float>::min();
+        minPos = glm::vec2(std::numeric_limits<float>::max());
+        maxPos = glm::vec2(std::numeric_limits<float>::lowest());
 
-        for (int i = 0; i < embeddedPoints.size(); i++)
+        for (TsnePoint2D point : embeddedPoints)
         {
-            if (embeddedPoints[i].position.x < left) { left = embeddedPoints[i].position.x; }
-            if (embeddedPoints[i].position.x > right) { right = embeddedPoints[i].position.x; }
-            if (embeddedPoints[i].position.y < down) { down = embeddedPoints[i].position.y; }
-            if (embeddedPoints[i].position.y > up) { up = embeddedPoints[i].position.y; }
+            minPos = glm::min(minPos, point.position);
+            maxPos = glm::max(maxPos, point.position);
         }
-
-        return std::make_tuple(left, right, down, up);
     }
 
 private:
 
     void updateDerivative()
     {
-        for (TsnePoint2D embeddedPoint : embeddedPoints)
+        for (TsnePoint2D& embeddedPoint : embeddedPoints)
             embeddedPoint.derivative = glm::vec2(0.0f); // reset derivative for iteration
 
         //checkError();
         
         updateRepulsive();
+
+        //struct
+        //{
+        //    bool operator()(TsnePoint2D a, TsnePoint2D b) const { return a.position.x < b.position.x; }
+        //}
+        //customLess;
+        //std::sort(embeddedPoints.begin(), embeddedPoints.end(), customLess);
+
+        for (int i = 0; i < embeddedPoints.size(); i++)
+            indexTracker[embeddedPoints[i].ID] = i;
         
         updateAttractive();
     }
@@ -311,6 +332,7 @@ private:
 
         nBodySolvers[nBodySelect]->solveNbody(QijTotal, embeddedPoints);
 
+
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             embeddedPoints[i].derivative *= (4.0f / QijTotal);
@@ -323,7 +345,10 @@ private:
         { 
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
             {
-                glm::vec2 diff = embeddedPoints[it.row()].position - embeddedPoints[it.col()].position;
+                int indexR = indexTracker[it.row()];
+                int indexC = indexTracker[it.col()];
+
+                glm::vec2 diff = embeddedPoints[indexR].position - embeddedPoints[indexC].position;
                 float dist = glm::length(diff);
 
                 float exageration = 1.0f;
@@ -332,7 +357,7 @@ private:
                     exageration = 4.0f;
                 }
 
-                embeddedPoints[it.col()].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
+                embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
     }
