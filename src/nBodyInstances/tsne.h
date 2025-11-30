@@ -71,7 +71,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -117,11 +117,11 @@ public:
             float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
 
             
-            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
-            {
-                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            }
+            //while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            //{
+            //    randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            //    randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            //}
             
 
             glm::vec2 pos = glm::vec2(
