@@ -63,15 +63,6 @@ public:
     std::function<void(float&, NodeFMM2D&, T&)> kernelNP;
     std::function<void(float&, T&, T&)> kernelPP;
 
-    int FMMcounter = 0;
-    int BHMPcounter = 0;
-    int BHRMPcounter = 0;
-
-    int NNinter = 0;
-    int NPinter = 0;
-    int PNinter = 0;
-    int PPinter = 0;
-
     NBodySolverFMM() {}
 
     NBodySolverFMM
@@ -96,35 +87,7 @@ public:
     
     void solveNbody(float& total, std::vector<T>& points) override
     {
-        FMMcounter = 0;
-        BHMPcounter = 0;
-        BHRMPcounter = 0;
-
-        NNinter = 0;
-        NPinter = 0;
-        PNinter = 0;
-        PPinter = 0;
-
         traverseFMM(total, points, nodes[0], nodes[0], this->theta);
-
-        std::cout << "FMMcounter: " << FMMcounter << std::endl;
-        std::cout << "BHMPcounter: " << BHMPcounter << std::endl;
-        std::cout << "BHRMPcounter: " << BHRMPcounter << std::endl;
-
-        std::cout << "NNinter: " << NNinter << std::endl;
-        std::cout << "NPinter: " << NPinter << std::endl;
-        std::cout << "PNinter: " << PNinter << std::endl;
-        std::cout << "PPinter: " << PPinter << std::endl;
-        
-        //for (int i = 0; i < points.size(); i++)
-        //{
-        //    traverseBHMP(total, points, points[i], nodes[0], this->theta);
-        //}
-
-        //for (int i = 0; i < points.size(); i++)
-        //{
-        //    traverseBHRMP(total, points, nodes[0], points[i], this->theta);
-        //}
 
         applyForces(points, nodes[0]);
     }
@@ -136,27 +99,19 @@ public:
         
         glm::vec2 negMinPos = -minPos;
         float largestAxis = glm::compMax(maxPos + negMinPos);
-
         
+
         std::vector<MortonPoint<T>> pointsMortons(points.size());
         for (int i = 0; i < points.size(); i++)
             pointsMortons[i] = MortonPoint<T>(createMortonCode(points[i].position, negMinPos, largestAxis), points[i]);
         boost::sort::spreadsort::integer_sort(pointsMortons.begin(), pointsMortons.end(), rightshift<T>(), lessthan<T>());
-        //struct { bool operator()(MortonPoint<T> a, MortonPoint<T> b) const { return a.morton < b.morton; } } customLess;
-        //std::sort(pointsMortons.begin(), pointsMortons.end(), customLess);
         for (int i = 0; i < points.size(); i++)
             points[i] = pointsMortons[i].point;
+
 
         createLeafNodes(points, minPos, maxPos);
         
         bottomUpNodeConstruction();
-
-        //std::cout << "----------------------" << std::endl;
-        //for (int i = 0; i < nodes.size(); i++)
-        //{
-        //    std::cout << "--node " << i << std::endl;
-        //    std::cout << nodes[i].toString() << std::endl;
-        //}
     }
 
     std::vector<VertexPos2Col3> getNodesBufferData(int nodeLevelToShow) override
@@ -171,42 +126,24 @@ public:
 private:   
     void traverseFMM(float& total, std::vector<T>& points, NodeFMM2D& sinkNode, NodeFMM2D& sourceNode, float theta)
     {
-        FMMcounter++;
-        std::cout << "----FMMcounter: " << FMMcounter << std::endl;
-        //std::cout << "peorming with: " << std::endl;
-        //std::cout << "sink: " << sinkNode.toString() << std::endl;
-        //std::cout << "source: " << sourceNode.toString() << std::endl;
-        //std::cout << "------------------------" << std::endl;
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
         glm::vec2 diff = sinkNode.centreOfMass - sourceNode.centreOfMass;
         float dist = glm::length(diff);
-
      
         if ((sinkNode.BBlength + sourceNode.BBlength) / dist < theta)
         {
-
-            //if (sinkNode.particleIndexAmount != 0 && sourceNode.particleIndexAmount != 0)
-            //{
-            //    kernelNN(total, sinkNode, sourceNode);
-            //    NNinter++;
-            //}
-            for (int sinkNodeChildIndex = sinkNode.firstChildIndex; sinkNodeChildIndex < sinkNode.firstChildIndex + 4; sinkNodeChildIndex++)
+            if (sinkNode.particleIndexAmount != 0 && sourceNode.particleIndexAmount != 0)
             {
-                for (int sourceNodeChildIndex = sourceNode.firstChildIndex; sourceNodeChildIndex < sourceNode.firstChildIndex + 4; sourceNodeChildIndex++)
-                {
-                    if (nodes[sinkNodeChildIndex].particleIndexAmount != 0 && nodes[sourceNodeChildIndex].particleIndexAmount != 0)
-                        traverseFMM(total, points, nodes[sinkNodeChildIndex], nodes[sourceNodeChildIndex], theta);
 
-                }
+                kernelNN(total, sinkNode, sourceNode);
+
             }
-
         }
         else if (sinkNode.firstChildIndex == 0)
         {
 
             for (int sinkNodePointIndex = sinkNode.firstParticleIndex; sinkNodePointIndex < sinkNode.firstParticleIndex + sinkNode.particleIndexAmount; sinkNodePointIndex++)
             {
+
                 if (sourceNode.particleIndexAmount != 0)
                     traverseBHMP(total, points, points[sinkNodePointIndex], sourceNode, theta);
 
@@ -216,6 +153,7 @@ private:
         {
             for (int sourceNodePointIndex = sourceNode.firstParticleIndex; sourceNodePointIndex < sourceNode.firstParticleIndex + sourceNode.particleIndexAmount; sourceNodePointIndex++)
             {
+
                 if (sinkNode.particleIndexAmount != 0)
                     traverseBHRMP(total, points, sinkNode, points[sourceNodePointIndex], theta);
 
@@ -228,11 +166,6 @@ private:
                 for (int sourceNodeChildIndex = sourceNode.firstChildIndex; sourceNodeChildIndex < sourceNode.firstChildIndex + 4; sourceNodeChildIndex++)
                 {
 
-                    //if (nodes[sinkNodeChildIndex].firstChildIndex == 0 || nodes[sourceNodeChildIndex].firstChildIndex)
-                    //{
-                    //    std::cout << 
-                    //}
-                    //if (nodes[sinkNodeChildIndex].particleIndexAmount != 0 && nodes[sourceNodeChildIndex].particleIndexAmount != 0)
                     if (nodes[sinkNodeChildIndex].particleIndexAmount != 0 && nodes[sourceNodeChildIndex].particleIndexAmount != 0)
                         traverseFMM(total, points, nodes[sinkNodeChildIndex], nodes[sourceNodeChildIndex], theta);
 
@@ -244,24 +177,13 @@ private:
 
     void traverseBHMP(float& total, std::vector<T>& points, T& sinkPoint, NodeFMM2D& sourceNode, float theta)
     {
-        BHMPcounter++;
-        std::cout << "----BHMPcounter: " << BHMPcounter << std::endl;
-        //std::cout << "peorming with: " << std::endl;
-        //std::cout << "sink: " << glm::to_string(sinkPoint.position) << std::endl;
-        //std::cout << "source: " << sourceNode.toString() << std::endl;
-        //std::cout << "------------------------" << std::endl;
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
         glm::vec2 diff = sinkPoint.position - sourceNode.centreOfMass;
+        float dist = glm::length(diff);
 
-        //std::cout << "sourceNode.BBlength / glm::length(diff) < theta: " << (sourceNode.BBlength / glm::length(diff) < theta) << std::endl;
-        //std::cout << "sourceNode.firstChildIndex == 0: " << (sourceNode.firstChildIndex == 0) << std::endl;
-
-        if (sourceNode.BBlength / glm::length(diff) < theta)
+        if (sourceNode.BBlength / dist < theta)
         {
 
             kernelPN(total, sinkPoint, sourceNode);
-            PNinter++;
 
         }
         else if (sourceNode.firstChildIndex == 0)
@@ -272,7 +194,6 @@ private:
                 {
 
                     kernelPP(total, sinkPoint, points[sourceNodePointIndex]);
-                    PPinter++;
 
                 }
             }
@@ -281,6 +202,7 @@ private:
         {
             for (int sourceNodeChildIndex = sourceNode.firstChildIndex; sourceNodeChildIndex < sourceNode.firstChildIndex + 4; sourceNodeChildIndex++)
             {
+
                 if (nodes[sourceNodeChildIndex].particleIndexAmount != 0)
                     traverseBHMP(total, points, sinkPoint, nodes[sourceNodeChildIndex], theta);
 
@@ -290,21 +212,13 @@ private:
     
     void traverseBHRMP(float& total, std::vector<T>& points, NodeFMM2D& sinkNode, T& sourcePoint, float theta)
     {
-        BHRMPcounter++;
-        std::cout << "----BHRMPcounter: " << BHRMPcounter << std::endl;
-        //std::cout << "peorming with: " << std::endl;
-        //std::cout << "sink: " << sinkNode.toString() << std::endl;
-        //std::cout << "source: " << glm::to_string(sourcePoint.position) << std::endl;
-        //std::cout << "------------------------" << std::endl;
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
         glm::vec2 diff = sinkNode.centreOfMass - sourcePoint.position;
+        float dist = glm::length(diff);
 
-        if (sinkNode.BBlength / glm::length(diff) < theta)
+        if (sinkNode.BBlength / dist < theta)
         {
 
             kernelNP(total, sinkNode, sourcePoint);
-            NPinter++;
 
         }
         else if (sinkNode.firstChildIndex == 0)
@@ -315,7 +229,6 @@ private:
                 {
 
                     kernelPP(total, points[sinkNodePointIndex], sourcePoint);
-                    PPinter++;
                     
                 }
             }
@@ -397,11 +310,27 @@ private:
             nodes[leafLevelIndex].M0 += 1.0f;
         }
 
-        for (int i = levelIndex[treeDepth]; i < levelIndex[treeDepth] + levelSize[treeDepth]; i++)
+        for (int n = levelIndex[treeDepth]; n < levelIndex[treeDepth] + levelSize[treeDepth]; n++)
         {
-            if (nodes[i].M0 != 0.0f)
-                nodes[i].centreOfMass /= nodes[i].M0;
+            if (nodes[n].M0 != 0.0f)
+            {
+                nodes[n].centreOfMass /= nodes[n].M0;
+
+                for (int pointIndex = nodes[n].firstParticleIndex; pointIndex < nodes[n].firstParticleIndex + nodes[n].particleIndexAmount; pointIndex++)
+                {
+                    glm::vec2 relativeCoord = points[pointIndex].position - nodes[n].centreOfMass;
+
+                    Fastor::Tensor<float, 2, 2> outer_product;
+                    outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+                    outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+                    outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+                    outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+                    nodes[n].M2 += outer_product;
+                }
+            }
         }
+
+
     }
 
     void bottomUpNodeConstruction()
@@ -419,12 +348,10 @@ private:
             for (int i = 0; i < levelSize[l]; i++)
             {
                 int nodeIndex = levelIndex[l] + i;
-
                 unsigned int potentialFirstChildIndex = levelIndex[l + 1] + i * 4;
-                //nodes[nodeIndex].firstChildIndex = levelIndex[l + 1] + i * 4;
+
                 for (int j = 3; j >= 0; j--) // loop over all children of node i in level l
                 {
-                    //unsigned int childIndex = nodes[nodeIndex].firstChildIndex + j;
                     unsigned int childIndex = potentialFirstChildIndex + j;
                     if (nodes[childIndex].particleIndexAmount != 0u)
                     {
@@ -443,7 +370,26 @@ private:
                 }
 
                 if (nodes[nodeIndex].particleIndexAmount != 0)
+                {
                     nodes[nodeIndex].centreOfMass /= nodes[nodeIndex].M0;
+
+                    for (int nodeChildIndex = nodes[nodeIndex].firstChildIndex; nodeChildIndex < nodes[nodeIndex].firstChildIndex + 4; nodeChildIndex++)
+                    {
+                        if (nodes[nodeChildIndex].M0 != 0.0f)
+                        {
+                            glm::vec2 relativeCoord = nodes[nodeChildIndex].centreOfMass - nodes[nodeIndex].centreOfMass;
+
+                            Fastor::Tensor<float, 2, 2> outer_product;
+                            outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+                            outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+                            outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+                            outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+                            nodes[nodeIndex].M2 += outer_product;
+
+                            nodes[nodeIndex].M2 += nodes[nodeChildIndex].M2;
+                        }
+                    }
+                }
             }
         }
     }
@@ -452,14 +398,10 @@ private:
     {
         if (node.firstChildIndex != 0)
         {
-            //for (QuadTreeFMM* child : children)
             for (int nodeIndex = node.firstChildIndex; nodeIndex < node.firstChildIndex + 4; nodeIndex++)
             {
-                //NodeFMM2D& child = nodes[nodeIndex];
-
                 if (nodes[nodeIndex].particleIndexAmount != 0)
                 {
-                    // prework
                     glm::vec2 oldZ = nodes[nodeIndex].centreOfMass;
                     glm::vec2 newZ = node.centreOfMass;
                     Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
@@ -475,12 +417,10 @@ private:
 
                     Fastor::Tensor<float, 2, 2, 2> newC3 = node.C3;
 
-                    // add translated C^n to child C^n
                     nodes[nodeIndex].C1 += newC1;
                     nodes[nodeIndex].C2 += newC2;
                     nodes[nodeIndex].C3 += newC3;
 
-                    // try to apply forces for the child node
                     applyForces(points, nodes[nodeIndex]);
                 }
             }
@@ -489,9 +429,6 @@ private:
         {
             for (int pointIndex = node.firstParticleIndex; pointIndex < node.firstParticleIndex + node.particleIndexAmount; pointIndex++)
             {
-                //T& point = points[pointIndex];
-
-                // prework
                 glm::vec2 x = points[pointIndex].position;
                 glm::vec2 Z0 = node.centreOfMass;
                 Fastor::Tensor<float, 2> diff1 = { x.x - Z0.x, x.y - Z0.y };
@@ -573,38 +510,6 @@ private:
             }
         }
     }
-
-    void getNodesLeafBufferData(std::vector<VertexPos2Col3>& nodesBufferData)
-    {
-        for (int i = levelIndex[treeDepth]; i < levelIndex[treeDepth] + levelSize[treeDepth]; i++)
-        {
-            NodeFMM2D node = nodes[i];
-
-            glm::vec2 lowestCorner = node.BBcentre - 0.5f * node.BBlength;
-            glm::vec2 highestCorner = node.BBcentre + 0.5f * node.BBlength;
-
-            glm::vec3 color(0.0f, 1.0f, 0.0f);
-
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, lowestCorner.y), color));
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y), color));
-
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, lowestCorner.y), color));
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, highestCorner.y), color));
-
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, highestCorner.y), color));
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, highestCorner.y), color));
-
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y), color));
-            nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, highestCorner.y), color));
-
-            //float crossSize = 0.1f;
-            //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass - glm::vec2(crossSize, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-            //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass + glm::vec2(crossSize, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-
-            //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass - glm::vec2(0.0f, crossSize), glm::vec3(1.0f, 0.0f, 0.0f)));
-            //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass + glm::vec2(0.0f, crossSize), glm::vec3(1.0f, 0.0f, 0.0f)));
-        }
-    }
 };
 
 
@@ -613,16 +518,6 @@ private:
 
 
 
-//void TSNEFMMNNKernelNaive(float& total, NodeFMM2D& sinkNode, NodeFMM2D& sourceNode)
-//{
-//    glm::vec2 diff = sinkNode.centreOfMass - sourceNode.centreOfMass;
-//    float dist = glm::length(diff);
-//
-//    float forceDecay = (1.0f / (1.0f + (dist * dist)));
-//    total += sinkNode.M0 * sourceNode.M0 * forceDecay;
-//
-//    sinkNode.tempAccAcc += sourceNode.M0 * forceDecay * forceDecay * diff;
-//}
 void TSNEFMMNNKernel(float& total, NodeFMM2D& sinkNode, NodeFMM2D& sourceNode)
 {
     glm::vec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
@@ -689,21 +584,11 @@ void TSNEFMMNNKernel(float& total, NodeFMM2D& sinkNode, NodeFMM2D& sourceNode)
 
 
     sinkNode.C1 += C1;
-    sinkNode.C1 += C2;
-    sinkNode.C1 += C3;
+    sinkNode.C2 += C2;
+    sinkNode.C3 += C3;
 }
 
 
-//void TSNEFMMPNKernelNaive(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
-//{
-//    glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
-//    float dist = glm::length(diff);
-//
-//    float forceDecay = (1.0f / (1.0f + (dist * dist)));
-//    total += sourceNode->totalMass * forceDecay;
-//
-//    sinkPoint.derivative += sourceNode->totalMass * forceDecay * forceDecay * diff;
-//}
 void TSNEFMMPNKernel(float& total, TsnePoint2D& sinkPoint, NodeFMM2D& sourceNode)
 {
     glm::vec2 R = sinkPoint.position - sourceNode.centreOfMass;
@@ -735,16 +620,6 @@ void TSNEFMMPNKernel(float& total, TsnePoint2D& sinkPoint, NodeFMM2D& sourceNode
 }
 
 
-//void TSNEFMMNPKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
-//{
-//    glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position; // change this
-//    float dist = glm::length(diff);
-//
-//    float forceDecay = (1.0f / (1.0f + (dist * dist)));
-//    total += sinkNode->totalMass * forceDecay;
-//
-//    sinkNode->tempAccAcc += forceDecay * forceDecay * diff;
-//}
 void TSNEFMMNPKernel(float& total, NodeFMM2D& sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 R = sinkNode.centreOfMass - sourcePoint.position;
