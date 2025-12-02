@@ -24,14 +24,14 @@ public:
     std::function<void(float&, QuadTreeFMM<T>*, T&)> kernelNP;
     std::function<void(float&, T&, T&)> kernelPP;
 
-    int FMMiter = 0;
-    int BHMPiter = 0;
-    int BHRMPiter = 0;
+    //int FMMiter = 0;
+    //int BHMPiter = 0;
+    //int BHRMPiter = 0;
 
-    int NNiter = 0;
-    int PNiter = 0;
-    int NPiter = 0;
-    int PPiter = 0;
+    //int NNiter = 0;
+    //int PNiter = 0;
+    //int NPiter = 0;
+    //int PPiter = 0;
 
     NBodySolverFMM() {}
 
@@ -55,25 +55,25 @@ public:
     
     void solveNbody(float& total, std::vector<T>& points) override
     {
-        FMMiter = 0;
-        BHMPiter = 0;
-        BHRMPiter = 0;
+        //FMMiter = 0;
+        //BHMPiter = 0;
+        //BHRMPiter = 0;
 
-        NNiter = 0;
-        PNiter = 0;
-        NPiter = 0;
-        PPiter = 0;
+        //NNiter = 0;
+        //PNiter = 0;
+        //NPiter = 0;
+        //PPiter = 0;
 
         traverseFMM(total, points, &root, &root, this->theta);
 
-        std::cout << "FMMiter: " << FMMiter << std::endl;
-        std::cout << "BHMPiter: " << BHMPiter << std::endl;
-        std::cout << "BHRMPiter: " << BHRMPiter << std::endl;
+        //std::cout << "FMMiter: " << FMMiter << std::endl;
+        //std::cout << "BHMPiter: " << BHMPiter << std::endl;
+        //std::cout << "BHRMPiter: " << BHRMPiter << std::endl;
 
-        std::cout << "NNiter: " << NNiter << std::endl;
-        std::cout << "PNiter: " << PNiter << std::endl;
-        std::cout << "NPiter: " << NPiter << std::endl;
-        std::cout << "PPiter: " << PPiter << std::endl;
+        //std::cout << "NNiter: " << NNiter << std::endl;
+        //std::cout << "PNiter: " << PNiter << std::endl;
+        //std::cout << "NPiter: " << NPiter << std::endl;
+        //std::cout << "PPiter: " << PPiter << std::endl;
 
         root.applyForces(points);
     }
@@ -93,7 +93,7 @@ public:
 private:   
     void traverseFMM(float& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, float theta)
     {
-        FMMiter++;
+        //FMMiter++;
 
         float Lsink = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
         float Lsource = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
@@ -104,7 +104,7 @@ private:
      
         if ((Lsink + Lsource) / dist < theta)
         {
-            NNiter++;
+            //NNiter++;
             kernelNN(total, sinkNode, sourceNode);
 
         }
@@ -143,14 +143,14 @@ private:
 
     void traverseBHMP(float& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, float theta)
     {
-        BHMPiter++;
+        //BHMPiter++;
 
         float l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
         glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
 
         if (l / glm::length(diff) < theta)
         {
-            PNiter++;
+            //PNiter++;
             kernelPN(total, sinkPoint, sourceNode);
 
         }
@@ -160,7 +160,7 @@ private:
             {
                 if (!glm::all(glm::equal((*sourceNode->allParticles)[i].position, sinkPoint.position)))
                 {
-                    PPiter++;
+                    //PPiter++;
                     kernelPP(total, sinkPoint, (*sourceNode->allParticles)[i]);
 
                 }
@@ -177,14 +177,14 @@ private:
     
     void traverseBHRMP(float& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, float theta)
     {
-        BHRMPiter++;
+        //BHRMPiter++;
 
         float l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
         glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
 
         if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
-            NPiter++;
+            //NPiter++;
             kernelNP(total, sinkNode, sourcePoint);
 
         }
@@ -194,7 +194,7 @@ private:
             {
                 if (!glm::all(glm::equal((*sinkNode->allParticles)[i].position, sourcePoint.position)))
                 {
-                    PPiter++;
+                    //PPiter++;
                     kernelPP(total, (*sinkNode->allParticles)[i], sourcePoint);
                     
                 }

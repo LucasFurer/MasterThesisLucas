@@ -24,7 +24,6 @@
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 
-
 class TSNE
 {
 public:
@@ -71,7 +70,7 @@ public:
     
 	TSNE()
 	{
-        int dataAmount = 1000;
+        int dataAmount = 70000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -117,11 +116,11 @@ public:
             float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
 
             
-            //while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
-            //{
-            //    randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            //    randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            //}
+            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            {
+                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            }
             
 
             glm::vec2 pos = glm::vec2(
@@ -145,7 +144,7 @@ public:
         nBodySolvers["BHMP"]->updateTree(embeddedPoints);
         nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 1.0f);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 20, 1.0f);
         nBodySolvers["FMM"]->updateTree(embeddedPoints);
         
         //nBodySolvers["FMMnaive"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNodeNodeKernelNaive, &TSNEFMMParticleNodeKernelNaive, &TSNEFMMNodeParticleKernelNaive, &TSNEFMMParticleParticleKernel, 10, 1.0f);
