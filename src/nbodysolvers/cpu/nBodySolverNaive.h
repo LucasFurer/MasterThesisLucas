@@ -10,72 +10,69 @@
 #include "../../trees/cpu/quadtree.h"
 #include "../../particles/embeddedPoint.h"
 #include "../../particles/Particle2D.h"
+#include "../../particles/tsnePoint2D.h"
 
 template <typename T>
 class NBodySolverNaive : public NBodySolver<T>
 {
 public:
-    std::function<void(float*, std::vector<T>*, int, int, std::vector<glm::vec2>*)> kernel;
+    std::function<void(float&, T&, T&)> kernel;
 
-    NBodySolverNaive() 
-    {
+    NBodySolverNaive() {}
 
-    }
-
-    NBodySolverNaive(std::function<void(float*, std::vector<T>*, int, int, std::vector<glm::vec2>*)> initKernel)
+    NBodySolverNaive(std::function<void(float&, T&, T&)> initKernel)
     {
         kernel = initKernel;
     }
 
-    void solveNbody(float* total, std::vector<glm::vec2>* forces, std::vector<T>* embeddedPoints) override
+    void solveNbody(float& total, std::vector<T>& points) override
     {
-        std::fill(forces->begin(), forces->end(), glm::vec2(0.0f, 0.0f));
-        *total = 0.0f;
+        total = 0.0f;
 
-        for (int i = 0; i < embeddedPoints->size(); i++)
+        if (kernel)
         {
-            for (int j = 0; j < embeddedPoints->size(); j++)
+            for (int i = 0; i < points.size(); i++)
             {
-                if (i != j)//might be useless
+                for (int j = 0; j < points.size(); j++)
                 {
-
-                    if (kernel) 
+                    if (i != j)
                     {
-                        kernel(total, embeddedPoints, i, j, forces);
-                    }
 
+                        kernel(total, points[i], points[j]);
+
+                    }
                 }
             }
         }
     }
 
-    void updateTree(std::vector<T>* embeddedPoints) override {}
+    void updateTree(std::vector<T>& points) override {}
+
+    std::vector<VertexPos2Col3> getNodesBufferData(int level) override { return std::vector<VertexPos2Col3>(); }
 
 private:
 
 };
 
-void TSNEnaiveKernal(float* accumulator, std::vector<EmbeddedPoint>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
+void TSNEnaiveKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    float softening = 1.0f; // should be 1.0f for t-SNE
+    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
+    float dist = glm::length(diff);
 
-    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
-    float distance = glm::length(diff);
+    float forceDecay = 1.0f / (1.0f + (dist * dist));
+    total += forceDecay;
 
-    float oneOverDistance = 1.0f / (softening + (distance * distance));
-    *accumulator += 1.0f * oneOverDistance;
-
-    (*forces)[i] += oneOverDistance * oneOverDistance * diff;
+    sinkPoint.derivative += forceDecay * forceDecay * diff;
 }
 
-void GRAVITYnaiveKernal(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
-{
-    float softening = 0.1f; // should be 1.0f for t-SNE
-
-    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
-    float distance = glm::length(diff);
-
-    float oneOverDistance = 1.0f / (softening + distance);
-
-    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
-}
+//void GRAVITYnaiveKernel(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
+//{
+//    float softening = 0.1f; // should be 1.0f for t-SNE
+//
+//    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
+//    float distance = glm::length(diff);
+//
+//    float oneOverDistance = 1.0f / (softening + distance);
+//
+//    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//}

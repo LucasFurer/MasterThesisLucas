@@ -1,4 +1,5 @@
 #pragma once
+// this whole class is a mess, clean up!!!!!!!!!!
 
 #include <glad/glad.h>
 #include <vector>
@@ -16,7 +17,8 @@ enum DataType
 	pos2Dvel2Dcol3Dmass,
 	pos3DNOTvel3DCol3DNOTmass1D,
 	pos2Dcol3Dpos2Dcol3DNOTdepth1D,
-	Pos2FloatAcc2FloatLab1Int
+	Pos2FloatAcc2FloatLab1Int,
+	Float2Float2Int1Int1
 };
 
 class Buffer
@@ -77,16 +79,23 @@ public:
 	template <typename T>
 	void updateBuffer(const std::vector<T>& toBuffer, DataType dataType)
 	{
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
 		std::size_t dataSize = toBuffer.size() * sizeof(T);
 
 		if (elementAmount != toBuffer.size())
 		{
-			std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			//std::cout << "tried to update a buffer with a different size of data" << std::endl;
+			glBufferData(GL_ARRAY_BUFFER, dataSize, toBuffer.data(), GL_DYNAMIC_DRAW); // change this so gl dynamic draw is a parameter!!!!!!!!!!!!!!!!!!!!!!!!!
+			elementAmount = toBuffer.size();
+		}
+		else
+		{
+			glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, toBuffer.data());
 		}
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, toBuffer.data());
+
 
 		/*
 		switch (dataType)
@@ -255,6 +264,16 @@ public:
 			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(5 * sizeof(float)));
 			glEnableVertexAttribArray(2);
 			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(7 * sizeof(float)));
+			glEnableVertexAttribArray(3);
+			break;
+		case Float2Float2Int1Int1:
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float) + 2 * sizeof(int), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float) + 2 * sizeof(int), (void*)(2 * sizeof(float)));
+			glEnableVertexAttribArray(1);
+			glVertexAttribIPointer(2, 1, GL_INT, 4 * sizeof(float) + 2 * sizeof(int), (void*)(4 * sizeof(float)));
+			glEnableVertexAttribArray(2);
+			glVertexAttribIPointer(3, 1, GL_INT, 4 * sizeof(float) + 2 * sizeof(int), (void*)(4 * sizeof(float) + 1 * sizeof(int)));
 			glEnableVertexAttribArray(3);
 			break;
 		default:
