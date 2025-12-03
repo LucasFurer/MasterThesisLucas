@@ -27,7 +27,9 @@
 #include "../nbodysolvers/cpu/nBodySolverBHMP.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
+#include "../ffthelper.h"
 
+#include "../particleMesh.h"
 
 class TSNE
 {
@@ -71,10 +73,13 @@ public:
     int timeCounter = 0;
 
     int globalTimeStep = 0;
+
+    ParticleMeshData particle_mesh_data;
+
     
 	TSNE()
 	{
-        int dataAmount = 70000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -150,8 +155,8 @@ public:
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 7u, 1.0f);
-        nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
+        //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 7u, 1.0f);
+        //nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
 
         
         //nBodySolvers["FMMiter"] = new NBodySolverFMMiter<TsnePoint2D>(&TSNEFMMiterInteractionKernel, 10, 1.0f);
@@ -165,6 +170,8 @@ public:
         
         //std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, embeddedDerivative, forceSize);
         //forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
+
+        particle_mesh_data = ParticleMeshData(Pmatrix, embeddedPoints, 4, 0.1, 50);
 	}
 	
 	~TSNE()
@@ -177,6 +184,8 @@ public:
         {
             delete nBodySolverPointer.second;
         }
+
+        nBodySolvers.clear();
 	}
 
     void cleanup()
@@ -198,7 +207,50 @@ public:
         {
             lastTimeUpdated = glfwGetTime();
 
-            updateDerivative();
+
+            if (true)
+            {
+                //ParticleMeshData particle_mesh_data = ParticleMeshData(Pmatrix, embeddedPoints, 4, 0.1, 50);
+                for (int i = 0; i < embeddedPoints.size(); i++)
+                {
+                    particle_mesh_data.Y[2 * i + 0] = embeddedPoints[i].position.x;
+                    particle_mesh_data.Y[2 * i + 1] = embeddedPoints[i].position.y;
+                }
+
+                ParticleMesh::computeFftGradient
+                (
+                    particle_mesh_data.P,
+                    particle_mesh_data.inp_row_P,
+                    particle_mesh_data.inp_col_P,
+                    particle_mesh_data.inp_val_P,
+                    particle_mesh_data.Y,
+                    particle_mesh_data.N,
+                    particle_mesh_data.D,
+                    particle_mesh_data.dC,
+                    particle_mesh_data.n_interpolation_points,
+                    particle_mesh_data.intervals_per_integer,
+                    particle_mesh_data.min_num_intervals,
+                    particle_mesh_data.nthreads
+                );
+
+                for (int i = 0; i < particle_mesh_data.N; i++)
+                    embeddedPoints[i].derivative = -glm::vec2
+                    (
+                        particle_mesh_data.dC[2 * i + 0],
+                        particle_mesh_data.dC[2 * i + 1]
+                    );
+
+                for (int i = 0; i < embeddedPoints.size(); i++)
+                    indexTracker[embeddedPoints[i].ID] = i;
+
+                //updateAttractive();
+            }
+            else
+            {
+                updateDerivative();
+            }
+
+
 
             embeddedPointsPrev.swap(embeddedPointsPrevPrev);
             embeddedPoints.swap(embeddedPointsPrev);

@@ -12,7 +12,7 @@
 #include <iostream>
 #include <cstddef>
 
-#define GLM_ENABLE_EXPERIMENTAL
+//#define GLM_ENABLE_EXPERIMENTAL
 //#define GLM_FORCE_CUDA
 //#define GLM_FORCE_INLINE
 #include <glm/glm.hpp>
