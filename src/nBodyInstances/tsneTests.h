@@ -25,7 +25,7 @@
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
 #include "../nbodysolvers/cpu/nBodySolverBHMP.h"
-#include "../nbodysolvers/cpu/nBodySolverFMM.h"
+#include "../nbodysolvers/cpu/nBodySolverFMM_MORTON.h"
 #include "../nbodysolvers/cpu/nBodySolverPM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 #include "../ffthelper.h"
@@ -158,6 +158,7 @@ public:
         std::vector<float> calculationtimeBHR(theta_diversity_amount, 0.0f);
         std::vector<float> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
         std::vector<float> calculationtimeFMM(theta_diversity_amount, 0.0f);
+        std::vector<float> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
     
         std::vector<float> thetaNaive(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
@@ -165,6 +166,7 @@ public:
         std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
         std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
+        std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
     
     
         for (int t = 0; t < theta_diversity_amount; t++)
@@ -181,6 +183,7 @@ public:
             thetaBHR[t] = chosenTheta;
             thetaBHRMP[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
+            thetaFMM_MORTON[t] = chosenTheta;
    
 
             //std::vector<std::vector<TsnePoint2D>> preComputedStates;
@@ -215,18 +218,24 @@ public:
                 tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
                 calculationtimeBHR[t] += glfwGetTime() - timeBefore;
-    
-                tsne.nBodySelect = "FMM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
 
                 tsne.nBodySelect = "BHRMP";
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
                 calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+
+                tsne.nBodySelect = "FMM";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+
+                tsne.nBodySelect = "FMM_MORTON";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeFMM_MORTON[t] += glfwGetTime() - timeBefore;
     
 
     
@@ -241,6 +250,7 @@ public:
             calculationtimeBHR[t]   /= iteration_amount;
             calculationtimeBHRMP[t] /= iteration_amount;
             calculationtimeFMM[t]   /= iteration_amount;
+            calculationtimeFMM_MORTON[t]   /= iteration_amount;
 
             tsne.cleanup();
         }
@@ -268,6 +278,8 @@ public:
         writeToFile(thetaBHRMP, calculationtimeBHRMP, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile(thetaFMM, calculationtimeFMM, methodPath);
+        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        writeToFile(thetaFMM_MORTON, calculationtimeFMM_MORTON, methodPath);
     }
 
 

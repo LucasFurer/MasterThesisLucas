@@ -5,7 +5,7 @@
 #include <Fastor/Fastor.h>
 #include <string>
 
-class NodeFMM2D
+class NodeFMM_MORTON_2D
 {
 public:
 	glm::vec2 BBcentre;
@@ -24,7 +24,7 @@ public:
 	Fastor::Tensor<float, 2, 2> C2;
 	Fastor::Tensor<float, 2, 2, 2> C3;
 
-	NodeFMM2D() :
+	NodeFMM_MORTON_2D() :
 		BBcentre(0.0f),
 		BBlength(0.0f),
 		firstChildIndex(0u),

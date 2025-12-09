@@ -26,6 +26,8 @@
 #include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
 #include "../nbodysolvers/cpu/nBodySolverBHMP.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
+#include "../nbodysolvers/cpu/nBodySolverFMM_MORTON.h"
+#include "../nbodysolvers/cpu/nBodySolverFMM_SYM_MORTON.h"
 #include "../nbodysolvers/cpu/nBodySolverPM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 #include "../ffthelper.h"
@@ -169,8 +171,12 @@ public:
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, max_children_per_node, 1.0f);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, NBodySolverFMM<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), 1.0f);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, 1.0f);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
+        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), 1.0f);
+        nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
+        //nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_SYM_MORTONNNKernel, &TSNEFMM_SYM_MORTONPNKernel, &TSNEFMM_SYM_MORTONNPKernel, &TSNEFMM_SYM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), 1.0f);
+        //nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.1, 40);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
 
@@ -295,12 +301,15 @@ public:
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
             //nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, 10, 1.0f);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
-            //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 7u, 1.0f);
+            //nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, 1.0f);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
+            //nBodySolvers["FMM_MORTON"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, 10, 7u, 1.0f);
+        nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
+            //nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_SYM_MORTONNNKernel, &TSNEFMM_SYM_MORTONPNKernel, &TSNEFMM_SYM_MORTONNPKernel, &TSNEFMM_SYM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), 1.0f);
+        //nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
             //nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.1, 40);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
 
-        
 
         embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);
 
@@ -521,25 +530,25 @@ private:
 
     void updateAttractive()
     {
-        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
-        { 
-            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
-            {
-                int indexR = indexTracker[it.row()];
-                int indexC = indexTracker[it.col()];
+        //for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        //{ 
+        //    for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
+        //    {
+        //        int indexR = indexTracker[it.row()];
+        //        int indexC = indexTracker[it.col()];
 
-                glm::vec2 diff = embeddedPoints[indexR].position - embeddedPoints[indexC].position;
-                float dist = glm::length(diff);
+        //        glm::vec2 diff = embeddedPoints[indexR].position - embeddedPoints[indexC].position;
+        //        float dist = glm::length(diff);
 
-                float exageration = 1.0f;
-                if (iteration_counter < 250)
-                {
-                    //exageration = 4.0f;
-                }
+        //        float exageration = 1.0f;
+        //        if (iteration_counter < 250)
+        //        {
+        //            //exageration = 4.0f;
+        //        }
 
-                embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
-            }
-        }
+        //        embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
+        //    }
+        //}
     }
 
     void costFunction()
