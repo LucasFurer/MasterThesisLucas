@@ -85,7 +85,7 @@ public:
         this->theta = initTheta;
     }
     
-    void solveNbody(float& total, std::vector<T>& points) override
+    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         traverseFMM(total, points, nodes[0], nodes[0], this->theta);
 
@@ -121,6 +121,18 @@ public:
         getNodesBufferData(result, nodes[0], 0, nodeLevelToShow);
 
         return result;
+    }
+
+    static unsigned int getDepth(int max_children, int N)
+    {
+        unsigned int depth = 0;
+        while (N > max_children)
+        {
+            N /= 4;
+            depth++;
+        }
+
+        return depth;
     }
     
 private:   
@@ -683,7 +695,7 @@ void TSNEFMMNPKernel(float& total, NodeFMM2D& sinkNode, TsnePoint2D& sourcePoint
 void TSNEFMMPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float dist = glm::length(diff);
+    float dist = glm::length(diff); // no need for length, we can do squared euclidean distance instead
 
     float forceDecay = 1.0f / (1.0f + (dist * dist));
     total += forceDecay;

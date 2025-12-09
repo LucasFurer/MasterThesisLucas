@@ -27,7 +27,7 @@
 //#include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
 //#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
 //#include "../nbodysolvers/cpu/nBodySolverFMM.h"
-//
+
 //class NBodyScenarios
 //{
 //public:
@@ -68,7 +68,7 @@
 //
 //    std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolversTSNE;
 //
-//
+
 //    NBodyScenarios()
 //    {
 //        nBodySolversGRAVITY["naive"] = new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
@@ -89,7 +89,7 @@
 //        //nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
 //        nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
 //    }
-//
+
 //    ~NBodyScenarios()
 //    {
 //        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolverPointer : nBodySolversGRAVITY)
@@ -102,7 +102,7 @@
 //            delete nBodySolverPointer.second;
 //        }
 //    }
-//
+
 //    void cleanup()
 //    {
 //        //particlesBuffer->cleanup();
@@ -119,7 +119,7 @@
 //    }
 //
 //
-//
+
 //    void testNodeNode()
 //    {
 //        // create room for particles
@@ -303,7 +303,7 @@
 //    }
 //
 //
-//
+
 //    void errorTimestepGRAVITY()
 //    {
 //        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
@@ -397,7 +397,7 @@
 //        writeToFile(timeBHRMP, errorBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHRMP" + attributes + ".csv"));
 //        writeToFile(timeFMM,   errorFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepFMM"   + attributes + ".csv"));
 //    }
-//
+
 //    void errorTimestepTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float thetaParam, float perplexityParam)
 //    {
 //        // 15 min
@@ -542,7 +542,7 @@
 //        writeToFile(timeFMMiter, errorFMMiter, projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMMiter" + attributes + ".csv"));
 //    }
 //
-//
+
 //    void errorTimestepGRAVITYFMMtest()
 //    {
 //        int errorMeasurementAmount = 500; // how many iterations to run the simulation
@@ -607,7 +607,7 @@
 //        writeToFile(timeFMMnaive, errorFMMnaive, projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepCompareFMMnaive" + attributes + ".csv"));
 //    }
 //
-//
+
 //    void calculationtimeThetaGRAVITY()
 //    {
 //        int averageOverAmount = 500; // average the error over this many time steps
@@ -730,173 +730,173 @@
 //        writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeThetaBHRMP" + attributes + ".csv"));
 //        writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeThetaFMM" + attributes + ".csv"));
 //    }
+
+	//void calculationtimeThetaTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float perplexityParam)
+	//{
+	//     25 min
+	//    int averageOverAmount = iterationAmount; // average the error over this many time steps
+	//    int dataAmount = particleAmount; // use this many particles
+	//    std::string dataSet = dataSetParam; // use this data set
+
+	//     set graph size
+	//    int thetaDiversityAmount = 15;
+	//    float thetaDiffSize = 1.0f;
+	//    float thetaOffset = 0.3f;
+
+
+	//    perplexity = perplexityParam;
+	//    learnRate = 1000.0f;
+	//    accelerationRate = 0.5f;
+
+	//    #ifdef _WIN32
+	//    std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+	//    std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+	//    #endif
+	//    #ifdef linux
+	//    std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+	//    std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+	//    #endif
+
+	//    labels = Loader::loadLabels(labelsPath.string());
+	//    Pmatrix = Loader::loadPmatrix(fileName.string());
+
+	//    embeddedPoints.resize(dataAmount);
+	//    embeddedPointsPrev.resize(dataAmount);
+	//    embeddedPointsPrevPrev.resize(dataAmount);
+
+	//    embeddedDerivative.resize(dataAmount);
+	//    embeddedDerivativeErrorTest.resize(dataAmount);
+	//    attractForce.resize(dataAmount);
+	//    repulsForce.resize(dataAmount);
+	//    repulsForceErrorTest.resize(dataAmount);
+	//    repulsForceNotNorm.resize(dataAmount);
+	//    repulsForceErrorTestNotNorm.resize(dataAmount);
+
+
+	//    std::vector<float> calculationtimeNaive(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> calculationtimeBH(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> calculationtimeBHMP(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> calculationtimeBHR(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> calculationtimeBHRMP(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> calculationtimeFMM(thetaDiversityAmount, 0.0f);
+
+	//    std::vector<float> thetaNaive(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
+	//    std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
+
+
+	//    float noAccumulator = 0.0f;
+	//    for (int t = 0; t < thetaDiversityAmount; t++)
+	//    {
+	//        generatePointsTSNE(dataAmount);
+	//        nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+	//        nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+	//        nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+	//        nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+	//        nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+
+	//        float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
+
+	//        thetaNaive[t] = chosenTheta;
+	//        thetaBH[t] = chosenTheta;
+	//        thetaBHMP[t] = chosenTheta;
+	//        thetaBHR[t] = chosenTheta;
+	//        thetaBHRMP[t] = chosenTheta;
+	//        thetaFMM[t] = chosenTheta;
+
+	//        nBodySolversTSNE["BH"]->theta = chosenTheta;
+	//        nBodySolversTSNE["BHMP"]->theta = chosenTheta;
+	//        nBodySolversTSNE["BHR"]->theta = chosenTheta;
+	//        nBodySolversTSNE["BHRMP"]->theta = chosenTheta;
+	//        nBodySolversTSNE["FMM"]->theta = chosenTheta;
+
+	//        float timeBefore = 0.0f;
+	//        globalTimeStep = 0;
+	//        for(int j = 0; j < averageOverAmount; j++)
+	//        { 
+	//            timeBefore = glfwGetTime();
+	//            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep);
+	//            calculationtimeNaive[t] += glfwGetTime() - timeBefore;
+
+	//            timeBefore = glfwGetTime();
+	//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+	//            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+	//            calculationtimeBH[t] += glfwGetTime() - timeBefore;
+
+	//            timeBefore = glfwGetTime();
+	//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+	//            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+	//            calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+
+	//            timeBefore = glfwGetTime();
+	//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+	//            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+	//            calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+
+	//            timeBefore = glfwGetTime();
+	//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+	//            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+	//            calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+
+	//            timeBefore = glfwGetTime();
+	//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+	//            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+	//            calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+
+
+	//             update positions with naive solution
+	//            embeddedPointsPrev.swap(embeddedPointsPrevPrev);
+	//            embeddedPoints.swap(embeddedPointsPrev);
+
+	//            accelerationRate = 0.5f;
+	//            if (globalTimeStep < 250)
+	//            {
+	//                accelerationRate = 0.5f;
+	//            }
+
+	//            for (int i = 0; i < embeddedPoints.size(); i++)
+	//            {
+	//                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+	//            }
+
+	//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+	//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+	//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+	//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+	//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+
+	//            globalTimeStep++;
+	//        }
+
+	//        calculationtimeNaive[t] /= averageOverAmount;
+	//        calculationtimeBH[t]    /= averageOverAmount;
+	//        calculationtimeBHMP[t]  /= averageOverAmount;
+	//        calculationtimeBHR[t]   /= averageOverAmount;
+	//        calculationtimeBHRMP[t] /= averageOverAmount;
+	//        calculationtimeFMM[t]   /= averageOverAmount;
+	//    }
+
+	//     write results to csv files
+	//    std::filesystem::path projectFolder;
+	//    #ifdef _WIN32
+	//    projectFolder = std::filesystem::current_path();
+	//    #endif
+	//    #ifdef linux
+	//    projectFolder = std::filesystem::current_path().parent_path();
+	//    #endif
+	//    std::string attributes = "_point" + std::to_string(dataAmount) + "_perp" + std::to_string(perplexity) + "_dataset" + dataSet;
+	//    writeToFile(thetaNaive, calculationtimeNaive, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaNaive" + attributes + ".csv"));
+	//    writeToFile(thetaBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBH" + attributes + ".csv"));
+	//    writeToFile(thetaBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHMP" + attributes + ".csv"));
+	//    writeToFile(thetaBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHR" + attributes + ".csv"));
+	//    writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHRMP" + attributes + ".csv"));
+	//    writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaFMM" + attributes + ".csv"));
+	//}
 //
-//    void calculationtimeThetaTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float perplexityParam)
-//    {
-//        // 25 min
-//        int averageOverAmount = iterationAmount; // average the error over this many time steps
-//        int dataAmount = particleAmount; // use this many particles
-//        std::string dataSet = dataSetParam; // use this data set
-//
-//        // set graph size
-//        int thetaDiversityAmount = 15;
-//        float thetaDiffSize = 1.0f;
-//        float thetaOffset = 0.3f;
-//
-//
-//        perplexity = perplexityParam;
-//        learnRate = 1000.0f;
-//        accelerationRate = 0.5f;
-//
-//        #ifdef _WIN32
-//        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-//        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-//        #endif
-//        #ifdef linux
-//        std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-//        std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-//        #endif
-//
-//        labels = Loader::loadLabels(labelsPath.string());
-//        Pmatrix = Loader::loadPmatrix(fileName.string());
-//
-//        embeddedPoints.resize(dataAmount);
-//        embeddedPointsPrev.resize(dataAmount);
-//        embeddedPointsPrevPrev.resize(dataAmount);
-//
-//        embeddedDerivative.resize(dataAmount);
-//        embeddedDerivativeErrorTest.resize(dataAmount);
-//        attractForce.resize(dataAmount);
-//        repulsForce.resize(dataAmount);
-//        repulsForceErrorTest.resize(dataAmount);
-//        repulsForceNotNorm.resize(dataAmount);
-//        repulsForceErrorTestNotNorm.resize(dataAmount);
-//
-//
-//        std::vector<float> calculationtimeNaive(thetaDiversityAmount, 0.0f);
-//        std::vector<float> calculationtimeBH(thetaDiversityAmount, 0.0f);
-//        std::vector<float> calculationtimeBHMP(thetaDiversityAmount, 0.0f);
-//        std::vector<float> calculationtimeBHR(thetaDiversityAmount, 0.0f);
-//        std::vector<float> calculationtimeBHRMP(thetaDiversityAmount, 0.0f);
-//        std::vector<float> calculationtimeFMM(thetaDiversityAmount, 0.0f);
-//
-//        std::vector<float> thetaNaive(thetaDiversityAmount, 0.0f);
-//        std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
-//        std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
-//        std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
-//        std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
-//        std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
-//
-//
-//        float noAccumulator = 0.0f;
-//        for (int t = 0; t < thetaDiversityAmount; t++)
-//        {
-//            generatePointsTSNE(dataAmount);
-//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-//
-//            float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
-//
-//            thetaNaive[t] = chosenTheta;
-//            thetaBH[t] = chosenTheta;
-//            thetaBHMP[t] = chosenTheta;
-//            thetaBHR[t] = chosenTheta;
-//            thetaBHRMP[t] = chosenTheta;
-//            thetaFMM[t] = chosenTheta;
-//
-//            nBodySolversTSNE["BH"]->theta = chosenTheta;
-//            nBodySolversTSNE["BHMP"]->theta = chosenTheta;
-//            nBodySolversTSNE["BHR"]->theta = chosenTheta;
-//            nBodySolversTSNE["BHRMP"]->theta = chosenTheta;
-//            nBodySolversTSNE["FMM"]->theta = chosenTheta;
-//
-//            float timeBefore = 0.0f;
-//            globalTimeStep = 0;
-//            for(int j = 0; j < averageOverAmount; j++)
-//            { 
-//                timeBefore = glfwGetTime();
-//                updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep);
-//                calculationtimeNaive[t] += glfwGetTime() - timeBefore;
-//
-//                timeBefore = glfwGetTime();
-//                nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-//                updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//                calculationtimeBH[t] += glfwGetTime() - timeBefore;
-//
-//                timeBefore = glfwGetTime();
-//                nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-//                updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//                calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
-//
-//                timeBefore = glfwGetTime();
-//                nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-//                updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//                calculationtimeBHR[t] += glfwGetTime() - timeBefore;
-//
-//                timeBefore = glfwGetTime();
-//                nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-//                updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//                calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
-//
-//                timeBefore = glfwGetTime();
-//                nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-//                updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
-//
-//
-//                // update positions with naive solution
-//                embeddedPointsPrev.swap(embeddedPointsPrevPrev);
-//                embeddedPoints.swap(embeddedPointsPrev);
-//
-//                accelerationRate = 0.5f;
-//                if (globalTimeStep < 250)
-//                {
-//                    accelerationRate = 0.5f;
-//                }
-//
-//                for (int i = 0; i < embeddedPoints.size(); i++)
-//                {
-//                    embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-//                }
-//
-//                nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-//                nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-//                nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-//                nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-//                nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-//
-//                globalTimeStep++;
-//            }
-//
-//            calculationtimeNaive[t] /= averageOverAmount;
-//            calculationtimeBH[t]    /= averageOverAmount;
-//            calculationtimeBHMP[t]  /= averageOverAmount;
-//            calculationtimeBHR[t]   /= averageOverAmount;
-//            calculationtimeBHRMP[t] /= averageOverAmount;
-//            calculationtimeFMM[t]   /= averageOverAmount;
-//        }
-//
-//        // write results to csv files
-//        std::filesystem::path projectFolder;
-//        #ifdef _WIN32
-//        projectFolder = std::filesystem::current_path();
-//        #endif
-//        #ifdef linux
-//        projectFolder = std::filesystem::current_path().parent_path();
-//        #endif
-//        std::string attributes = "_point" + std::to_string(dataAmount) + "_perp" + std::to_string(perplexity) + "_dataset" + dataSet;
-//        writeToFile(thetaNaive, calculationtimeNaive, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaNaive" + attributes + ".csv"));
-//        writeToFile(thetaBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBH" + attributes + ".csv"));
-//        writeToFile(thetaBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHMP" + attributes + ".csv"));
-//        writeToFile(thetaBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHR" + attributes + ".csv"));
-//        writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHRMP" + attributes + ".csv"));
-//        writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaFMM" + attributes + ".csv"));
-//    }
-//
-//
+
 //    void errorThetaGRAVITY()
 //    {
 //        int averageOverAmount = 250; // average the error over this many time steps

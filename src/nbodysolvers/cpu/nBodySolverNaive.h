@@ -25,7 +25,7 @@ public:
         kernel = initKernel;
     }
 
-    void solveNbody(float& total, std::vector<T>& points) override
+    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         total = 0.0f;
 

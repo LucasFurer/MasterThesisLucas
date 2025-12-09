@@ -1,5 +1,4 @@
 #define GLM_ENABLE_EXPERIMENTAL
-//#define E 2.71828182845904523536 // std::numbers::pi_v<double>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,20 +11,8 @@
 #include <iostream>
 #include <map>
 #include <filesystem>
-#include "stb_image.h"
+#include "stb_image.h" // hmmm change this
 #include <chrono>
-
-
-
-#define _CRTDBG_MAP_ALLOC
-#include <iostream>
-#include <crtdbg.h>
-
-#ifdef _DEBUG
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
-
 
 #include "openGLhelper/shader.h"
 #include "openGLhelper/scene.h"
@@ -37,10 +24,20 @@
 #include "nBodyInstances/tsne.h"
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
-#include "nBodyInstances/nBodyScenarios.h"
+//#include "nBodyInstances/nBodyScenarios.h"
+#include "nBodyInstances/tsneTests.h"
 #include "common.h"
 #include "codeData/data.h"
 #include "visualization/multipoleVis.h"
+
+//#define _CRTDBG_MAP_ALLOC
+//#include <iostream>
+//#include <crtdbg.h>
+//
+//#ifdef _DEBUG
+//#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+//#define new DEBUG_NEW
+//#endif
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -59,7 +56,7 @@ int per = 0;
 
 int main(void)
 {
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
     // glfw: initialize and configure
     // ------------------------------
@@ -147,12 +144,12 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "BHMP";
+        tsne.nBodySelect = "FMM";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
-        //Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
-        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
-        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
+        Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
+        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
+        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -234,6 +231,10 @@ int main(void)
 
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
+
+        TsneTest tsne_test;
+        //tsne_test.errorTimestepTSNE("MNIST_digits", 1000, 30.0f, 200.0f, 50, 1.0f);
+        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 5, 1.0f);
 
         //NBodyScenarios nBodyScenarios;
         //std::cout << "starting tests--------------------------" << std::endl;
@@ -357,6 +358,9 @@ int main(void)
                 else
                     scenes[currentSceneName]->camera->perspective = false;
 
+                std::string frameOutput = "iteration: " + std::to_string(tsne.iteration_counter);
+                ImGui::Text(frameOutput.c_str());
+
                 //std::vector<std::string> solvers = 
                 //ImGui::Combo(
                 //    "Select solver",
@@ -371,8 +375,8 @@ int main(void)
                 //    static_cast<void*>(&sceneNames),
                 //    static_cast<int>(sceneNames.size())
                 //);
-                ImGui::SliderFloat("sim speed", &tsne.timeStepsPerSec, 0.0f, 1000.0f);
-                //ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
+                ImGui::SliderFloat("sim speed", &tsne.desired_iteration_per_second, 0.0f, 1000.0f);
+                ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
                 ImGui::SliderInt("show tree level", &tsne.nodeLevelToShow, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
@@ -387,7 +391,7 @@ int main(void)
                     float up = tsne.maxPos.y;
                     scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
                     scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-
+                    
                     //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
                 }
             }
@@ -473,7 +477,7 @@ int main(void)
     }
     
     glfwTerminate();
-    _CrtDumpMemoryLeaks();
+    //_CrtDumpMemoryLeaks();
     return 0;
 }
 

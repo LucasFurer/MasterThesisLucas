@@ -60,6 +60,8 @@ public:
 		createVertexBuffer(toBuffer, dataType, bufferType);
 	}
 
+
+
 	~Buffer()
 	{
 		if (VAO != 0) { std::cerr << "VAO of buffer was not deleted!" << std::endl; }
