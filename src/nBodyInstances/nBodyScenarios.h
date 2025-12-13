@@ -22,32 +22,19 @@
 //#include "../openGLhelper/buffer.h"
 //#include "../nbodysolvers/cpu/nBodySolver.h"
 //#include "../nbodysolvers/cpu/nBodySolverNaive.h"
-//#include "../nbodysolvers/cpu/nBodySolverBarnesHut.h"
-//#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverse.h"
-//#include "../nbodysolvers/cpu/nBodySolverMultiPole.h"
-//#include "../nbodysolvers/cpu/nBodySolverBarnesHutReverseMultiPole.h"
+//#include "../nbodysolvers/cpu/nBodySolverBH.h"
+//#include "../nbodysolvers/cpu/nBodySolverBHR.h"
+//#include "../nbodysolvers/cpu/nBodySolverBHMP.h"
+//#include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
 //#include "../nbodysolvers/cpu/nBodySolverFMM.h"
-
+//
 //class NBodyScenarios
 //{
 //public:
-//    // GRAVITY variables
-//    std::vector<Particle2D> particles;
-//    std::vector<glm::vec2> accelerations;
-//    std::vector<glm::vec2> accelerationsErrorTest;
-//
-//    float stepSize = 0.1f;
-//    float timeStepsPerSec = 30.0f;
-//    float lastTimeUpdated = 0.0f;
-//
-//    std::map<std::string, NBodySolver<Particle2D>*> nBodySolversGRAVITY;
-//
-//
-//
 //    // TSNE variables
-//    std::vector<EmbeddedPoint> embeddedPoints;
-//    std::vector<EmbeddedPoint> embeddedPointsPrev;
-//    std::vector<EmbeddedPoint> embeddedPointsPrevPrev;
+//    std::vector<TsnePoint2D> embeddedPoints;
+//    std::vector<TsnePoint2D> embeddedPointsPrev;
+//    std::vector<TsnePoint2D> embeddedPointsPrevPrev;
 //
 //    std::vector<glm::vec2> embeddedDerivative;
 //    std::vector<glm::vec2> embeddedDerivativeErrorTest;
@@ -66,338 +53,330 @@
 //    std::vector<uint8_t> labels;
 //    Eigen::SparseMatrix<double> Pmatrix;
 //
-//    std::map<std::string, NBodySolver<EmbeddedPoint>*> nBodySolversTSNE;
+//    std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolversTSNE;
 //
-
+//
 //    NBodyScenarios()
 //    {
-//        nBodySolversGRAVITY["naive"] = new NBodySolverNaive<Particle2D>(&GRAVITYnaiveKernal);
-//        nBodySolversGRAVITY["BH"] = new NBodySolverBarnesHut<Particle2D>(&GRAVITYbarnesHutParticleNodeKernal, &GRAVITYbarnesHutParticleParticleKernal, 10, 1.0f);
-//        nBodySolversGRAVITY["BHR"] = new NBodySolverBarnesHutReverse<Particle2D>(&GRAVITYbarnesHutReverseParticleNodeKernal, &GRAVITYbarnesHutReverseParticleParticleKernal, 10, 1.0f);
-//        nBodySolversGRAVITY["BHMP"] = new NBodySolverMultiPole<Particle2D>(&GRAVITYmultiPoleParticleNodeKernal, &GRAVITYmultiPoleParticleParticleKernal, 10, 1.0f);
-//        nBodySolversGRAVITY["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<Particle2D>(&GRAVITYbarnesHutReverseMultiPoleParticleNodeKernal, &GRAVITYbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
-//        nBodySolversGRAVITY["FMM"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernal, &GRAVITYFMMParticleNodeKernal, &GRAVITYFMMNodeParticleKernal, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
-//        nBodySolversGRAVITY["FMMnaive"] = new NBodySolverFMM<Particle2D>(&GRAVITYFMMNodeNodeKernalNaive, &GRAVITYFMMParticleNodeKernalNaive, &GRAVITYFMMNodeParticleKernalNaive, &GRAVITYFMMParticleParticleKernal, 10, 1.0f);
-//
-//        nBodySolversTSNE["naive"] = new NBodySolverNaive<EmbeddedPoint>(&TSNEnaiveKernal);
-//        nBodySolversTSNE["BH"] = new NBodySolverBarnesHut<EmbeddedPoint>(&TSNEbarnesHutParticleNodeKernal, &TSNEbarnesHutParticleParticleKernal, 10, 1.0f);
-//        nBodySolversTSNE["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
-//        nBodySolversTSNE["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
-//        nBodySolversTSNE["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
-//        nBodySolversTSNE["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
-//        nBodySolversTSNE["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+//        nBodySolversTSNE["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
+//        nBodySolversTSNE["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, 10, 1.0f);
+//        //nBodySolversTSNE["BHR"] = new NBodySolverBarnesHutReverse<EmbeddedPoint>(&TSNEbarnesHutReverseParticleNodeKernal, &TSNEbarnesHutReverseParticleParticleKernal, 10, 1.0f);
+//        //nBodySolversTSNE["BHMP"] = new NBodySolverMultiPole<EmbeddedPoint>(&TSNEmultiPoleParticleNodeKernal, &TSNEmultiPoleParticleParticleKernal, 10, 1.0f);
+//        //nBodySolversTSNE["BHRMP"] = new NBodySolverBarnesHutReverseMultiPole<EmbeddedPoint>(&TSNEbarnesHutReverseMultiPoleParticleNodeKernal, &TSNEbarnesHutReverseMultiPoleParticleParticleKernal, 10, 1.0f);
+//        //nBodySolversTSNE["FMM"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernal, &TSNEFMMParticleNodeKernal, &TSNEFMMNodeParticleKernal, &TSNEFMMParticleParticleKernal, 10, 1.0f);
+//        //nBodySolversTSNE["FMMnaive"] = new NBodySolverFMM<EmbeddedPoint>(&TSNEFMMNodeNodeKernalNaive, &TSNEFMMParticleNodeKernalNaive, &TSNEFMMNodeParticleKernalNaive, &TSNEFMMParticleParticleKernal, 10, 1.0f);
 //        //nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernal, 10, 1.0f);
-//        nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
+//        //nBodySolversTSNE["FMMiter"] = new NBodySolverFMMiter<EmbeddedPoint>(&TSNEFMMiterInteractionKernalNodeNode, &TSNEFMMiterInteractionKernalNodeParticle, &TSNEFMMiterInteractionKernalParticleNode, &TSNEFMMiterInteractionKernalParticleParticle, 10, 1.0f);
 //    }
-
+//
 //    ~NBodyScenarios()
 //    {
-//        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolverPointer : nBodySolversGRAVITY)
-//        {
-//            delete nBodySolverPointer.second;
-//        }
+//        //for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolverPointer : nBodySolversGRAVITY)
+//        //{
+//        //    delete nBodySolverPointer.second;
+//        //}
 //
-//        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolverPointer : nBodySolversTSNE)
+//        for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolverPointer : nBodySolversTSNE)
 //        {
 //            delete nBodySolverPointer.second;
 //        }
 //    }
-
+//
 //    void cleanup()
 //    {
 //        //particlesBuffer->cleanup();
 //
-//        for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolversGRAVITY)
-//        {
-//            nBodySolver.second->boxBuffer->cleanup();
-//        }
+//        //for (std::pair<const std::string, NBodySolver<Particle2D>*> nBodySolver : nBodySolversGRAVITY)
+//        //{
+//        //    nBodySolver.second->boxBuffer->cleanup();
+//        //}
 //
-//        for (std::pair<const std::string, NBodySolver<EmbeddedPoint>*> nBodySolver : nBodySolversTSNE)
-//        {
-//            nBodySolver.second->boxBuffer->cleanup();
-//        }
+//        //for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolver : nBodySolversTSNE)
+//        //{
+//        //    nBodySolver.second->boxBuffer->cleanup();
+//        //}
 //    }
 //
 //
-
-//    void testNodeNode()
-//    {
-//        // create room for particles
-//        std::vector<Particle2D> particles(20);
-//        std::vector<glm::vec2> trueAccelerations(20);
-//        std::vector<glm::vec2> stupidNodeNodeAccelerations(20);
-//        std::vector<glm::vec2> smartNodeNodeAccelerations(20);
 //
-//        // initialize particles
-//        {
-//            particles[0] = Particle2D(glm::vec2(0.12, -0.85), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[1] = Particle2D(glm::vec2(0.43, 1.22), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[2] = Particle2D(glm::vec2(-1.18, -0.39), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[3] = Particle2D(glm::vec2(0.57, -0.01), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[4] = Particle2D(glm::vec2(-0.62, 0.87), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[5] = Particle2D(glm::vec2(-0.95, 0.11), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[6] = Particle2D(glm::vec2(1.30, -1.46), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[7] = Particle2D(glm::vec2(0.05, 0.60), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[8] = Particle2D(glm::vec2(-0.47, -0.23), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[9] = Particle2D(glm::vec2(0.88, 0.31), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            for (int i = 0; i < 10; i++) { particles[i].position.x += 5.0f; }
-//
-//            particles[10] = Particle2D(glm::vec2(-0.34, 0.92), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[11] = Particle2D(glm::vec2(1.12, -0.77), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[12] = Particle2D(glm::vec2(0.26, 0.04), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[13] = Particle2D(glm::vec2(-0.61, 1.43), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[14] = Particle2D(glm::vec2(0.90, -0.16), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[15] = Particle2D(glm::vec2(-1.25, -1.01), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[16] = Particle2D(glm::vec2(0.37, 0.68), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[17] = Particle2D(glm::vec2(-0.08, -0.54), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[18] = Particle2D(glm::vec2(0.13, 1.05), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            particles[19] = Particle2D(glm::vec2(-0.73, 0.22), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
-//            for (int i = 10; i < 20; i++) { particles[i].position.x -= 5.0f; }
-//        }
-//
-//        // calculate true acceleration
-//        for (int i = 0; i < 20; i++)
-//        {
-//            for (int j = 0; j < 20; j++)
-//            {
-//                float softening = 0.1f;
-//                glm::vec2 diff = particles[i].position - particles[j].position;
-//                float distance = glm::length(diff);
-//
-//                float oneOverDistance = 1.0f / (distance + softening);
-//                trueAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//            }
-//        }
-//
-//        // poles of 1
-//        glm::vec2 centreOfMass1 = glm::vec2(0.0f);
-//        float totalMass1 = 0.0f;
-//        glm::vec2 dipole1 = glm::vec2(0.0f);
-//        Fastor::Tensor<float, 2, 2> quadrupole1{};
-//        {
-//            for (int i = 0; i < 10; i++)
-//            {
-//                centreOfMass1 += particles[i].position;
-//                totalMass1 += particles[i].mass;
-//            }
-//            centreOfMass1 /= totalMass1;
-//            for (int i = 0; i < 10; i++)
-//            {
-//                glm::vec2 relativeCoord = particles[i].position - centreOfMass1;
-//                dipole1 += relativeCoord;
-//
-//                Fastor::Tensor<float, 2, 2> outer_product;
-//                outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
-//                outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
-//                outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
-//                outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
-//                quadrupole1 += outer_product;
-//            }
-//        }
-//
-//        // poles of 1
-//        glm::vec2 centreOfMass2 = glm::vec2(0.0f);
-//        float totalMass2 = 0.0f;
-//        glm::vec2 dipole2 = glm::vec2(0.0f);
-//        Fastor::Tensor<float, 2, 2> quadrupole2{};
-//        {
-//            for (int i = 10; i < 20; i++)
-//            {
-//                centreOfMass2 += particles[i].position;
-//                totalMass2 += particles[i].mass;
-//            }
-//            centreOfMass2 /= totalMass2;
-//            for (int i = 10; i < 20; i++)
-//            {
-//                glm::vec2 relativeCoord = particles[i].position - centreOfMass2;
-//                dipole2 += relativeCoord;
-//
-//                Fastor::Tensor<float, 2, 2> outer_product;
-//                outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
-//                outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
-//                outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
-//                outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
-//                quadrupole2 += outer_product;
-//            }
-//        }
-//
-//        // naive interaction of cluster 1
-//        for (int i = 0; i < 10; i++)
-//        {
-//            for (int j = 0; j < 10; j++)
-//            {
-//                float softening = 0.1f;
-//                glm::vec2 diff = particles[i].position - particles[j].position;
-//                float distance = glm::length(diff);
-//
-//                float oneOverDistance = 1.0f / (distance + softening);
-//                stupidNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//                smartNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//            }
-//        }
-//
-//        // naive interaction of cluster 2
-//        for (int i = 10; i < 20; i++)
-//        {
-//            for (int j = 10; j < 20; j++)
-//            {
-//                float softening = 0.1f;
-//                glm::vec2 diff = particles[i].position - particles[j].position;
-//                float distance = glm::length(diff);
-//
-//                float oneOverDistance = 1.0f / (distance + softening);
-//                stupidNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//                smartNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//            }
-//        }
-//
-//        // stupid node node
-//        {
-//            float softening = 0.1f;
-//            glm::vec2 diff = centreOfMass1 - centreOfMass2;
-//            float distance = glm::length(diff);
-//
-//            float oneOverDistance = (1.0f / (distance + softening));
-//            for (int i = 0; i < 10; i++)
-//            {
-//                stupidNodeNodeAccelerations[i] += -totalMass2 * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//            }
-//
-//            //----------------------------------------------------------------------------------------------------------------
-//
-//            softening = 0.1f;
-//            diff = centreOfMass2 - centreOfMass1;
-//            distance = glm::length(diff);
-//
-//            oneOverDistance = (1.0f / (distance + softening));
-//            for (int i = 10; i < 20; i++)
-//            {
-//                stupidNodeNodeAccelerations[i] += -totalMass1 * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//            }
-//        }
-//
-//        // smart node node
-//        smartNodeNode(particles, smartNodeNodeAccelerations, centreOfMass1, totalMass1, dipole1, quadrupole1, centreOfMass2, totalMass2, dipole2, quadrupole2, true);
-//        smartNodeNode(particles, smartNodeNodeAccelerations, centreOfMass2, totalMass2, dipole2, quadrupole2, centreOfMass1, totalMass1, dipole1, quadrupole1, false);
-//
-//
-//        // error of all
-//        float errorStupid = 0.0f;
-//        float errorSmart = 0.0f;
-//        {
-//            for (int i = 0; i < 20; i++)
-//            {
-//                errorStupid += powf(glm::length(trueAccelerations[i] - stupidNodeNodeAccelerations[i]), 2.0f);
-//            }
-//            errorStupid /= 20;
-//
-//            for (int i = 0; i < 20; i++)
-//            {
-//                errorSmart += powf(glm::length(trueAccelerations[i] - smartNodeNodeAccelerations[i]), 2.0f);
-//            }
-//            errorSmart /= 20;
-//        }
-//
-//        std::cout << "stupid error: " << errorStupid << std::endl;
-//        std::cout << "smart error: " << errorSmart << std::endl;
-//    }
-//
-//
-
-//    void errorTimestepGRAVITY()
-//    {
-//        int errorMeasurementAmount = 1000; // how many iterations to run the simulation
-//        int particleCount = 1000; // use this many particles
-//        float setTheta = 1.0f; // approximation parameter
-//
-//        generatePoints(particleCount);
-//        nBodySolversGRAVITY["BH"]->updateTree(&particles);
-//        nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
-//        nBodySolversGRAVITY["BHR"]->updateTree(&particles);
-//        nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
-//        nBodySolversGRAVITY["FMM"]->updateTree(&particles);
-//
-//        nBodySolversGRAVITY["BH"]->theta = setTheta;
-//        nBodySolversGRAVITY["BHMP"]->theta = setTheta;
-//        nBodySolversGRAVITY["BHR"]->theta = setTheta;
-//        nBodySolversGRAVITY["BHRMP"]->theta = setTheta;
-//        nBodySolversGRAVITY["FMM"]->theta = setTheta;
+//    //void testNodeNode()
+//    //{
+//    //    // create room for particles
+//    //    std::vector<Particle2D> particles(20);
+//    //    std::vector<glm::vec2> trueAccelerations(20);
+//    //    std::vector<glm::vec2> stupidNodeNodeAccelerations(20);
+//    //    std::vector<glm::vec2> smartNodeNodeAccelerations(20);
+//    //
+//    //    // initialize particles
+//    //    {
+//    //        particles[0] = Particle2D(glm::vec2(0.12, -0.85), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[1] = Particle2D(glm::vec2(0.43, 1.22), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[2] = Particle2D(glm::vec2(-1.18, -0.39), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[3] = Particle2D(glm::vec2(0.57, -0.01), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[4] = Particle2D(glm::vec2(-0.62, 0.87), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[5] = Particle2D(glm::vec2(-0.95, 0.11), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[6] = Particle2D(glm::vec2(1.30, -1.46), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[7] = Particle2D(glm::vec2(0.05, 0.60), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[8] = Particle2D(glm::vec2(-0.47, -0.23), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[9] = Particle2D(glm::vec2(0.88, 0.31), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        for (int i = 0; i < 10; i++) { particles[i].position.x += 5.0f; }
+//    //
+//    //        particles[10] = Particle2D(glm::vec2(-0.34, 0.92), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[11] = Particle2D(glm::vec2(1.12, -0.77), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[12] = Particle2D(glm::vec2(0.26, 0.04), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[13] = Particle2D(glm::vec2(-0.61, 1.43), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[14] = Particle2D(glm::vec2(0.90, -0.16), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[15] = Particle2D(glm::vec2(-1.25, -1.01), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[16] = Particle2D(glm::vec2(0.37, 0.68), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[17] = Particle2D(glm::vec2(-0.08, -0.54), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[18] = Particle2D(glm::vec2(0.13, 1.05), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        particles[19] = Particle2D(glm::vec2(-0.73, 0.22), glm::vec2(0.0f), glm::vec3(1.0f), 1.0f);
+//    //        for (int i = 10; i < 20; i++) { particles[i].position.x -= 5.0f; }
+//    //    }
+//    //
+//    //    // calculate true acceleration
+//    //    for (int i = 0; i < 20; i++)
+//    //    {
+//    //        for (int j = 0; j < 20; j++)
+//    //        {
+//    //            float softening = 0.1f;
+//    //            glm::vec2 diff = particles[i].position - particles[j].position;
+//    //            float distance = glm::length(diff);
+//    //
+//    //            float oneOverDistance = 1.0f / (distance + softening);
+//    //            trueAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //        }
+//    //    }
+//    //
+//    //    // poles of 1
+//    //    glm::vec2 centreOfMass1 = glm::vec2(0.0f);
+//    //    float totalMass1 = 0.0f;
+//    //    glm::vec2 dipole1 = glm::vec2(0.0f);
+//    //    Fastor::Tensor<float, 2, 2> quadrupole1{};
+//    //    {
+//    //        for (int i = 0; i < 10; i++)
+//    //        {
+//    //            centreOfMass1 += particles[i].position;
+//    //            totalMass1 += particles[i].mass;
+//    //        }
+//    //        centreOfMass1 /= totalMass1;
+//    //        for (int i = 0; i < 10; i++)
+//    //        {
+//    //            glm::vec2 relativeCoord = particles[i].position - centreOfMass1;
+//    //            dipole1 += relativeCoord;
+//    //
+//    //            Fastor::Tensor<float, 2, 2> outer_product;
+//    //            outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+//    //            outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+//    //            outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+//    //            outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+//    //            quadrupole1 += outer_product;
+//    //        }
+//    //    }
+//    //
+//    //    // poles of 1
+//    //    glm::vec2 centreOfMass2 = glm::vec2(0.0f);
+//    //    float totalMass2 = 0.0f;
+//    //    glm::vec2 dipole2 = glm::vec2(0.0f);
+//    //    Fastor::Tensor<float, 2, 2> quadrupole2{};
+//    //    {
+//    //        for (int i = 10; i < 20; i++)
+//    //        {
+//    //            centreOfMass2 += particles[i].position;
+//    //            totalMass2 += particles[i].mass;
+//    //        }
+//    //        centreOfMass2 /= totalMass2;
+//    //        for (int i = 10; i < 20; i++)
+//    //        {
+//    //            glm::vec2 relativeCoord = particles[i].position - centreOfMass2;
+//    //            dipole2 += relativeCoord;
+//    //
+//    //            Fastor::Tensor<float, 2, 2> outer_product;
+//    //            outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+//    //            outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+//    //            outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+//    //            outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+//    //            quadrupole2 += outer_product;
+//    //        }
+//    //    }
+//    //
+//    //    // naive interaction of cluster 1
+//    //    for (int i = 0; i < 10; i++)
+//    //    {
+//    //        for (int j = 0; j < 10; j++)
+//    //        {
+//    //            float softening = 0.1f;
+//    //            glm::vec2 diff = particles[i].position - particles[j].position;
+//    //            float distance = glm::length(diff);
+//    //
+//    //            float oneOverDistance = 1.0f / (distance + softening);
+//    //            stupidNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //            smartNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //        }
+//    //    }
+//    //
+//    //    // naive interaction of cluster 2
+//    //    for (int i = 10; i < 20; i++)
+//    //    {
+//    //        for (int j = 10; j < 20; j++)
+//    //        {
+//    //            float softening = 0.1f;
+//    //            glm::vec2 diff = particles[i].position - particles[j].position;
+//    //            float distance = glm::length(diff);
+//    //
+//    //            float oneOverDistance = 1.0f / (distance + softening);
+//    //            stupidNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //            smartNodeNodeAccelerations[i] += -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //        }
+//    //    }
+//    //
+//    //    // stupid node node
+//    //    {
+//    //        float softening = 0.1f;
+//    //        glm::vec2 diff = centreOfMass1 - centreOfMass2;
+//    //        float distance = glm::length(diff);
+//    //
+//    //        float oneOverDistance = (1.0f / (distance + softening));
+//    //        for (int i = 0; i < 10; i++)
+//    //        {
+//    //            stupidNodeNodeAccelerations[i] += -totalMass2 * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //        }
+//    //
+//    //        //----------------------------------------------------------------------------------------------------------------
+//    //
+//    //        softening = 0.1f;
+//    //        diff = centreOfMass2 - centreOfMass1;
+//    //        distance = glm::length(diff);
+//    //
+//    //        oneOverDistance = (1.0f / (distance + softening));
+//    //        for (int i = 10; i < 20; i++)
+//    //        {
+//    //            stupidNodeNodeAccelerations[i] += -totalMass1 * oneOverDistance * oneOverDistance * oneOverDistance * diff;
+//    //        }
+//    //    }
+//    //
+//    //    // smart node node
+//    //    smartNodeNode(particles, smartNodeNodeAccelerations, centreOfMass1, totalMass1, dipole1, quadrupole1, centreOfMass2, totalMass2, dipole2, quadrupole2, true);
+//    //    smartNodeNode(particles, smartNodeNodeAccelerations, centreOfMass2, totalMass2, dipole2, quadrupole2, centreOfMass1, totalMass1, dipole1, quadrupole1, false);
+//    //
+//    //
+//    //    // error of all
+//    //    float errorStupid = 0.0f;
+//    //    float errorSmart = 0.0f;
+//    //    {
+//    //        for (int i = 0; i < 20; i++)
+//    //        {
+//    //            errorStupid += powf(glm::length(trueAccelerations[i] - stupidNodeNodeAccelerations[i]), 2.0f);
+//    //        }
+//    //        errorStupid /= 20;
+//    //
+//    //        for (int i = 0; i < 20; i++)
+//    //        {
+//    //            errorSmart += powf(glm::length(trueAccelerations[i] - smartNodeNodeAccelerations[i]), 2.0f);
+//    //        }
+//    //        errorSmart /= 20;
+//    //    }
+//    //
+//    //    std::cout << "stupid error: " << errorStupid << std::endl;
+//    //    std::cout << "smart error: " << errorSmart << std::endl;
+//    //}
 //
 //
-//        // set graph size
-//        std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHMP(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHR(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHRMP(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
 //
-//        std::vector<int> timeBH(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHMP(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHR(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHRMP(errorMeasurementAmount, 0);
-//        std::vector<int> timeFMM(errorMeasurementAmount, 0);
+//    //void errorTimestepGRAVITY()
+//    //{
+//    //    int errorMeasurementAmount = 1000; // how many iterations to run the simulation
+//    //    int particleCount = 1000; // use this many particles
+//    //    float setTheta = 1.0f; // approximation parameter
+//    //
+//    //    generatePoints(particleCount);
+//    //    nBodySolversGRAVITY["BH"]->updateTree(&particles);
+//    //    nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+//    //    nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+//    //    nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+//    //    nBodySolversGRAVITY["FMM"]->updateTree(&particles);
+//    //
+//    //    nBodySolversGRAVITY["BH"]->theta = setTheta;
+//    //    nBodySolversGRAVITY["BHMP"]->theta = setTheta;
+//    //    nBodySolversGRAVITY["BHR"]->theta = setTheta;
+//    //    nBodySolversGRAVITY["BHRMP"]->theta = setTheta;
+//    //    nBodySolversGRAVITY["FMM"]->theta = setTheta;
+//    //
+//    //
+//    //    // set graph size
+//    //    std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
+//    //    std::vector<float> errorBHMP(errorMeasurementAmount, 0.0f);
+//    //    std::vector<float> errorBHR(errorMeasurementAmount, 0.0f);
+//    //    std::vector<float> errorBHRMP(errorMeasurementAmount, 0.0f);
+//    //    std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
+//    //
+//    //    std::vector<int> timeBH(errorMeasurementAmount, 0);
+//    //    std::vector<int> timeBHMP(errorMeasurementAmount, 0);
+//    //    std::vector<int> timeBHR(errorMeasurementAmount, 0);
+//    //    std::vector<int> timeBHRMP(errorMeasurementAmount, 0);
+//    //    std::vector<int> timeFMM(errorMeasurementAmount, 0);
+//    //
+//    //
+//    //    // find error at every time step
+//    //    float noAccumulator = 0.0f;
+//    //    for (int t = 0; t < errorMeasurementAmount; t++)
+//    //    {
+//    //        // correct solution up to machine precision
+//    //        nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
+//    //
+//    //
+//    //        // calculate the result of every approximation technique and find the error by comparing to naive
+//    //        nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+//    //        errorBH[t] = getMSE(accelerations, accelerationsErrorTest);
+//    //        timeBH[t] = t;
+//    //        
+//    //        nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+//    //        errorBHMP[t] = getMSE(accelerations, accelerationsErrorTest);
+//    //        timeBHMP[t] = t;
+//    //
+//    //        nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+//    //        errorBHR[t] = getMSE(accelerations, accelerationsErrorTest);
+//    //        timeBHR[t] = t;
+//    //
+//    //        nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
+//    //        errorBHRMP[t] = getMSE(accelerations, accelerationsErrorTest);
+//    //        timeBHRMP[t] = t;
+//    //
+//    //        nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
+//    //        errorFMM[t] = getMSE(accelerations, accelerationsErrorTest);
+//    //        timeFMM[t] = t;
+//    //
+//    //        // update positions with naive solution
+//    //        for (int i = 0; i < particles.size(); i++)
+//    //            particles[i].speed += stepSize * accelerations[i];
+//    //
+//    //        for (int i = 0; i < particles.size(); i++)
+//    //            particles[i].position += stepSize * particles[i].speed;
+//    //        
+//    //        // update tree structures
+//    //        nBodySolversGRAVITY["BH"]->updateTree(&particles);
+//    //        nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
+//    //        nBodySolversGRAVITY["BHR"]->updateTree(&particles);
+//    //        nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
+//    //        nBodySolversGRAVITY["FMM"]->updateTree(&particles);
+//    //    }
+//    //
+//    //    // write results to csv files
+//    //    std::filesystem::path projectFolder;
+//    //    #ifdef _WIN32
+//    //    projectFolder = std::filesystem::current_path();
+//    //    #endif
+//    //    #ifdef linux
+//    //    projectFolder = std::filesystem::current_path().parent_path();
+//    //    #endif
+//    //    std::string attributes = "_point" + std::to_string(particleCount) + "_theta" + fltToStr(setTheta);
+//    //    writeToFile(timeBH,    errorBH,    projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBH"    + attributes + ".csv"));
+//    //    writeToFile(timeBHMP,  errorBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHMP"  + attributes + ".csv"));
+//    //    writeToFile(timeBHR,   errorBHR,   projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHR"   + attributes + ".csv"));
+//    //    writeToFile(timeBHRMP, errorBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHRMP" + attributes + ".csv"));
+//    //    writeToFile(timeFMM,   errorFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepFMM"   + attributes + ".csv"));
+//    //}
 //
-//
-//        // find error at every time step
-//        float noAccumulator = 0.0f;
-//        for (int t = 0; t < errorMeasurementAmount; t++)
-//        {
-//            // correct solution up to machine precision
-//            nBodySolversGRAVITY["naive"]->solveNbody(&noAccumulator, &accelerations, &particles);
-//
-//
-//            // calculate the result of every approximation technique and find the error by comparing to naive
-//            nBodySolversGRAVITY["BH"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
-//            errorBH[t] = getMSE(accelerations, accelerationsErrorTest);
-//            timeBH[t] = t;
-//            
-//            nBodySolversGRAVITY["BHMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
-//            errorBHMP[t] = getMSE(accelerations, accelerationsErrorTest);
-//            timeBHMP[t] = t;
-//
-//            nBodySolversGRAVITY["BHR"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
-//            errorBHR[t] = getMSE(accelerations, accelerationsErrorTest);
-//            timeBHR[t] = t;
-//
-//            nBodySolversGRAVITY["BHRMP"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);
-//            errorBHRMP[t] = getMSE(accelerations, accelerationsErrorTest);
-//            timeBHRMP[t] = t;
-//
-//            nBodySolversGRAVITY["FMM"]->solveNbody(&noAccumulator, &accelerationsErrorTest, &particles);//, 10, 1.0f
-//            errorFMM[t] = getMSE(accelerations, accelerationsErrorTest);
-//            timeFMM[t] = t;
-//
-//            // update positions with naive solution
-//            for (int i = 0; i < particles.size(); i++)
-//                particles[i].speed += stepSize * accelerations[i];
-//
-//            for (int i = 0; i < particles.size(); i++)
-//                particles[i].position += stepSize * particles[i].speed;
-//            
-//            // update tree structures
-//            nBodySolversGRAVITY["BH"]->updateTree(&particles);
-//            nBodySolversGRAVITY["BHMP"]->updateTree(&particles);
-//            nBodySolversGRAVITY["BHR"]->updateTree(&particles);
-//            nBodySolversGRAVITY["BHRMP"]->updateTree(&particles);
-//            nBodySolversGRAVITY["FMM"]->updateTree(&particles);
-//        }
-//
-//        // write results to csv files
-//        std::filesystem::path projectFolder;
-//        #ifdef _WIN32
-//        projectFolder = std::filesystem::current_path();
-//        #endif
-//        #ifdef linux
-//        projectFolder = std::filesystem::current_path().parent_path();
-//        #endif
-//        std::string attributes = "_point" + std::to_string(particleCount) + "_theta" + fltToStr(setTheta);
-//        writeToFile(timeBH,    errorBH,    projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBH"    + attributes + ".csv"));
-//        writeToFile(timeBHMP,  errorBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHMP"  + attributes + ".csv"));
-//        writeToFile(timeBHR,   errorBHR,   projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHR"   + attributes + ".csv"));
-//        writeToFile(timeBHRMP, errorBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepBHRMP" + attributes + ".csv"));
-//        writeToFile(timeFMM,   errorFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepFMM"   + attributes + ".csv"));
-//    }
-
 //    void errorTimestepTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float thetaParam, float perplexityParam)
 //    {
 //        // 15 min
@@ -435,69 +414,73 @@
 //        repulsForceNotNorm.resize(dataAmount);
 //        repulsForceErrorTestNotNorm.resize(dataAmount);
 //
+//        std::vector<int> indexTracker;
+//        for (int i = 0; i < dataAmount; i++)
+//            indexTracker.push_back(i);
+//
 //
 //        generatePointsTSNE(dataAmount);
-//        nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-//        nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-//        nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-//        nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-//        nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-//        nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
+//        nBodySolversTSNE["BH"]->updateTree(embeddedPoints, glm::vec2(0.0f), glm::vec2(0.0f));
+//        //nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+//        //nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+//        //nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+//        //nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+//        //nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
 //
 //        nBodySolversTSNE["BH"]->theta = setTheta;
-//        nBodySolversTSNE["BHMP"]->theta = setTheta;
-//        nBodySolversTSNE["BHR"]->theta = setTheta;
-//        nBodySolversTSNE["BHRMP"]->theta = setTheta;
-//        nBodySolversTSNE["FMM"]->theta = setTheta;
-//        nBodySolversTSNE["FMMiter"]->theta = setTheta;
+//        //nBodySolversTSNE["BHMP"]->theta = setTheta;
+//        //nBodySolversTSNE["BHR"]->theta = setTheta;
+//        //nBodySolversTSNE["BHRMP"]->theta = setTheta;
+//        //nBodySolversTSNE["FMM"]->theta = setTheta;
+//        //nBodySolversTSNE["FMMiter"]->theta = setTheta;
 //
 //
 //        // set graph size
 //        std::vector<float> errorBH(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHMP(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHR(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorBHRMP(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
-//        std::vector<float> errorFMMiter(errorMeasurementAmount, 0.0f);
+//        //std::vector<float> errorBHMP(errorMeasurementAmount, 0.0f);
+//        //std::vector<float> errorBHR(errorMeasurementAmount, 0.0f);
+//        //std::vector<float> errorBHRMP(errorMeasurementAmount, 0.0f);
+//        //std::vector<float> errorFMM(errorMeasurementAmount, 0.0f);
+//        //std::vector<float> errorFMMiter(errorMeasurementAmount, 0.0f);
 //
 //        std::vector<int> timeBH(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHMP(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHR(errorMeasurementAmount, 0);
-//        std::vector<int> timeBHRMP(errorMeasurementAmount, 0);
-//        std::vector<int> timeFMM(errorMeasurementAmount, 0);
-//        std::vector<int> timeFMMiter(errorMeasurementAmount, 0);
+//        //std::vector<int> timeBHMP(errorMeasurementAmount, 0);
+//        //std::vector<int> timeBHR(errorMeasurementAmount, 0);
+//        //std::vector<int> timeBHRMP(errorMeasurementAmount, 0);
+//        //std::vector<int> timeFMM(errorMeasurementAmount, 0);
+//        //std::vector<int> timeFMMiter(errorMeasurementAmount, 0);
 //
 //
 //        // find error at every time step
 //        for (int t = 0; t < errorMeasurementAmount; t++)
 //        {
 //            // correct solution up to machine precision
-//            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep);
+//            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep, indexTracker);
 //
 //            // calculate the result of every approximation technique and find the error by comparing to naive
-//            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep, indexTracker);
 //            errorBH[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
 //            timeBH[t] = t;
 //
-//            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//            errorBHMP[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
-//            timeBHMP[t] = t;
+//            //updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            //errorBHMP[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+//            //timeBHMP[t] = t;
 //
-//            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//            errorBHR[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
-//            timeBHR[t] = t;
+//            //updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            //errorBHR[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+//            //timeBHR[t] = t;
 //
-//            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//            errorBHRMP[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
-//            timeBHRMP[t] = t;
+//            //updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            //errorBHRMP[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+//            //timeBHRMP[t] = t;
 //
-//            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//            errorFMM[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
-//            timeFMM[t] = t;
+//            //updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            //errorFMM[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+//            //timeFMM[t] = t;
 //
-//            updateTSNE("FMMiter", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-//            errorFMMiter[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
-//            timeFMMiter[t] = t;
+//            //updateTSNE("FMMiter", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//            //errorFMMiter[t] = getMSE(repulsForceNotNorm, repulsForceErrorTestNotNorm);
+//            //timeFMMiter[t] = t;
 //
 //
 //            // update positions with naive solution
@@ -515,12 +498,12 @@
 //                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
 //            }
 //
-//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-//            nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
+//            nBodySolversTSNE["BH"]->updateTree(embeddedPoints, glm::vec2(0.0f), glm::vec2(0.0f));
+//            //nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+//            //nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+//            //nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+//            //nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+//            //nBodySolversTSNE["FMMiter"]->updateTree(&embeddedPoints);
 //
 //            globalTimeStep++;
 //        }
@@ -535,14 +518,14 @@
 //        #endif
 //        std::string attributes = "_point" + std::to_string(dataAmount) + "_perp" + std::to_string(perplexity) + "_theta" + fltToStr(setTheta) + "_dataset" + dataSet;
 //        writeToFile(timeBH,      errorBH,      projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBH"      + attributes + ".csv"));
-//        writeToFile(timeBHMP,    errorBHMP,    projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHMP"    + attributes + ".csv"));
-//        writeToFile(timeBHR,     errorBHR,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHR"     + attributes + ".csv"));
-//        writeToFile(timeBHRMP,   errorBHRMP,   projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHRMP"   + attributes + ".csv"));
-//        writeToFile(timeFMM,     errorFMM,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMM"     + attributes + ".csv"));
-//        writeToFile(timeFMMiter, errorFMMiter, projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMMiter" + attributes + ".csv"));
+//        //writeToFile(timeBHMP,    errorBHMP,    projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHMP"    + attributes + ".csv"));
+//        //writeToFile(timeBHR,     errorBHR,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHR"     + attributes + ".csv"));
+//        //writeToFile(timeBHRMP,   errorBHRMP,   projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepBHRMP"   + attributes + ".csv"));
+//        //writeToFile(timeFMM,     errorFMM,     projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMM"     + attributes + ".csv"));
+//        //writeToFile(timeFMMiter, errorFMMiter, projectFolder / std::filesystem::path("graphCSV") / ("tsneErrorTimestepFMMiter" + attributes + ".csv"));
 //    }
 //
-
+///*
 //    void errorTimestepGRAVITYFMMtest()
 //    {
 //        int errorMeasurementAmount = 500; // how many iterations to run the simulation
@@ -607,7 +590,7 @@
 //        writeToFile(timeFMMnaive, errorFMMnaive, projectFolder / std::filesystem::path("graphCSV") / ("gravityErrorTimestepCompareFMMnaive" + attributes + ".csv"));
 //    }
 //
-
+//
 //    void calculationtimeThetaGRAVITY()
 //    {
 //        int averageOverAmount = 500; // average the error over this many time steps
@@ -730,173 +713,173 @@
 //        writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeThetaBHRMP" + attributes + ".csv"));
 //        writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("gravityCalculationtimeThetaFMM" + attributes + ".csv"));
 //    }
-
-	//void calculationtimeThetaTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float perplexityParam)
-	//{
-	//     25 min
-	//    int averageOverAmount = iterationAmount; // average the error over this many time steps
-	//    int dataAmount = particleAmount; // use this many particles
-	//    std::string dataSet = dataSetParam; // use this data set
-
-	//     set graph size
-	//    int thetaDiversityAmount = 15;
-	//    float thetaDiffSize = 1.0f;
-	//    float thetaOffset = 0.3f;
-
-
-	//    perplexity = perplexityParam;
-	//    learnRate = 1000.0f;
-	//    accelerationRate = 0.5f;
-
-	//    #ifdef _WIN32
-	//    std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-	//    std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-	//    #endif
-	//    #ifdef linux
-	//    std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-	//    std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-	//    #endif
-
-	//    labels = Loader::loadLabels(labelsPath.string());
-	//    Pmatrix = Loader::loadPmatrix(fileName.string());
-
-	//    embeddedPoints.resize(dataAmount);
-	//    embeddedPointsPrev.resize(dataAmount);
-	//    embeddedPointsPrevPrev.resize(dataAmount);
-
-	//    embeddedDerivative.resize(dataAmount);
-	//    embeddedDerivativeErrorTest.resize(dataAmount);
-	//    attractForce.resize(dataAmount);
-	//    repulsForce.resize(dataAmount);
-	//    repulsForceErrorTest.resize(dataAmount);
-	//    repulsForceNotNorm.resize(dataAmount);
-	//    repulsForceErrorTestNotNorm.resize(dataAmount);
-
-
-	//    std::vector<float> calculationtimeNaive(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> calculationtimeBH(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> calculationtimeBHMP(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> calculationtimeBHR(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> calculationtimeBHRMP(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> calculationtimeFMM(thetaDiversityAmount, 0.0f);
-
-	//    std::vector<float> thetaNaive(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
-	//    std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
-
-
-	//    float noAccumulator = 0.0f;
-	//    for (int t = 0; t < thetaDiversityAmount; t++)
-	//    {
-	//        generatePointsTSNE(dataAmount);
-	//        nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-	//        nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-	//        nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-	//        nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-	//        nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-
-	//        float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
-
-	//        thetaNaive[t] = chosenTheta;
-	//        thetaBH[t] = chosenTheta;
-	//        thetaBHMP[t] = chosenTheta;
-	//        thetaBHR[t] = chosenTheta;
-	//        thetaBHRMP[t] = chosenTheta;
-	//        thetaFMM[t] = chosenTheta;
-
-	//        nBodySolversTSNE["BH"]->theta = chosenTheta;
-	//        nBodySolversTSNE["BHMP"]->theta = chosenTheta;
-	//        nBodySolversTSNE["BHR"]->theta = chosenTheta;
-	//        nBodySolversTSNE["BHRMP"]->theta = chosenTheta;
-	//        nBodySolversTSNE["FMM"]->theta = chosenTheta;
-
-	//        float timeBefore = 0.0f;
-	//        globalTimeStep = 0;
-	//        for(int j = 0; j < averageOverAmount; j++)
-	//        { 
-	//            timeBefore = glfwGetTime();
-	//            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep);
-	//            calculationtimeNaive[t] += glfwGetTime() - timeBefore;
-
-	//            timeBefore = glfwGetTime();
-	//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-	//            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-	//            calculationtimeBH[t] += glfwGetTime() - timeBefore;
-
-	//            timeBefore = glfwGetTime();
-	//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-	//            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-	//            calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
-
-	//            timeBefore = glfwGetTime();
-	//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-	//            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-	//            calculationtimeBHR[t] += glfwGetTime() - timeBefore;
-
-	//            timeBefore = glfwGetTime();
-	//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-	//            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-	//            calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
-
-	//            timeBefore = glfwGetTime();
-	//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-	//            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
-	//            calculationtimeFMM[t] += glfwGetTime() - timeBefore;
-
-
-	//             update positions with naive solution
-	//            embeddedPointsPrev.swap(embeddedPointsPrevPrev);
-	//            embeddedPoints.swap(embeddedPointsPrev);
-
-	//            accelerationRate = 0.5f;
-	//            if (globalTimeStep < 250)
-	//            {
-	//                accelerationRate = 0.5f;
-	//            }
-
-	//            for (int i = 0; i < embeddedPoints.size(); i++)
-	//            {
-	//                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
-	//            }
-
-	//            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
-	//            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
-	//            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
-	//            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
-	//            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
-
-	//            globalTimeStep++;
-	//        }
-
-	//        calculationtimeNaive[t] /= averageOverAmount;
-	//        calculationtimeBH[t]    /= averageOverAmount;
-	//        calculationtimeBHMP[t]  /= averageOverAmount;
-	//        calculationtimeBHR[t]   /= averageOverAmount;
-	//        calculationtimeBHRMP[t] /= averageOverAmount;
-	//        calculationtimeFMM[t]   /= averageOverAmount;
-	//    }
-
-	//     write results to csv files
-	//    std::filesystem::path projectFolder;
-	//    #ifdef _WIN32
-	//    projectFolder = std::filesystem::current_path();
-	//    #endif
-	//    #ifdef linux
-	//    projectFolder = std::filesystem::current_path().parent_path();
-	//    #endif
-	//    std::string attributes = "_point" + std::to_string(dataAmount) + "_perp" + std::to_string(perplexity) + "_dataset" + dataSet;
-	//    writeToFile(thetaNaive, calculationtimeNaive, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaNaive" + attributes + ".csv"));
-	//    writeToFile(thetaBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBH" + attributes + ".csv"));
-	//    writeToFile(thetaBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHMP" + attributes + ".csv"));
-	//    writeToFile(thetaBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHR" + attributes + ".csv"));
-	//    writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHRMP" + attributes + ".csv"));
-	//    writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaFMM" + attributes + ".csv"));
-	//}
 //
-
+//	void calculationtimeThetaTSNE(std::string dataSetParam, int particleAmount, int iterationAmount, float perplexityParam)
+//	{
+//	     25 min
+//	    int averageOverAmount = iterationAmount; // average the error over this many time steps
+//	    int dataAmount = particleAmount; // use this many particles
+//	    std::string dataSet = dataSetParam; // use this data set
+//
+//	     set graph size
+//	    int thetaDiversityAmount = 15;
+//	    float thetaDiffSize = 1.0f;
+//	    float thetaOffset = 0.3f;
+//
+//
+//	    perplexity = perplexityParam;
+//	    learnRate = 1000.0f;
+//	    accelerationRate = 0.5f;
+//
+//	    #ifdef _WIN32
+//	    std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+//	    std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+//	    #endif
+//	    #ifdef linux
+//	    std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+//	    std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
+//	    #endif
+//
+//	    labels = Loader::loadLabels(labelsPath.string());
+//	    Pmatrix = Loader::loadPmatrix(fileName.string());
+//
+//	    embeddedPoints.resize(dataAmount);
+//	    embeddedPointsPrev.resize(dataAmount);
+//	    embeddedPointsPrevPrev.resize(dataAmount);
+//
+//	    embeddedDerivative.resize(dataAmount);
+//	    embeddedDerivativeErrorTest.resize(dataAmount);
+//	    attractForce.resize(dataAmount);
+//	    repulsForce.resize(dataAmount);
+//	    repulsForceErrorTest.resize(dataAmount);
+//	    repulsForceNotNorm.resize(dataAmount);
+//	    repulsForceErrorTestNotNorm.resize(dataAmount);
+//
+//
+//	    std::vector<float> calculationtimeNaive(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> calculationtimeBH(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> calculationtimeBHMP(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> calculationtimeBHR(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> calculationtimeBHRMP(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> calculationtimeFMM(thetaDiversityAmount, 0.0f);
+//
+//	    std::vector<float> thetaNaive(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> thetaBH(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> thetaBHMP(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> thetaBHR(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> thetaBHRMP(thetaDiversityAmount, 0.0f);
+//	    std::vector<float> thetaFMM(thetaDiversityAmount, 0.0f);
+//
+//
+//	    float noAccumulator = 0.0f;
+//	    for (int t = 0; t < thetaDiversityAmount; t++)
+//	    {
+//	        generatePointsTSNE(dataAmount);
+//	        nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+//	        nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+//	        nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+//	        nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+//	        nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+//
+//	        float chosenTheta = ((float)t / thetaDiversityAmount) * thetaDiffSize + thetaOffset;
+//
+//	        thetaNaive[t] = chosenTheta;
+//	        thetaBH[t] = chosenTheta;
+//	        thetaBHMP[t] = chosenTheta;
+//	        thetaBHR[t] = chosenTheta;
+//	        thetaBHRMP[t] = chosenTheta;
+//	        thetaFMM[t] = chosenTheta;
+//
+//	        nBodySolversTSNE["BH"]->theta = chosenTheta;
+//	        nBodySolversTSNE["BHMP"]->theta = chosenTheta;
+//	        nBodySolversTSNE["BHR"]->theta = chosenTheta;
+//	        nBodySolversTSNE["BHRMP"]->theta = chosenTheta;
+//	        nBodySolversTSNE["FMM"]->theta = chosenTheta;
+//
+//	        float timeBefore = 0.0f;
+//	        globalTimeStep = 0;
+//	        for(int j = 0; j < averageOverAmount; j++)
+//	        { 
+//	            timeBefore = glfwGetTime();
+//	            updateTSNE("naive", embeddedDerivative, repulsForce, repulsForceNotNorm, globalTimeStep);
+//	            calculationtimeNaive[t] += glfwGetTime() - timeBefore;
+//
+//	            timeBefore = glfwGetTime();
+//	            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+//	            updateTSNE("BH", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//	            calculationtimeBH[t] += glfwGetTime() - timeBefore;
+//
+//	            timeBefore = glfwGetTime();
+//	            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+//	            updateTSNE("BHMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//	            calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+//
+//	            timeBefore = glfwGetTime();
+//	            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+//	            updateTSNE("BHR", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//	            calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+//
+//	            timeBefore = glfwGetTime();
+//	            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+//	            updateTSNE("BHRMP", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//	            calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+//
+//	            timeBefore = glfwGetTime();
+//	            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+//	            updateTSNE("FMM", embeddedDerivativeErrorTest, repulsForceErrorTest, repulsForceErrorTestNotNorm, globalTimeStep);
+//	            calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+//
+//
+//	             update positions with naive solution
+//	            embeddedPointsPrev.swap(embeddedPointsPrevPrev);
+//	            embeddedPoints.swap(embeddedPointsPrev);
+//
+//	            accelerationRate = 0.5f;
+//	            if (globalTimeStep < 250)
+//	            {
+//	                accelerationRate = 0.5f;
+//	            }
+//
+//	            for (int i = 0; i < embeddedPoints.size(); i++)
+//	            {
+//	                embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedDerivative[i] + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
+//	            }
+//
+//	            nBodySolversTSNE["BH"]->updateTree(&embeddedPoints);
+//	            nBodySolversTSNE["BHMP"]->updateTree(&embeddedPoints);
+//	            nBodySolversTSNE["BHR"]->updateTree(&embeddedPoints);
+//	            nBodySolversTSNE["BHRMP"]->updateTree(&embeddedPoints);
+//	            nBodySolversTSNE["FMM"]->updateTree(&embeddedPoints);
+//
+//	            globalTimeStep++;
+//	        }
+//
+//	        calculationtimeNaive[t] /= averageOverAmount;
+//	        calculationtimeBH[t]    /= averageOverAmount;
+//	        calculationtimeBHMP[t]  /= averageOverAmount;
+//	        calculationtimeBHR[t]   /= averageOverAmount;
+//	        calculationtimeBHRMP[t] /= averageOverAmount;
+//	        calculationtimeFMM[t]   /= averageOverAmount;
+//	    }
+//
+//	     write results to csv files
+//	    std::filesystem::path projectFolder;
+//	    #ifdef _WIN32
+//	    projectFolder = std::filesystem::current_path();
+//	    #endif
+//	    #ifdef linux
+//	    projectFolder = std::filesystem::current_path().parent_path();
+//	    #endif
+//	    std::string attributes = "_point" + std::to_string(dataAmount) + "_perp" + std::to_string(perplexity) + "_dataset" + dataSet;
+//	    writeToFile(thetaNaive, calculationtimeNaive, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaNaive" + attributes + ".csv"));
+//	    writeToFile(thetaBH,    calculationtimeBH,    projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBH" + attributes + ".csv"));
+//	    writeToFile(thetaBHMP,  calculationtimeBHMP,  projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHMP" + attributes + ".csv"));
+//	    writeToFile(thetaBHR,   calculationtimeBHR,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHR" + attributes + ".csv"));
+//	    writeToFile(thetaBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaBHRMP" + attributes + ".csv"));
+//	    writeToFile(thetaFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeThetaFMM" + attributes + ".csv"));
+//	}
+//
+//
 //    void errorThetaGRAVITY()
 //    {
 //        int averageOverAmount = 250; // average the error over this many time steps
@@ -1492,7 +1475,7 @@
 //        //writeToFile(errorBHRMP, calculationtimeBHRMP, projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorBHRMP" + attributes + ".csv"));
 //        //writeToFile(errorFMM,   calculationtimeFMM,   projectFolder / std::filesystem::path("graphCSV") / ("tsneCalculationtimeErrorFMM" + attributes + ".csv"));
 //    }
-//
+//*/
 //private:
 //    float getMSE(const std::vector<glm::vec2>& MSEaccelerations, const std::vector<glm::vec2>& MSEaccelerationsErrorTest)
 //    {
@@ -1594,7 +1577,7 @@
 //
 //        file.close();
 //    }
-//
+//    /*
 //    void generatePoints(int particleAmount)
 //    {
 //        particles.resize(particleAmount);
@@ -1641,7 +1624,7 @@
 //
 //        //particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
 //    }
-//
+//    */
 //    void generatePointsTSNE(int particleAmount)
 //    {
 //        srand(1952732);
@@ -1666,28 +1649,31 @@
 //
 //            int lab = labels[i];
 //
-//            embeddedPoints[i] = EmbeddedPoint(pos, lab);
-//            embeddedPointsPrev[i] = EmbeddedPoint(pos, lab);
-//            embeddedPointsPrevPrev[i] = EmbeddedPoint(pos, lab);
+//            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
+//            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
+//            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i);
 //        }
 //    }
 //
-//    void updateTSNE(std::string nbodySolverName, std::vector<glm::vec2>& derivResult, std::vector<glm::vec2>& repulResult, std::vector<glm::vec2>& repulNotNormResult, int globalTimeStepFunc)
+//    void updateTSNE(std::string nbodySolverName, std::vector<glm::vec2>& derivResult, std::vector<glm::vec2>& repulResult, std::vector<glm::vec2>& repulNotNormResult, int globalTimeStepFunc, std::vector<int>& embeddedTracker)
 //    {
 //        std::fill(repulResult.begin(), repulResult.end(), glm::vec2(0.0f, 0.0f));
 //        std::fill(repulNotNormResult.begin(), repulNotNormResult.end(), glm::vec2(0.0f, 0.0f));
+//        for (int i = 0; i < embeddedPoints.size(); i++)
+//            embeddedPoints[i].derivative = glm::vec2(0.0f);
 //
 //        float QijTotal = 0.0f;
 //
-//        nBodySolversTSNE[nbodySolverName]->solveNbody(&QijTotal, &repulResult, &embeddedPoints);
+//        nBodySolversTSNE[nbodySolverName]->solveNbody(QijTotal, embeddedPoints, embeddedTracker);
 //        for (int i = 0; i < repulResult.size(); i++)
 //        { 
-//            repulNotNormResult[i] = repulResult[i];
+//            repulNotNormResult[i] = embeddedPoints[i].derivative;//repulResult[i];
 //        }
 //
 //        for (int i = 0; i < embeddedPoints.size(); i++)
 //        {
-//            repulResult[i] *= (1.0f / QijTotal);
+//            embeddedPoints[i].derivative *= (1.0f / QijTotal);
+//            repulResult[i] = embeddedPoints[i].derivative;
 //        }
 //
 //        // --------------------------------
@@ -1720,7 +1706,7 @@
 //            derivResult[i] = attractForce[i] - repulResult[i];
 //        }
 //    }
-//
+///*
 //    void generatePointsCustom1()
 //    {
 //        int particleAmount = 40;
@@ -1804,7 +1790,7 @@
 //
 //        //particlesBuffer = new Buffer(particles, pos2Dvel2Dcol3Dmass, GL_DYNAMIC_DRAW);
 //    }
-//
+//    */
 //    void smartNodeNode(std::vector<Particle2D>& particles, std::vector<glm::vec2>& smartNodeNodeAccelerations, glm::vec2 centreOfMass1, float totalMass1, glm::vec2 dipole1, Fastor::Tensor<float, 2, 2> quadrupole1, glm::vec2 centreOfMass2, float totalMass2, glm::vec2 dipole2, Fastor::Tensor<float, 2, 2> quadrupole2, bool firstHalve)
 //    {
 //        // prework
@@ -1918,4 +1904,15 @@
 //
 //        return str;
 //    }
+//
+//    //void getMinMax(std::vector<EmbeddedPoint>& points, glm::vec2& min, glm::vec2& max)
+//    //{
+//    //    min = glm::vec2(std::numeric_limits<float>::max());
+//    //    max = glm::vec2(std::numeric_limits<float>::lowest());
+//
+//    //    for (EmbeddedPoint point : points)
+//    //    {
+//    //        if 
+//    //    }
+//    //}
 //};

@@ -196,7 +196,7 @@ public:
         delete[] dC;
     }
 
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         for (int i = 0; i < points.size(); i++)
             indexTracker[points[i].ID] = i;

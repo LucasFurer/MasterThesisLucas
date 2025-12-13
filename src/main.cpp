@@ -24,7 +24,7 @@
 #include "nBodyInstances/tsne.h"
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
-//#include "nBodyInstances/nBodyScenarios.h"
+#include "nBodyInstances/nBodyScenarios.h"
 #include "nBodyInstances/tsneTests.h"
 #include "common.h"
 #include "codeData/data.h"
@@ -233,10 +233,11 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        //tsne_test.errorTimestepTSNE("MNIST_digits", 1000, 30.0f, 200.0f, 50, 1.0f);
+        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 50, 1.0f);
         //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 5, 1.0f);
 
         //NBodyScenarios nBodyScenarios;
+        //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);
         //std::cout << "starting tests--------------------------" << std::endl;
 
         //std::vector<float> perpValues{};

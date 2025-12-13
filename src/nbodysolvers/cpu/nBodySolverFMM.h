@@ -19,19 +19,19 @@ class NBodySolverFMM : public NBodySolver<T>
 public:
     QuadTreeFMM<T> root;
 
-    std::function<void(float&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNN;
-    std::function<void(float&, T&, QuadTreeFMM<T>*)> kernelPN;
-    std::function<void(float&, QuadTreeFMM<T>*, T&)> kernelNP;
-    std::function<void(float&, T&, T&)> kernelPP;
+    std::function<void(double&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> kernelNN;
+    std::function<void(double&, T&, QuadTreeFMM<T>*)> kernelPN;
+    std::function<void(double&, QuadTreeFMM<T>*, T&)> kernelNP;
+    std::function<void(double&, T&, T&)> kernelPP;
 
     NBodySolverFMM() {}
 
     NBodySolverFMM
     (
-        std::function<void(float&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> initKernelNN,
-        std::function<void(float&, T&, QuadTreeFMM<T>*)> initKernelPN,
-        std::function<void(float&, QuadTreeFMM<T>*, T&)> initKernelNP,
-        std::function<void(float&, T&, T&)> initKernelPP,
+        std::function<void(double&, QuadTreeFMM<T>*, QuadTreeFMM<T>*)> initKernelNN,
+        std::function<void(double&, T&, QuadTreeFMM<T>*)> initKernelPN,
+        std::function<void(double&, QuadTreeFMM<T>*, T&)> initKernelNP,
+        std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         float initTheta
     )
@@ -44,7 +44,7 @@ public:
         this->theta = initTheta;
     }
 
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         traverseFMM(total, points, &root, &root, this->theta);
 
@@ -64,7 +64,7 @@ public:
     }
 
 private:
-    void traverseFMM(float& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, float theta)
+    void traverseFMM(double& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, float theta)
     {
         float Lsink = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
         float Lsource = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
@@ -112,7 +112,7 @@ private:
 
     }
 
-    void traverseBHMP(float& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, float theta)
+    void traverseBHMP(double& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, float theta)
     {
         float l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
         glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
@@ -144,7 +144,7 @@ private:
         }
     }
 
-    void traverseBHRMP(float& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, float theta)
+    void traverseBHRMP(double& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, float theta)
     {
         float l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
         glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
@@ -187,7 +187,7 @@ private:
 
 
 
-void TSNEFMMNNKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
+void TSNEFMMNNKernelNaive(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
     glm::vec2 diff = sinkNode->centreOfMass - sourceNode->centreOfMass;
     float dist = glm::length(diff);
@@ -197,7 +197,7 @@ void TSNEFMMNNKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, Quad
 
     sinkNode->tempAccAcc += sourceNode->totalMass * forceDecay * forceDecay * diff;
 }
-void TSNEFMMNNKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
+void TSNEFMMNNKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
     glm::vec2 R = sinkNode->centreOfMass - sourceNode->centreOfMass;
     float r = glm::length(R);
@@ -268,7 +268,7 @@ void TSNEFMMNNKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeF
 }
 
 
-void TSNEFMMPNKernelNaive(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
+void TSNEFMMPNKernelNaive(double& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
     glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
     float dist = glm::length(diff);
@@ -278,7 +278,7 @@ void TSNEFMMPNKernelNaive(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<Tsne
 
     sinkPoint.derivative += sourceNode->totalMass * forceDecay * forceDecay * diff;
 }
-void TSNEFMMPNKernel(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
+void TSNEFMMPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
     glm::vec2 R = sinkPoint.position - sourceNode->centreOfMass;
     float r = glm::length(R);
@@ -309,7 +309,7 @@ void TSNEFMMPNKernel(float& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint
 }
 
 
-void TSNEFMMNPKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+void TSNEFMMNPKernelNaive(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position; // change this
     float dist = glm::length(diff);
@@ -319,7 +319,7 @@ void TSNEFMMNPKernelNaive(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, Tsne
 
     sinkNode->tempAccAcc += forceDecay * forceDecay * diff;
 }
-void TSNEFMMNPKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+void TSNEFMMNPKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 R = sinkNode->centreOfMass - sourcePoint.position;
     float r = glm::length(R);
@@ -379,7 +379,7 @@ void TSNEFMMNPKernel(float& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint
 }
 
 
-void TSNEFMMPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEFMMPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff);

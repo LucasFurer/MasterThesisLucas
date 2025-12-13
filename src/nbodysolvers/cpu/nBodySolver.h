@@ -19,7 +19,7 @@ public:
 	int maxChildren;
 	float theta;
 
-	virtual void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) = 0;
+	virtual void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) = 0;
 	virtual void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) = 0;
 	virtual std::vector<VertexPos2Col3> getNodesBufferData(int level) = 0;
 

@@ -19,12 +19,12 @@ class NBodySolverBHR : public NBodySolver<T>
 public:
     QuadTreeBarnesHutReverse<T> root;
 
-    std::function<void(float&, QuadTreeBarnesHutReverse<T>*, T&)> kernelNP;
-    std::function<void(float&, T&, T&)> kernelPP;
+    std::function<void(double&, QuadTreeBarnesHutReverse<T>*, T&)> kernelNP;
+    std::function<void(double&, T&, T&)> kernelPP;
 
     NBodySolverBHR() {}
 
-    NBodySolverBHR(std::function<void(float&, QuadTreeBarnesHutReverse<T>*, T&)> initKernelNP, std::function<void(float&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
+    NBodySolverBHR(std::function<void(double&, QuadTreeBarnesHutReverse<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
     {
         kernelNP = initKernelNP;
         kernelPP = initKernelPP;
@@ -32,7 +32,7 @@ public:
         this->theta = initTheta;
     }
 
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         total = 0.0f;
 
@@ -57,7 +57,7 @@ public:
     }
 
 private:
-    void traverseBHR(float& total, QuadTreeBarnesHutReverse<T>* node, T point, float theta)
+    void traverseBHR(double& total, QuadTreeBarnesHutReverse<T>* node, T point, float theta)
     {
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 diff = point.position - node->centreOfMass;
@@ -121,7 +121,7 @@ private:
 };
 
 
-void TSNEBHRNPKernel(float& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+void TSNEBHRNPKernel(double& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
     float dist = glm::length(diff);
@@ -132,7 +132,7 @@ void TSNEBHRNPKernel(float& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkNo
     sinkNode->acceleration += forceDecay * forceDecay * diff;
 }
 
-void TSNEBHRPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEBHRPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff);

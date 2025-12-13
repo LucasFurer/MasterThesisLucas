@@ -19,12 +19,12 @@ class NBodySolverBHRMP : public NBodySolver<T>
 public:
     QuadTreeBarnesHutReverseMultiPole<T> root;
 
-    std::function<void(float&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> kernelNP;
-    std::function<void(float&, T&, T&)> kernelPP;
+    std::function<void(double&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> kernelNP;
+    std::function<void(double&, T&, T&)> kernelPP;
 
     NBodySolverBHRMP() {}
 
-    NBodySolverBHRMP(std::function<void(float&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> initKernelNP, std::function<void(float&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
+    NBodySolverBHRMP(std::function<void(double&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
     {
         kernelNP = initKernelNP;
         kernelPP = initKernelPP;
@@ -32,7 +32,7 @@ public:
         this->theta = initTheta;
     }
 
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         total = 0.0f;
 
@@ -57,7 +57,7 @@ public:
     }
     
 private:
-    void traverseBHRMP(float& total, QuadTreeBarnesHutReverseMultiPole<T>* node, T point, float theta)
+    void traverseBHRMP(double& total, QuadTreeBarnesHutReverseMultiPole<T>* node, T point, float theta)
     {
         float l = node->highestCorner.x - node->lowestCorner.x;
         glm::vec2 diff = point.position - node->centreOfMass;
@@ -96,7 +96,7 @@ private:
 };
 
 
-void TSNEBHRMPNPKernel(float& total, QuadTreeBarnesHutReverseMultiPole<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
+void TSNEBHRMPNPKernel(double& total, QuadTreeBarnesHutReverseMultiPole<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 R = sinkNode->centreOfMass - sourcePoint.position;
     float r = glm::length(R);
@@ -154,7 +154,7 @@ void TSNEBHRMPNPKernel(float& total, QuadTreeBarnesHutReverseMultiPole<TsnePoint
     sinkNode->C3 += C3;
 }
 
-void TSNEBHRMPPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEBHRMPPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff);

@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <iostream>
 #include <map>
 #include <vector>
@@ -67,57 +69,83 @@ public:
         // find error at every time step
         for (int t = 0; t < iteration_amount; t++)
         {
+            double totalNaive = 0.0f;
+
             // correct solution up to machine precision - precomputed and loaded from disk
+            tsne.resetDeriv();
             tsne.nBodySelect = "naive";
+            //tsne.nBodySolvers["naive"]->solveNbody(totalNaive, tsne.embeddedPoints, tsne.indexTracker);
             tsne.updateDerivative();
+            //tsne.updateRepulsive();
+            //tsne.updateAttractive();
             naiveSolution = tsne.embeddedPoints;
             naiveSolutionIndexTracker = tsne.indexTracker;
 
+
+            double totalBH = 0.0f;
+
             // calculate the result of every approximation technique and find the error by comparing to naive
+            tsne.resetDeriv();
             tsne.nBodySelect = "BH";
             tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            //tsne.nBodySolvers["BH"]->solveNbody(totalBH, tsne.embeddedPoints, tsne.indexTracker);
             tsne.updateDerivative();
+            //tsne.updateRepulsive();
+            //tsne.updateAttractive();
             fastSolution = tsne.embeddedPoints;
             fastSolutionIndexTracker = tsne.indexTracker;
             errorBH[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
             timeBH[t] = t;
 
-            tsne.nBodySelect = "BHMP";
-            tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            //std::cout << "total naive: " << totalNaive << " ,total BH: " << totalBH << std::endl;
+
+            //tsne.resetDeriv();
+            //tsne.nBodySelect = "BHMP";
+            //tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            ////tsne.nBodySolvers["BHMP"]->solveNbody(dummy, tsne.embeddedPoints, tsne.indexTracker);
+            //tsne.updateDerivative();
+            //fastSolution = tsne.embeddedPoints;
+            //fastSolutionIndexTracker = tsne.indexTracker;
+            //errorBHMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+            //timeBHMP[t] = t;
+
+            //tsne.resetDeriv();
+            //tsne.nBodySelect = "BHR";
+            //tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            ////tsne.nBodySolvers["BHR"]->solveNbody(dummy, tsne.embeddedPoints, tsne.indexTracker);
+            //tsne.updateDerivative();
+            //fastSolution = tsne.embeddedPoints;
+            //fastSolutionIndexTracker = tsne.indexTracker;
+            //errorBHR[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+            //timeBHR[t] = t;
+
+            //tsne.resetDeriv();
+            //tsne.nBodySelect = "BHRMP";
+            //tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            ////tsne.nBodySolvers["BHRMP"]->solveNbody(dummy, tsne.embeddedPoints, tsne.indexTracker);
+            //tsne.updateDerivative();
+            //fastSolution = tsne.embeddedPoints;
+            //fastSolutionIndexTracker = tsne.indexTracker;
+            //errorBHRMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+            //timeBHRMP[t] = t;
+
+            //tsne.resetDeriv();
+            //tsne.nBodySelect = "FMM";
+            //tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            ////tsne.nBodySolvers["FMM"]->solveNbody(dummy, tsne.embeddedPoints, tsne.indexTracker);
+            //tsne.updateDerivative();
+            //fastSolution = tsne.embeddedPoints;
+            //fastSolutionIndexTracker = tsne.indexTracker;
+            //errorFMM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+            //timeFMM[t] = t;
+
+
+
+
+            // update points with naive solution
+            tsne.resetDeriv();
+            tsne.nBodySelect = "naive";
             tsne.updateDerivative();
-            fastSolution = tsne.embeddedPoints;
-            fastSolutionIndexTracker = tsne.indexTracker;
-            errorBHMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
-            timeBHMP[t] = t;
-
-            tsne.nBodySelect = "BHR";
-            tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-            tsne.updateDerivative();
-            fastSolution = tsne.embeddedPoints;
-            fastSolutionIndexTracker = tsne.indexTracker;
-            errorBHR[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
-            timeBHR[t] = t;
-
-            tsne.nBodySelect = "BHRMP";
-            tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-            tsne.updateDerivative();
-            fastSolution = tsne.embeddedPoints;
-            fastSolutionIndexTracker = tsne.indexTracker;
-            errorBHRMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
-            timeBHRMP[t] = t;
-
-            tsne.nBodySelect = "FMM";
-            tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-            tsne.updateDerivative();
-            fastSolution = tsne.embeddedPoints;
-            fastSolutionIndexTracker = tsne.indexTracker;
-            errorFMM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
-            timeFMM[t] = t;
-
-
-
-            tsne.embeddedPoints = naiveSolution;
-            tsne.indexTracker = naiveSolutionIndexTracker;
             tsne.updatePoints();
         }
 
@@ -133,16 +161,16 @@ public:
 
 
         std::filesystem::path methodPath;
-        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
+        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + fltToStr(theta) + "_dataset" + dataset_type + ".csv");
         writeToFile(timeBH, errorBH, methodPath);
-        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(timeBHMP, errorBHMP, methodPath);
-        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(timeBHR, errorBHR, methodPath);
-        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(timeBHRMP, errorBHRMP, methodPath);
-        methodPath = projectFolder / ("tsneErrorTimestep" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(timeFMM, errorFMM, methodPath);
+        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(timeBHMP, errorBHMP, methodPath);
+        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(timeBHR, errorBHR, methodPath);
+        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(timeBHRMP, errorBHRMP, methodPath);
+        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + std::to_string(static_cast<int>(theta)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(timeFMM, errorFMM, methodPath);
 
         
         tsne.cleanup();
@@ -293,22 +321,22 @@ private:
         }
     }
 
-    float getNMAE(const std::vector<TsnePoint2D>& pointsNaive, const std::vector<int>& pointsNaiveIndexTracker, const std::vector<TsnePoint2D>& pointsApproximate, const std::vector<int>& pointsApproximateIndexTracker)
+    float getNMAE(const std::vector<TsnePoint2D>& points_naive, const std::vector<int>& points_naive_indices, const std::vector<TsnePoint2D>& points_approx, const std::vector<int>& points_approx_indices)
     {
-        float NMAE = 0.0f;
-        float divide = 0.0f;
+        float MAE = 0.0f;
+        float norm = 0.0f;
     
-        for (int i = 0; i < pointsNaive.size(); i++)
+        for (int i = 0; i < points_naive.size(); i++)
         {
-            TsnePoint2D pointNaive = pointsNaive[pointsNaiveIndexTracker[i]];
-            TsnePoint2D pointApproximate = pointsApproximate[pointsApproximateIndexTracker[i]];
+            TsnePoint2D pointNaive = points_naive[points_naive_indices[i]];
+            TsnePoint2D pointApprox = points_approx[points_approx_indices[i]];
 
-            NMAE += powf(glm::length(pointNaive.derivative - pointApproximate.derivative), 1.0f);
-            divide += powf(glm::length(pointNaive.derivative), 1.0f);
+            MAE += glm::length(pointNaive.derivative - pointApprox.derivative);
+            norm += glm::length(pointNaive.derivative);
         }
     
-        float NMSE = NMAE / divide;
-        return NMSE;
+        float NMAE = MAE / norm;
+        return NMAE;
     }
     
     template <typename T, typename I>

@@ -16,16 +16,16 @@ template <typename T>
 class NBodySolverNaive : public NBodySolver<T>
 {
 public:
-    std::function<void(float&, T&, T&)> kernel;
+    std::function<void(double&, T&, T&)> kernel;
 
     NBodySolverNaive() {}
 
-    NBodySolverNaive(std::function<void(float&, T&, T&)> initKernel)
+    NBodySolverNaive(std::function<void(double&, T&, T&)> initKernel)
     {
         kernel = initKernel;
     }
 
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         total = 0.0f;
 
@@ -54,7 +54,7 @@ private:
 
 };
 
-void TSNEnaiveKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEnaiveKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff);
@@ -64,15 +64,3 @@ void TSNEnaiveKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePo
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }
-
-//void GRAVITYnaiveKernel(float* accumulator, std::vector<Particle2D>* embeddedPoints, int i, int j, std::vector<glm::vec2>* forces)
-//{
-//    float softening = 0.1f; // should be 1.0f for t-SNE
-//
-//    glm::vec2 diff = (*embeddedPoints)[j].position - (*embeddedPoints)[i].position;
-//    float distance = glm::length(diff);
-//
-//    float oneOverDistance = 1.0f / (softening + distance);
-//
-//    (*forces)[i] += oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//}

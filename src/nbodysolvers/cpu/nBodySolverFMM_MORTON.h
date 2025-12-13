@@ -35,19 +35,19 @@ public:
     std::vector<unsigned int> levelSize;
     std::vector<unsigned int> levelGridWidth;
 
-    std::function<void(float&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> kernelNN;
-    std::function<void(float&, T&, NodeFMM_MORTON_2D&)> kernelPN;
-    std::function<void(float&, NodeFMM_MORTON_2D&, T&)> kernelNP;
-    std::function<void(float&, T&, T&)> kernelPP;
+    std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> kernelNN;
+    std::function<void(double&, T&, NodeFMM_MORTON_2D&)> kernelPN;
+    std::function<void(double&, NodeFMM_MORTON_2D&, T&)> kernelNP;
+    std::function<void(double&, T&, T&)> kernelPP;
 
     NBodySolverFMM_MORTON() {}
 
     NBodySolverFMM_MORTON
     (
-        std::function<void(float&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> initKernelNN,
-        std::function<void(float&, T&, NodeFMM_MORTON_2D&)> initKernelPN,
-        std::function<void(float&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
-        std::function<void(float&, T&, T&)> initKernelPP,
+        std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> initKernelNN,
+        std::function<void(double&, T&, NodeFMM_MORTON_2D&)> initKernelPN,
+        std::function<void(double&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
+        std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         unsigned int initTreeDepth,
         float initTheta
@@ -62,7 +62,7 @@ public:
         this->theta = initTheta;
     }
     
-    void solveNbody(float& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         traverseFMM(total, points, nodes[0], nodes[0], this->theta);
 
@@ -113,7 +113,7 @@ public:
     }
     
 private:   
-    void traverseFMM(float& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode, float theta)
+    void traverseFMM(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode, float theta)
     {
         glm::vec2 diff = sinkNode.centreOfMass - sourceNode.centreOfMass;
         float dist = glm::length(diff);
@@ -164,7 +164,7 @@ private:
 
     }
 
-    void traverseBHMP(float& total, std::vector<T>& points, T& sinkPoint, NodeFMM_MORTON_2D& sourceNode, float theta)
+    void traverseBHMP(double& total, std::vector<T>& points, T& sinkPoint, NodeFMM_MORTON_2D& sourceNode, float theta)
     {
         glm::vec2 diff = sinkPoint.position - sourceNode.centreOfMass;
         float dist = glm::length(diff);
@@ -199,7 +199,7 @@ private:
         }
     }
     
-    void traverseBHRMP(float& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, T& sourcePoint, float theta)
+    void traverseBHRMP(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, T& sourcePoint, float theta)
     {
         glm::vec2 diff = sinkNode.centreOfMass - sourcePoint.position;
         float dist = glm::length(diff);
@@ -507,7 +507,7 @@ private:
 
 
 
-void TSNEFMM_MORTONNNKernel(float& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
+void TSNEFMM_MORTONNNKernel(double& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
 {
     glm::vec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
     float r = glm::length(R);
@@ -578,7 +578,7 @@ void TSNEFMM_MORTONNNKernel(float& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_M
 }
 
 
-void TSNEFMM_MORTONPNKernel(float& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
+void TSNEFMM_MORTONPNKernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
 {
     glm::vec2 R = sinkPoint.position - sourceNode.centreOfMass;
     float r = glm::length(R);
@@ -609,7 +609,7 @@ void TSNEFMM_MORTONPNKernel(float& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON
 }
 
 
-void TSNEFMM_MORTONNPKernel(float& total, NodeFMM_MORTON_2D& sinkNode, TsnePoint2D& sourcePoint)
+void TSNEFMM_MORTONNPKernel(double& total, NodeFMM_MORTON_2D& sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 R = sinkNode.centreOfMass - sourcePoint.position;
     float r = glm::length(R);
@@ -669,7 +669,7 @@ void TSNEFMM_MORTONNPKernel(float& total, NodeFMM_MORTON_2D& sinkNode, TsnePoint
 }
 
 
-void TSNEFMM_MORTONPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEFMM_MORTONPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float dist = glm::length(diff); // no need for length, we can do squared euclidean distance instead
