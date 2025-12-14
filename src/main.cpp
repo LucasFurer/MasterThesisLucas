@@ -144,7 +144,7 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "BH";
+        tsne.nBodySelect = "FMM";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -233,7 +233,7 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 50, 1.0f);
+        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 50, 1.0f, 5);
         //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 5, 1.0f);
 
         //NBodyScenarios nBodyScenarios;

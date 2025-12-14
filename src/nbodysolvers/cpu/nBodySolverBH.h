@@ -59,7 +59,7 @@ private:
         glm::vec2 diff = point.position - node->centreOfMass;
 
 
-        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(diff) < theta)// && (glm::any(glm::lessThan(point.position, node->lowestCorner)) || glm::any(glm::greaterThan(point.position, node->highestCorner))))
+        if (l / glm::length(diff) < theta)// && (glm::any(glm::lessThan(point.position, node->lowestCorner)) || glm::any(glm::greaterThan(point.position, node->highestCorner))))
         {
 
             kernelPN(total, point, node);
@@ -94,10 +94,10 @@ private:
 void TSNEBHPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTree<TsnePoint2D>* sourceNode)
 {
     glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
-    float dist = glm::length(diff);
+    float sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += sourceNode->totalMass * forceDecay;
+    float forceDecay = 1.0f / (1.0f + sq_dist);
+    total += static_cast<double>(sourceNode->totalMass * forceDecay);
 
     sinkPoint.derivative += sourceNode->totalMass * forceDecay * forceDecay * diff;
 }
@@ -105,10 +105,10 @@ void TSNEBHPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTree<TsnePoint2D>
 void TSNEBHPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float dist = glm::length(diff);
+    float sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += forceDecay;
+    float forceDecay = 1.0f / (1.0f + sq_dist);
+    total += static_cast<double>(forceDecay);
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

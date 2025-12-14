@@ -198,6 +198,8 @@ public:
 
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
+        //std::cout << "solving PM with grid width: " << min_num_intervals << std::endl;
+
         for (int i = 0; i < points.size(); i++)
             indexTracker[points[i].ID] = i;
 
@@ -928,13 +930,13 @@ private:
         {
             neg_f[i * 2 + 0] = (xs[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 1]) / sum_Q;
             neg_f[i * 2 + 1] = (ys[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 2]) / sum_Q;
-            //neg_f[i * 2 + 0] = (xs[i] * potentialsQij[i * n_terms] * potentialsQij[i * n_terms]) / sum_Q;
-            //neg_f[i * 2 + 1] = (ys[i] * potentialsQij[i * n_terms] * potentialsQij[i * n_terms]) / sum_Q;
 
-            dC[i * 2 + 0] = pos_f[i * 2] - neg_f[i * 2];
-            dC[i * 2 + 1] = pos_f[i * 2 + 1] - neg_f[i * 2 + 1];
+            dC[i * 2 + 0] = 4.0f * (pos_f[i * 2] - neg_f[i * 2]);
+            dC[i * 2 + 1] = 4.0f * (pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
             //dC[i * 2 + 0] = - neg_f[i * 2];
             //dC[i * 2 + 1] = - neg_f[i * 2 + 1];
+            //dC[i * 2 + 0] = -4.0f * pos_f[i * 2];
+            //dC[i * 2 + 1] = -4.0f * pos_f[i * 2 + 1];
         }
 
         delete[] pos_f;

@@ -60,7 +60,7 @@ void TSNEnaiveKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourceP
     float dist = glm::length(diff);
 
     float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += forceDecay;
+    total += static_cast<double>(forceDecay);
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

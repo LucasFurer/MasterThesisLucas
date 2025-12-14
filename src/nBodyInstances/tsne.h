@@ -178,8 +178,8 @@ public:
         //nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         //nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_SYM_MORTONNNKernel, &TSNEFMM_SYM_MORTONPNKernel, &TSNEFMM_SYM_MORTONNPKernel, &TSNEFMM_SYM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
         //nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-        //nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.1, 40);
-        //nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
+        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.1, 5);
+        nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
 
 
         embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);
@@ -296,7 +296,7 @@ public:
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
         //nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         //nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-        //nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
+        nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
 
 
         embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1, GL_DYNAMIC_DRAW);

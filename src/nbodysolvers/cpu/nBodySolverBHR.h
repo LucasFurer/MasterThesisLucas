@@ -63,7 +63,7 @@ private:
         glm::vec2 diff = point.position - node->centreOfMass;
 
         
-        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
 
             kernelNP(total, node, point);
@@ -73,7 +73,7 @@ private:
         {
             for (int i : node->occupants)
             {
-                if (!glm::all(glm::equal((*node->allParticles)[i].position, point.position)))
+                if ((*node->allParticles)[i].ID != point.ID)
                 {
 
                     kernelPP(total, (*node->allParticles)[i], point);
@@ -124,10 +124,10 @@ private:
 void TSNEBHRNPKernel(double& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
-    float dist = glm::length(diff);
+    float sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = (1.0f / (1.0f + (dist * dist)));
-    total += sinkNode->totalMass * forceDecay;
+    float forceDecay = 1.0f / (1.0f + sq_dist);
+    total += static_cast<double>(sinkNode->totalMass * forceDecay);
 
     sinkNode->acceleration += forceDecay * forceDecay * diff;
 }
@@ -135,35 +135,10 @@ void TSNEBHRNPKernel(double& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkN
 void TSNEBHRPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float dist = glm::length(diff);
+    float sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += 1.0f * forceDecay;
+    float forceDecay = 1.0f / (1.0f + sq_dist);
+    total += static_cast<double>(forceDecay);
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }
-
-
-//glm::vec2 GRAVITYbarnesHutReverseParticleNodeKernal(float* accumulator, Particle2D i, QuadTreeBarnesHutReverse<Particle2D>* j)
-//{
-//    float softening = 0.1f;
-//
-//    glm::vec2 nodeDiff = j->centreOfMass - i.position;
-//    float distance = glm::length(nodeDiff);
-//
-//    float oneOverDistance = (1.0f / (softening + distance));
-//    
-//    return -i.mass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
-//}
-//
-//glm::vec2 GRAVITYbarnesHutReverseParticleParticleKernal(float* accumulator, Particle2D i, Particle2D j)
-//{
-//    float softening = 0.1f;
-//
-//    glm::vec2 diff = j.position - i.position;
-//    float distance = glm::length(diff);
-//
-//    float oneOverDistance = 1.0f / (softening + distance);
-//
-//    return -i.mass * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//}
