@@ -24,13 +24,10 @@ public:
 	virtual std::vector<VertexPos2Col3> getNodesBufferData(int level) = 0;
 
 
-	virtual ~NBodySolver()
-	{
-		//delete boxBuffer; // eurhmmmm will opengl complain on linux when i delete the dynamic buffers since the glfw context might be destroyed before the destructor is called leading to the opengl attributes not being able to be cleaned up properly
-	}
+	virtual ~NBodySolver() = default;
 
-	void cleanup()
-	{
-		//boxBuffer->cleanup();
-	}
+	//void cleanup()
+	//{
+	//	//boxBuffer->cleanup();
+	//}
 };

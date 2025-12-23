@@ -1,3 +1,61 @@
+/*
+ *
+ * Copyright (c) 2014, Laurens van der Maaten (Delft University of Technology)
+ * All rights reserved.
+ * (for code that originates from tsne.cpp)
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *    This product includes software developed by the Delft University of Technology.
+ * 4. Neither the name of the Delft University of Technology nor the names of
+ *    its contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY LAURENS VAN DER MAATEN ''AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL LAURENS VAN DER MAATEN BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ */
+
+/*
+* Copyright(c)[2019][George Linderman]
+* (for code that originates from nbodyfft.cpp)
+* 
+* MIT License
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
 #pragma once
 
 #include <functional>
@@ -35,25 +93,36 @@ template <typename T>
 class NBodySolverPM : public NBodySolver<T>
 {
 public:
-    unsigned int* inp_row_P = nullptr; // row val of sparse matrix
-    unsigned int* inp_col_P = nullptr; // col val of sparse matrix
-    double* inp_val_P = nullptr; // scalar val of sparse matrix
+    unsigned int* C_inp_row_P = nullptr; // row val of sparse matrix
+    unsigned int* C_inp_col_P = nullptr; // col val of sparse matrix
+    double* C_inp_val_P = nullptr; // scalar val of sparse matrix
 
-    double* Y = nullptr; // embedded position array
-    int N = 0; // number of points
-    int D = 2; // dimensionality of points
+    double* C_Y = nullptr; // embedded position array
+    int C_N = 0; // number of points
+    int C_D = 2; // dimensionality of points
 
-    double* dC = nullptr; // derivative array
-    int n_interpolation_points = 0; // how many interpolation points per box, typically is 4
-    double intervals_per_integer = 0.0; // desired side length of the boxes
-    int min_num_intervals = 0; // minimun amount of boxes per dim
+    double* C_dC = nullptr; // derivative array
+    int C_n_interpolation_points = 0; // how many interpolation points per box, typically is 4
+    double C_intervals_per_integer = 0.0; // desired side length of the boxes
+    int C_min_num_intervals = 0; // minimun amount of boxes per dim
 
-    unsigned int nthreads = 1u; // number of threads used
+    unsigned int C_nthreads = 1u; // number of threads used
 
-    std::vector<glm::vec2> vec_box_lower_bounds;
-    std::vector<glm::vec2> vec_box_upper_bounds;
+    std::vector<glm::vec2> C_vec_box_lower_bounds;
+    std::vector<glm::vec2> C_vec_box_upper_bounds;
 
-    NBodySolverPM() {}
+    NBodySolverPM() : 
+        C_N(0), 
+        C_D(2), 
+        C_nthreads(1u),
+        C_n_interpolation_points(0),
+        C_intervals_per_integer(0.0),
+        C_min_num_intervals(0),
+        C_inp_row_P(nullptr), 
+        C_inp_col_P(nullptr),
+        C_inp_val_P(nullptr), 
+        C_Y(nullptr), 
+        C_dC(nullptr) {}
 
     NBodySolverPM
     (
@@ -64,11 +133,13 @@ public:
         int init_min_num_intervals
     )
     {
-        N = points.size();
+        C_nthreads = 1u;
 
-        inp_row_P = new unsigned int[N + 1];
-        inp_col_P = new unsigned int[Pmatrix.nonZeros()];
-        inp_val_P = new double[Pmatrix.nonZeros()];
+        C_N = points.size();
+
+        C_inp_row_P = new unsigned int[C_N + 1];
+        C_inp_col_P = new unsigned int[Pmatrix.nonZeros()];
+        C_inp_val_P = new double[Pmatrix.nonZeros()];
 
         int PmatrixCounter = 0;
 
@@ -94,111 +165,114 @@ public:
                     return a.col < b.col;
             }
         );
-        inp_row_P[0] = 0;
+        C_inp_row_P[0] = 0;
         int entryCounter = 0;
-        for (int r = 0; r < N; r++) // go over each row
+        for (int r = 0; r < C_N; r++) // go over each row
         {
             int amount_in_row = 0;
 
             while (entryCounter < Pmatrix.nonZeros() && sparse_matrix_COO[entryCounter].row == r)
             {
-                inp_col_P[entryCounter] = sparse_matrix_COO[entryCounter].col;
-                inp_val_P[entryCounter] = sparse_matrix_COO[entryCounter].val;
+                C_inp_col_P[entryCounter] = sparse_matrix_COO[entryCounter].col;
+                C_inp_val_P[entryCounter] = sparse_matrix_COO[entryCounter].val;
                 amount_in_row++;
                 entryCounter++;
             }
 
-            inp_row_P[r + 1] = inp_row_P[r] + amount_in_row;
+            C_inp_row_P[r + 1] = C_inp_row_P[r] + amount_in_row;
         }
 
-        Y = new double[N * 2];
-        dC = new double[N * 2];
-        for (int i = 0; i < N; i++)
+        C_Y = new double[C_N * 2];
+        C_dC = new double[C_N * 2];
+        for (int i = 0; i < C_N; i++)
         {
-            Y[i * 2 + 0] = points[i].position.x;
-            Y[i * 2 + 1] = points[i].position.y;
+            C_Y[i * 2 + 0] = points[i].position.x;
+            C_Y[i * 2 + 1] = points[i].position.y;
 
-            dC[i * 2 + 0] = 0.0;
-            dC[i * 2 + 1] = 0.0;
+            C_dC[i * 2 + 0] = 0.0;
+            C_dC[i * 2 + 1] = 0.0;
         }
 
-        n_interpolation_points = init_n_interpolation_points;
-        intervals_per_integer = init_intervals_per_integer;
-        min_num_intervals = init_min_num_intervals;
+        C_n_interpolation_points = init_n_interpolation_points;
+        C_intervals_per_integer = init_intervals_per_integer;
+        C_min_num_intervals = init_min_num_intervals;
     }
 
     NBodySolverPM(const NBodySolverPM& other) // copy constructor
     {
-        N = other.N;
-        D = other.D;
-        nthreads = other.nthreads;
-        n_interpolation_points = other.n_interpolation_points;
-        intervals_per_integer = other.intervals_per_integer;
-        min_num_intervals = other.min_num_intervals;
+        C_N = other.C_N;
+        C_D = other.C_D;
+        C_nthreads = other.C_nthreads;
+        C_n_interpolation_points = other.C_n_interpolation_points;
+        C_intervals_per_integer = other.C_intervals_per_integer;
+        C_min_num_intervals = other.C_min_num_intervals;
 
-        inp_row_P = new unsigned int[N + 1];
-        std::copy(other.inp_row_P, other.inp_row_P + other.N + 1, inp_row_P);
+        C_inp_row_P = new unsigned int[C_N + 1];
+        std::copy(other.C_inp_row_P, other.C_inp_row_P + other.C_N + 1, C_inp_row_P);
 
-        inp_col_P = new unsigned int[inp_row_P[N]];
-        std::copy(other.inp_col_P, other.inp_col_P + other.inp_row_P[other.N], inp_col_P);
-        inp_val_P = new double[inp_row_P[N]];
-        std::copy(other.inp_val_P, other.inp_val_P + other.inp_row_P[other.N], inp_val_P);
+        C_inp_col_P = new unsigned int[C_inp_row_P[C_N]];
+        std::copy(other.C_inp_col_P, other.C_inp_col_P + other.C_inp_row_P[other.C_N], C_inp_col_P);
+        C_inp_val_P = new double[C_inp_row_P[C_N]];
+        std::copy(other.C_inp_val_P, other.C_inp_val_P + other.C_inp_row_P[other.C_N], C_inp_val_P);
 
-        Y = new double[N * 2];
-        std::copy(other.Y, other.Y + 2 * other.N, Y);
-        dC = new double[N * 2];
-        std::copy(other.dC, other.dC + 2 * other.N, dC);
+        C_Y = new double[C_N * 2];
+        std::copy(other.C_Y, other.C_Y + 2 * other.C_N, C_Y);
+        C_dC = new double[C_N * 2];
+        std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
     }
 
     NBodySolverPM& operator=(const NBodySolverPM& other) // copy assignment operator
     {
         if (this != &other) // self-assignment check
         {
-            delete[] inp_row_P;
-            delete[] inp_col_P;
-            delete[] inp_val_P;
+            delete[] C_inp_row_P;
+            delete[] C_inp_col_P;
+            delete[] C_inp_val_P;
 
-            delete[] Y;
+            delete[] C_Y;
 
-            delete[] dC;
+            delete[] C_dC;
 
-            N = other.N;
-            D = other.D;
-            nthreads = other.nthreads;
-            n_interpolation_points = other.n_interpolation_points;
-            intervals_per_integer = other.intervals_per_integer;
-            min_num_intervals = other.min_num_intervals;
+            C_N = other.C_N;
+            C_D = other.C_D;
+            C_nthreads = other.C_nthreads;
+            C_n_interpolation_points = other.C_n_interpolation_points;
+            C_intervals_per_integer = other.C_intervals_per_integer;
+            C_min_num_intervals = other.C_min_num_intervals;
 
-            inp_row_P = new unsigned int[N + 1];
-            std::copy(other.inp_row_P, other.inp_row_P + other.N + 1, inp_row_P);
+            C_inp_row_P = new unsigned int[C_N + 1];
+            std::copy(other.C_inp_row_P, other.C_inp_row_P + other.C_N + 1, C_inp_row_P);
 
-            inp_col_P = new unsigned int[inp_row_P[N]];
-            std::copy(other.inp_col_P, other.inp_col_P + other.inp_row_P[other.N], inp_col_P);
-            inp_val_P = new double[inp_row_P[N]];
-            std::copy(other.inp_val_P, other.inp_val_P + other.inp_row_P[other.N], inp_val_P);
+            C_inp_col_P = new unsigned int[C_inp_row_P[C_N]];
+            std::copy(other.C_inp_col_P, other.C_inp_col_P + other.C_inp_row_P[other.C_N], C_inp_col_P);
+            C_inp_val_P = new double[C_inp_row_P[C_N]];
+            std::copy(other.C_inp_val_P, other.C_inp_val_P + other.C_inp_row_P[other.C_N], C_inp_val_P);
 
-            Y = new double[N * 2];
-            std::copy(other.Y, other.Y + 2 * other.N, Y);
-            dC = new double[N * 2];
-            std::copy(other.dC, other.dC + 2 * other.N, dC);
+            C_Y = new double[C_N * 2];
+            std::copy(other.C_Y, other.C_Y + 2 * other.C_N, C_Y);
+            C_dC = new double[C_N * 2];
+            std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
         }
         return *this;
     }
 
     ~NBodySolverPM()
     {
-        delete[] inp_row_P;
-        delete[] inp_col_P;
-        delete[] inp_val_P;
+        delete[] C_inp_row_P;
+        delete[] C_inp_col_P;
+        delete[] C_inp_val_P;
 
-        delete[] Y;
+        delete[] C_Y;
 
-        delete[] dC;
+        delete[] C_dC;
     }
 
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         //std::cout << "solving PM with grid width: " << min_num_intervals << std::endl;
+        //C_N = points.size();
+        if (C_N != points.size())
+            std::cout << "C_N: " << C_N << std::endl;
 
         for (int i = 0; i < points.size(); i++)
             indexTracker[points[i].ID] = i;
@@ -206,33 +280,33 @@ public:
         for (int i = 0; i < points.size(); i++)
         {
             int tracketIndex = indexTracker[i];
-            Y[2 * i + 0] = points[tracketIndex].position.x;
-            Y[2 * i + 1] = points[tracketIndex].position.y;
+            C_Y[2 * i + 0] = points[tracketIndex].position.x;
+            C_Y[2 * i + 1] = points[tracketIndex].position.y;
         }
 
         computeFftGradient
         (
             nullptr,
-            inp_row_P,
-            inp_col_P,
-            inp_val_P,
-            Y,
-            N,
-            D,
-            dC,
-            n_interpolation_points,
-            intervals_per_integer,
-            min_num_intervals,
-            nthreads
+            C_inp_row_P,
+            C_inp_col_P,
+            C_inp_val_P,
+            C_Y,
+            C_N,
+            C_D,
+            C_dC,
+            C_n_interpolation_points,
+            C_intervals_per_integer,
+            C_min_num_intervals,
+            C_nthreads
         );
 
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < C_N; i++)
         {
             int tracketIndex = indexTracker[i];
             points[tracketIndex].derivative = -glm::vec2
             (
-                dC[2 * i + 0],
-                dC[2 * i + 1]
+                C_dC[2 * i + 0],
+                C_dC[2 * i + 1]
             );
         }
     }
@@ -248,10 +322,10 @@ public:
 
         if (nodeLevelToShow != 0)
         {
-            for (int i = 0; i < vec_box_lower_bounds.size(); i++)
+            for (int i = 0; i < C_vec_box_lower_bounds.size(); i++)
             {
-                glm::vec2 lower = vec_box_lower_bounds[i];
-                glm::vec2 upper = vec_box_upper_bounds[i];
+                glm::vec2 lower = C_vec_box_lower_bounds[i];
+                glm::vec2 upper = C_vec_box_upper_bounds[i];
                 glm::vec2 xlyu = glm::vec2(lower.x, upper.y);
                 glm::vec2 xuyl = glm::vec2(upper.x, lower.y);
 
@@ -691,7 +765,9 @@ private:
         int min_num_intervals,
         unsigned int nthreads)
     {
-
+        //fftw_init_threads();
+        //fftw_plan_with_nthreads(1);
+        // std::cout << "fftw_planner_nthreads(void): " << fftw_planner_nthreads() << std::endl;
         // P
         // inp_row_P
         // inp_col_P
@@ -745,22 +821,23 @@ private:
 
         // Compute the number of boxes in a single dimension and the total number of boxes in 2d
         //auto n_boxes_per_dim = static_cast<int>(fmax(min_num_intervals, (max_coord - min_coord) / intervals_per_integer));
-        auto n_boxes_per_dim = static_cast<int>(min_num_intervals);
+        //auto n_boxes_per_dim = static_cast<int>(min_num_intervals);
+        auto n_boxes_per_dim = static_cast<int>((max_coord - min_coord) / intervals_per_integer);
 
 
         // FFTW works faster on numbers that can be written as  2^a 3^b 5^c 7^d
         // 11^e 13^f, where e+f is either 0 or 1, and the other exponents are
         // arbitrary
-        int allowed_n_boxes_per_dim[20] = { 25,36, 50, 55, 60, 65, 70, 75, 80, 85, 90, 96, 100, 110, 120, 130, 140,150, 175, 200 };
-        if (n_boxes_per_dim < allowed_n_boxes_per_dim[19])
-        {
-            //Round up to nearest grid point
-            int chosen_i;
-            for (chosen_i = 0; allowed_n_boxes_per_dim[chosen_i] < n_boxes_per_dim; chosen_i++);
-            n_boxes_per_dim = allowed_n_boxes_per_dim[chosen_i];
-        }
+        //int allowed_n_boxes_per_dim[20] = { 25,36, 50, 55, 60, 65, 70, 75, 80, 85, 90, 96, 100, 110, 120, 130, 140,150, 175, 200 };
+        //if (n_boxes_per_dim < allowed_n_boxes_per_dim[19])
+        //{
+        //    //Round up to nearest grid point
+        //    int chosen_i;
+        //    for (chosen_i = 0; allowed_n_boxes_per_dim[chosen_i] < n_boxes_per_dim; chosen_i++);
+        //    n_boxes_per_dim = allowed_n_boxes_per_dim[chosen_i];
+        //}
 
-        n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
+        //n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
 
         int n_boxes = n_boxes_per_dim * n_boxes_per_dim;
 
@@ -781,18 +858,18 @@ private:
         n_body_fft_2d(N, n_terms, xs, ys, chargesQij, n_boxes_per_dim, n_interpolation_points, box_lower_bounds,
             box_upper_bounds, y_tilde_spacings, fft_kernel_tilde, potentialsQij, nthreads);
 
-        vec_box_lower_bounds.clear();
-        vec_box_lower_bounds.resize(n_boxes);
-        vec_box_upper_bounds.clear();
-        vec_box_upper_bounds.resize(n_boxes);
+        C_vec_box_lower_bounds.clear();
+        C_vec_box_lower_bounds.resize(n_boxes);
+        C_vec_box_upper_bounds.clear();
+        C_vec_box_upper_bounds.resize(n_boxes);
         for (int i = 0; i < n_boxes; i++)
         {
-            vec_box_lower_bounds[i] = glm::vec2
+            C_vec_box_lower_bounds[i] = glm::vec2
             (
                 box_lower_bounds[i],
                 box_lower_bounds[n_boxes + i]
             );
-            vec_box_upper_bounds[i] = glm::vec2
+            C_vec_box_upper_bounds[i] = glm::vec2
             (
                 box_upper_bounds[i],
                 box_upper_bounds[n_boxes + i]
@@ -933,10 +1010,6 @@ private:
 
             dC[i * 2 + 0] = 4.0f * (pos_f[i * 2] - neg_f[i * 2]);
             dC[i * 2 + 1] = 4.0f * (pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
-            //dC[i * 2 + 0] = - neg_f[i * 2];
-            //dC[i * 2 + 1] = - neg_f[i * 2 + 1];
-            //dC[i * 2 + 0] = -4.0f * pos_f[i * 2];
-            //dC[i * 2 + 1] = -4.0f * pos_f[i * 2 + 1];
         }
 
         delete[] pos_f;

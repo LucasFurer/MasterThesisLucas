@@ -25,6 +25,7 @@
 #include "../../particles/morton_point.h"
 
 
+
 template <typename T>
 class NBodySolverFMM_SYM_MORTON : public NBodySolver<T>
 {
@@ -37,8 +38,13 @@ public:
 
     std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> kernelNN;
     std::function<void(double&, T&, NodeFMM_MORTON_2D&)> kernelPN;
-    std::function<void(double&, NodeFMM_MORTON_2D&, T&)> kernelNP;
+    //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> kernelNP;
     std::function<void(double&, T&, T&)> kernelPP;
+
+    std::vector<std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>> interaction_NN_stack;
+    std::vector<std::pair<T, NodeFMM_MORTON_2D>> interaction_PN_stack;
+
+    int pp_count = 0;
 
     NBodySolverFMM_SYM_MORTON() {}
 
@@ -46,7 +52,7 @@ public:
     (
         std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> initKernelNN,
         std::function<void(double&, T&, NodeFMM_MORTON_2D&)> initKernelPN,
-        std::function<void(double&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
+        //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
         std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         unsigned int initTreeDepth,
@@ -55,7 +61,7 @@ public:
     {
         kernelNN = initKernelNN;
         kernelPN = initKernelPN;
-        kernelNP = initKernelNP;
+        //kernelNP = initKernelNP;
         kernelPP = initKernelPP;
         this->maxChildren = initMaxChildren;
         initNodesSize(initTreeDepth);
@@ -64,9 +70,17 @@ public:
 
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
-        traverseFMM(total, points, nodes[0], nodes[0], this->theta);
+        pp_count = 0;
 
+        std::cout << "starting traverse FMM\n";
+        traverse_SYM_NN(total, points, nodes[0], nodes[0], this->theta);
+        std::cout << "starting divide by mass\n";
+        divide_by_mass();
+        std::cout << "starting apply forces\n";
         applyForces(points, nodes[0]);
+        std::cout << "done\n";
+
+        std::cout << "PP_count: " << pp_count << std::endl;
     }
 
     void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
@@ -113,126 +127,145 @@ public:
     }
 
 private:
-    void traverseFMM(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode, float theta)
+    void traverse_SYM_NN(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& node_A, NodeFMM_MORTON_2D& node_B, float theta)
     {
-        glm::vec2 diff = sinkNode.centreOfMass - sourceNode.centreOfMass;
-        float dist = glm::length(diff);
+        //interaction_NN_stack.clear();
+        //interaction_NN_stack.push_back(std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>{node_A, node_B});
 
-        if ((sinkNode.BBlength + sourceNode.BBlength) / dist < theta)
-        {
-            if (sinkNode.particleIndexAmount != 0 && sourceNode.particleIndexAmount != 0)
+        //while (interaction_NN_stack.size() != 0)
+        //{
+        //    std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D> cur_pair = interaction_NN_stack.back();
+        //    interaction_NN_stack.pop_back();
+            std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D> cur_pair = std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>{ node_A, node_B };
+            
+
+            glm::vec2 diff = cur_pair.first.centreOfMass - cur_pair.second.centreOfMass;
+            float dist = glm::length(diff);
+
+            if ((cur_pair.first.BBlength + cur_pair.second.BBlength) / dist < theta) // sym node node
             {
+                std::cout << "not possible" << std::endl;
 
-                kernelNN(total, sinkNode, sourceNode);
-
-            }
-        }
-        else if (sinkNode.firstChildIndex == 0)
-        {
-
-            for (int sinkNodePointIndex = sinkNode.firstParticleIndex; sinkNodePointIndex < sinkNode.firstParticleIndex + sinkNode.particleIndexAmount; sinkNodePointIndex++)
-            {
-
-                if (sourceNode.particleIndexAmount != 0)
-                    traverseBHMP(total, points, points[sinkNodePointIndex], sourceNode, theta);
-
-            }
-        }
-        else if (sourceNode.firstChildIndex == 0)
-        {
-            for (int sourceNodePointIndex = sourceNode.firstParticleIndex; sourceNodePointIndex < sourceNode.firstParticleIndex + sourceNode.particleIndexAmount; sourceNodePointIndex++)
-            {
-
-                if (sinkNode.particleIndexAmount != 0)
-                    traverseBHRMP(total, points, sinkNode, points[sourceNodePointIndex], theta);
-
-            }
-        }
-        else
-        {
-            for (int sinkNodeChildIndex = sinkNode.firstChildIndex; sinkNodeChildIndex < sinkNode.firstChildIndex + 4; sinkNodeChildIndex++)
-            {
-                for (int sourceNodeChildIndex = sourceNode.firstChildIndex; sourceNodeChildIndex < sourceNode.firstChildIndex + 4; sourceNodeChildIndex++)
+                if (cur_pair.first.particleIndexAmount != 0 && cur_pair.second.particleIndexAmount != 0)
                 {
 
-                    if (nodes[sinkNodeChildIndex].particleIndexAmount != 0 && nodes[sourceNodeChildIndex].particleIndexAmount != 0)
-                        traverseFMM(total, points, nodes[sinkNodeChildIndex], nodes[sourceNodeChildIndex], theta);
+                    kernelNN(total, cur_pair.first, cur_pair.second);
 
                 }
             }
-        }
+            else if (cur_pair.first.firstChildIndex == 0) // traverse for each point in first
+            {
+                for (int firstNodePointIndex = cur_pair.first.firstParticleIndex; firstNodePointIndex < cur_pair.first.firstParticleIndex + cur_pair.first.particleIndexAmount; firstNodePointIndex++)
+                {
 
+                    if (cur_pair.second.particleIndexAmount != 0)
+                        traverse_SYM_PN(total, points, points[firstNodePointIndex], cur_pair.second, theta);//, &cur_pair.first == &cur_pair.second);
+
+                }
+            }
+            else if (cur_pair.second.firstChildIndex == 0) // traverse for each point in second
+            {
+                for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+                {
+                    
+                    if (cur_pair.first.particleIndexAmount != 0)
+                        traverse_SYM_PN(total, points, points[secondNodePointIndex], cur_pair.first, theta);
+
+                }
+            }
+            else // traverse for each node in first and second
+            {
+                if (&cur_pair.first == &cur_pair.second) // if nodes from interaction pair are the same then dont add duplicates
+                {
+                    for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                    {
+                        for (int secondNodeChildIndex = firstNodeChildIndex; secondNodeChildIndex < cur_pair.first.firstChildIndex + 4; secondNodeChildIndex++)
+                        {
+
+                            if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
+                                traverse_SYM_NN(total, points, nodes[firstNodeChildIndex], nodes[secondNodeChildIndex], theta);
+                                //interaction_NN_stack.push_back(std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>{nodes[firstNodeChildIndex], nodes[secondNodeChildIndex]});
+
+                        }
+                    }
+                }
+                else // if nodes from interaction pair are the NOT same then add all combinations
+                {
+                    for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                    {
+                        for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
+                        {
+
+                            if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
+                                traverse_SYM_NN(total, points, nodes[firstNodeChildIndex], nodes[secondNodeChildIndex], theta);
+                                //interaction_NN_stack.push_back(std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>{nodes[firstNodeChildIndex], nodes[secondNodeChildIndex]});
+
+                        }
+                    }
+                }
+            }
+
+        //}
     }
 
-    void traverseBHMP(double& total, std::vector<T>& points, T& sinkPoint, NodeFMM_MORTON_2D& sourceNode, float theta)
+    void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, NodeFMM_MORTON_2D& secondNode, float theta)
     {
-        glm::vec2 diff = sinkPoint.position - sourceNode.centreOfMass;
-        float dist = glm::length(diff);
+        //interaction_PN_stack.clear();
+        //interaction_PN_stack.push_back(std::pair<T, NodeFMM_MORTON_2D>{firstPoint, secondNode});
 
-        if (sourceNode.BBlength / dist < theta)
-        {
+        //while (interaction_PN_stack.size() != 0)
+        //{
+        //    std::pair<T, NodeFMM_MORTON_2D> cur_pair = interaction_PN_stack.back();
+        //    interaction_PN_stack.pop_back();
 
-            kernelPN(total, sinkPoint, sourceNode);
+            std::pair<T, NodeFMM_MORTON_2D> cur_pair = std::pair<T, NodeFMM_MORTON_2D>{ firstPoint, secondNode };
 
-        }
-        else if (sourceNode.firstChildIndex == 0)
-        {
-            for (int sourceNodePointIndex = sourceNode.firstParticleIndex; sourceNodePointIndex < sourceNode.firstParticleIndex + sourceNode.particleIndexAmount; sourceNodePointIndex++)
+            glm::vec2 diff = cur_pair.first.position - cur_pair.second.centreOfMass;
+            float dist = glm::length(diff);
+
+            if (cur_pair.second.BBlength / dist < theta) // sym point node
             {
-                if (points[sourceNodePointIndex].ID != sinkPoint.ID)
+                std::cout << "not possible" << std::endl;
+                kernelPN(total, cur_pair.first, cur_pair.second);
+
+            }
+            else if (cur_pair.second.firstChildIndex == 0) // sym point point
+            {
+                for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+                {
+                    if (points[secondNodePointIndex].ID != cur_pair.first.ID)
+                    {
+                        pp_count++;
+                        kernelPP(total, cur_pair.first, points[secondNodePointIndex]);
+
+                    }
+                }
+            }
+            else // traverse for each node in second
+            {
+                for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
                 {
 
-                    kernelPP(total, sinkPoint, points[sourceNodePointIndex]);
+                    if (nodes[secondNodeChildIndex].particleIndexAmount != 0)
+                        traverse_SYM_PN(total, points, firstPoint, nodes[secondNodeChildIndex], theta);
+                        //interaction_PN_stack.push_back(std::pair<T, NodeFMM_MORTON_2D>{cur_pair.first, nodes[secondNodeChildIndex]});
 
                 }
             }
-        }
-        else
-        {
-            for (int sourceNodeChildIndex = sourceNode.firstChildIndex; sourceNodeChildIndex < sourceNode.firstChildIndex + 4; sourceNodeChildIndex++)
-            {
-
-                if (nodes[sourceNodeChildIndex].particleIndexAmount != 0)
-                    traverseBHMP(total, points, sinkPoint, nodes[sourceNodeChildIndex], theta);
-
-            }
-        }
+        //}
     }
 
-    void traverseBHRMP(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& sinkNode, T& sourcePoint, float theta)
+    void divide_by_mass()
     {
-        glm::vec2 diff = sinkNode.centreOfMass - sourcePoint.position;
-        float dist = glm::length(diff);
-
-        if (sinkNode.BBlength / dist < theta)
+        for (int i = 0; i < nodes.size(); i++)
         {
-
-            kernelNP(total, sinkNode, sourcePoint);
-
-        }
-        else if (sinkNode.firstChildIndex == 0)
-        {
-            for (int sinkNodePointIndex = sinkNode.firstParticleIndex; sinkNodePointIndex < sinkNode.firstParticleIndex + sinkNode.particleIndexAmount; sinkNodePointIndex++)
+            if (nodes[i].M0 != 0.0f)
             {
-                if (points[sinkNodePointIndex].ID != sourcePoint.ID)
-                {
-
-                    kernelPP(total, points[sinkNodePointIndex], sourcePoint);
-
-                }
+                nodes[i].C1 /= nodes[i].M0;
+                nodes[i].C2 /= nodes[i].M0;
+                nodes[i].C3 /= nodes[i].M0;
             }
         }
-        else
-        {
-            for (int sinkNodeChildIndex = sinkNode.firstChildIndex; sinkNodeChildIndex < sinkNode.firstChildIndex + 4; sinkNodeChildIndex++)
-            {
-
-                if (nodes[sinkNodeChildIndex].particleIndexAmount != 0)
-                    traverseBHRMP(total, points, nodes[sinkNodeChildIndex], sourcePoint, theta);
-
-            }
-        }
-
     }
 
     void initNodesSize(unsigned int initTreeDepth)
@@ -507,7 +540,7 @@ private:
 
 
 
-void TSNEFMM_SYM_MORTONNNKernel(double& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
+void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
 {
     glm::vec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
     float sq_r = R.x * R.x + R.y * R.y;
@@ -529,13 +562,13 @@ void TSNEFMM_SYM_MORTONNNKernel(double& total, NodeFMM_MORTON_2D& sinkNode, Node
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
     {
         {
             MB0 * (D1 + R.x * R.x * D2),
@@ -547,7 +580,7 @@ void TSNEFMM_SYM_MORTONNNKernel(double& total, NodeFMM_MORTON_2D& sinkNode, Node
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
     {
         {
             {
@@ -575,10 +608,37 @@ void TSNEFMM_SYM_MORTONNNKernel(double& total, NodeFMM_MORTON_2D& sinkNode, Node
     sinkNode.C1 += C1;
     sinkNode.C2 += C2;
     sinkNode.C3 += C3;
+
+    // second interaction
+
+    R = -R;
+    
+    total += static_cast<double>((sinkNode.M0 * sourceNode.M0) / rS);
+
+    MA0 = sourceNode.M0;
+    MB0 = sinkNode.M0;
+    MB2 = sinkNode.M2;
+    MB2Tilde = (1.0f / MB0) * MB2;
+
+    // calculate the C^m
+    MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+
+    C1 = MA0 * Fastor::Tensor<float, 2>
+    {
+        MB0 * (R.x* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+    };
+
+    sourceNode.C1 += C1;
+    sourceNode.C2 += C2;
+    sourceNode.C3 += -C3;
 }
 
 
-void TSNEFMM_SYM_MORTONPNKernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
+void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
 {
     glm::vec2 R = sinkPoint.position - sourceNode.centreOfMass;
     float sq_r = R.x * R.x + R.y * R.y;
@@ -589,6 +649,7 @@ void TSNEFMM_SYM_MORTONPNKernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_M
     float D3 = 24.0f / (rS * rS * rS * rS);
     total += static_cast<double>(sourceNode.M0 / rS);
 
+    float MA0 = 1.0f;
     float MB0 = sourceNode.M0;
     Fastor::Tensor<float, 2, 2> MB2 = sourceNode.M2;
     Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
@@ -599,35 +660,30 @@ void TSNEFMM_SYM_MORTONPNKernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_M
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
     sinkPoint.derivative += glm::vec2(C1(0), C1(1));
-}
 
+    // second interaction
 
-void TSNEFMM_SYM_MORTONNPKernel(double& total, NodeFMM_MORTON_2D& sinkNode, TsnePoint2D& sourcePoint)
-{
-    glm::vec2 R = sinkNode.centreOfMass - sourcePoint.position;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    R = -R;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
-    total += static_cast<double>(sinkNode.M0 / rS);
+    total += static_cast<double>(1.0f / rS);
 
+    MA0 = sourceNode.M0;
+    MB0 = 1.0f;
 
-    Fastor::Tensor<float, 2> C1 =
+    C1 = MA0 * Fastor::Tensor<float, 2>
     {
         (R.x * D1),
         (R.y * D1)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
     {
         {
             (D1 + R.x * R.x * D2),
@@ -639,7 +695,7 @@ void TSNEFMM_SYM_MORTONNPKernel(double& total, NodeFMM_MORTON_2D& sinkNode, Tsne
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
     {
         {
             {
@@ -663,13 +719,13 @@ void TSNEFMM_SYM_MORTONNPKernel(double& total, NodeFMM_MORTON_2D& sinkNode, Tsne
         }
     };
 
-    sinkNode.C1 += C1;
-    sinkNode.C2 += C2;
-    sinkNode.C3 += C3;
+    sourceNode.C1 += C1;
+    sourceNode.C2 += C2;
+    sourceNode.C3 += C3;
 }
 
 
-void TSNEFMM_SYM_MORTONPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNE_FMM_SYM_MORTON_PP_Kernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     float sq_dist = diff.x * diff.x + diff.y * diff.y;
@@ -678,4 +734,12 @@ void TSNEFMM_SYM_MORTONPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint
     total += static_cast<double>(forceDecay);
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
+
+    // second interaction
+
+    diff = -diff;
+
+    total += static_cast<double>(forceDecay);
+
+    sourcePoint.derivative += forceDecay * forceDecay * diff;
 }

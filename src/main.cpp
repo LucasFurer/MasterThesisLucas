@@ -29,6 +29,7 @@
 #include "common.h"
 #include "codeData/data.h"
 #include "visualization/multipoleVis.h"
+#include "Timer.h"
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <iostream>
@@ -144,73 +145,19 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "FMM_SYM_MORTON";
+        //tsne.nBodySelect = "naive";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
         std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
-        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
         Scene tsneScene("tsne", &cameraTsne, tsneRenderables);
        
         scenes[tsneScene.sceneName] = &tsneScene;
-        //scenes.push_back(&tsneScene);
 
-        
-        // gravity --------------------------------------------------------------------------------------------------------------------------
-
-        //GravitySim gravitySim(10000); 
-        //
-        //glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-
-        //#ifdef _WIN32
-        //Shader shaderGravity("shaders/shaderPos2Dvel2Dcol3D.vs", "shaders/shaderPos2Dvel2Dcol3D.fs");
-        //#endif
-        //#ifdef linux
-        //Shader shaderGravity((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
-        //#endif
-
-        //gravitySim.nBodySelect = "FMM";
-        //Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
-        //Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        //Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
-        //std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines, gravityRenderableForces };
-
-        //TsneCamera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
-
-        //Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
-
-        //scenes[gravityScene.sceneName] = &gravityScene;
-
-
-        // gpu solver tests ------------------------------------------------------------------------------------------------------------
-
-        //TsneGpu tsneGpu;
-
-        ////tsneGpu.tests();
-        //
-        //glm::mat4 tsneGpuModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-        //
-        //#ifdef _WIN32
-        //Shader shaderTsneGpu("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
-        //#endif
-        //#ifdef linux
-        //Shader shaderTsneGpu((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
-        //#endif
-        //
-        //tsneGpu.nBodySelect = "naive";
-        //Renderable tsneGpuRenderablePoints(GL_POINTS, tsneGpuModel, tsneGpu.TsneParticlesBuffer, &shaderTsneGpu, nullptr);
-        //Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        //Renderable tsneGpuRenderableForces(GL_LINES, tsneGpuModel, tsneGpu.forceBuffer, &shaderLine2D, nullptr);
-        //std::vector<Renderable> tsneGpuRenderables{ tsneGpuRenderablePoints, tsneGpuRenderableLines, tsneGpuRenderableForces };
-
-        //TsneCamera cameraTsneGpu(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
-
-        //Scene tsneGpuScene("tsneGpu", &cameraTsneGpu, tsneGpuRenderables);
-       
-        //scenes[tsneGpuScene.sceneName] = &tsneGpuScene;
         
         // sceneNames --------------------------------------------------------------------------------------------------------------------------
 
@@ -233,8 +180,10 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 50, 1.0f, 5);
-        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 5, 1.0f);
+        tsne_test.errorTimestepTSNE("MNIST_digits", 1000, 30.0f, 200.0f, 100, 0.0f, 5, 1.0, 296343u);
+        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 6, 1.0f, 5, 1.0, 296343u);
+        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, 200.0f, 2, 0.1f, 20, 2.0f, 0.1f, 2.0, 296343u);
+        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 200.0f, 1, 0.1f, 20, 2.0f, 0.1f, 2.0f, 296343u);
 
         //NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);
@@ -381,7 +330,9 @@ int main(void)
                 ImGui::SliderInt("show tree level", &tsne.nodeLevelToShow, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
 
+
                 tsne.timeStep();
+
 
                 if (tsne.follow == 1)
                 {
@@ -396,36 +347,6 @@ int main(void)
                     //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
                 }
             }
-            //else if (currentSceneName == "gravity")
-            //{
-            //    ImGui::SliderFloat("sim speed", &gravitySim.timeStepsPerSec, 0.0f, 1000.0f);
-            //    ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
-            //    ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
-
-            //    gravitySim.timeStep();
-            //}
-            //else if (currentSceneName == "tsneGpu")
-            //{
-            //    if (per == 1)
-            //        scenes[currentSceneName]->camera->perspective = true;
-            //    else
-            //        scenes[currentSceneName]->camera->perspective = false;
-
-            //    ImGui::SliderFloat("sim speed", &tsneGpu.timeStepsPerSec, 0.0f, 1000.0f);
-            //    ImGui::SliderFloat("forceSize", &tsneGpu.forceSize, 0.0f, 200.0f);
-            //    //ImGui::SliderInt("show tree level", &tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->showLevel, -1, 10);
-            //    ImGui::SliderInt("follow embedded points", &tsneGpu.follow, 0, 1);
-
-            //    tsneGpu.timeStep();
-
-            //    if (tsneGpu.follow == 1)
-            //    {
-            //        auto [left, right, down, up] = tsneGpu.getEdges();
-            //        scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
-            //        scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-            //        //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
-            //    }
-            //}
             else
             {
                 std::cout << "no scene selected" << std::endl;
@@ -433,18 +354,8 @@ int main(void)
 
 
 
-
-
-
-
-
-
             scenes[currentSceneName]->Render();
             
-
-
-
-
 
 
             ImGui::End();

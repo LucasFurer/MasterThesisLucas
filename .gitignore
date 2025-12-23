@@ -6,6 +6,7 @@ Debug/
 graphCSV/
 outdated/
 plotOutput/
+precomputed_states/
 src/library_src/
 TSNEdataInput/
 .ipynb_checkpoints/

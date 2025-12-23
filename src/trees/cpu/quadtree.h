@@ -137,7 +137,7 @@ public:
 			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY),        glm::vec2(middleX, highestCorner.y))); }
 			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
 
-			occupants.clear();
+			//occupants.clear();
 
 			totalMass = 0.0f;
 			centreOfMass = glm::vec2(0.0f);

@@ -93,6 +93,8 @@ private:
 
 void TSNEBHPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTree<TsnePoint2D>* sourceNode)
 {
+    //std::cout << "im doing a PN interaction" << std::endl;
+
     glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
     float sq_dist = diff.x * diff.x + diff.y * diff.y;
 
