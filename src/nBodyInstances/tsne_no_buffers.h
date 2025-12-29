@@ -81,7 +81,7 @@ public:
 
     TSNE_no_buffers()
     {
-        int dataAmount = 70000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
@@ -342,7 +342,7 @@ public:
         accelerationRate = 0.8f;
         if (iteration_counter < 250)
         {
-            //accelerationRate = 0.5f;
+            accelerationRate = 0.5f;
         }
 
 #ifdef TIME_ALGORITHM 
@@ -354,7 +354,7 @@ public:
             int indexPrevPrev = indexTrackerPrev[i];
 
             embeddedPoints[indexPrev] = embeddedPointsPrev[indexPrev];
-            embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative;// +accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
+            embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative + accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
         }
 #ifdef TIME_ALGORITHM 
         time_update.endTimer("update positions");
@@ -409,6 +409,9 @@ public:
     {
         if (nBodySelect == "PM")
         {
+            NBodySolverPM<TsnePoint2D>* PMpointer = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(nBodySolvers["PM"]);
+            PMpointer->iteration_counter = iteration_counter;
+
             double QijTotal = 0.0f;
             nBodySolvers["PM"]->solveNbody(QijTotal, embeddedPoints, indexTracker);
         }
@@ -493,6 +496,8 @@ public:
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             embeddedPoints[i].derivative *= (4.0f / QijTotal);
+            //embeddedPoints[i].derivative.x = static_cast<float>((static_cast<double>(embeddedPoints[i].derivative.x) * (4.0 / QijTotal))); // hmm wait maybe convert to doubles first then back to float??
+            //embeddedPoints[i].derivative.y = static_cast<float>((static_cast<double>(embeddedPoints[i].derivative.y) * (4.0 / QijTotal)));
         }
     }
 
@@ -511,7 +516,7 @@ public:
                 float exageration = 1.0f;
                 if (iteration_counter < 250)
                 {
-                    //exageration = 4.0f;
+                    exageration = 4.0f;
                 }
 
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));

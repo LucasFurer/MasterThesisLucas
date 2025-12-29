@@ -27,13 +27,13 @@ public:
 
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
-        total = 0.0f;
+        total = 0.0;
 
         if (kernel)
         {
             for (int i = 0; i < points.size(); i++)
             {
-                for (int j = 0; j < points.size(); j++)
+                for (int j = 1; j < points.size(); j++)
                 {
                     if (i != j)
                     {
@@ -60,7 +60,8 @@ void TSNEnaiveKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourceP
     float dist = glm::length(diff);
 
     float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += static_cast<double>(forceDecay);
+    total += static_cast<double>(2.0f * forceDecay);
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
+    sourcePoint.derivative += forceDecay * forceDecay * -diff;
 }

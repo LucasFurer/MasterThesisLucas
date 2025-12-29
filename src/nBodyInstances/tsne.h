@@ -79,15 +79,18 @@ public:
 
     Timer thousand_iteration_timer; 
     bool reached_thousand_iterations = false;
+
+    float min_theta = 0.5f;
+    float max_theta = 2.0f;
     
 	TSNE()
 	{
-        int dataAmount = 1000;
+        int dataAmount = 70000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits";
         //std::string dataSet = "CIFAR10";
 
-        learnRate = 200.0f;
+        learnRate = static_cast<float>(dataAmount) / 12.0f;
 
         desired_iteration_per_second = 0.0f;
 
@@ -162,8 +165,8 @@ public:
         time_update_minmax.endTimer("tsne update minmax");
         #endif
 
-        float set_theta = 0.0f;
-        int max_children_per_node = 500;
+        float set_theta = 1.0f;
+        int max_children_per_node = 10;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -175,7 +178,7 @@ public:
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, set_theta);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.2, 5);
+        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 1.0f, 5);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -365,10 +368,12 @@ public:
         embeddedPointsPrev.swap(embeddedPointsPrevPrev);
         embeddedPoints.swap(embeddedPointsPrev);
 
+        thetaFunction();
+
         accelerationRate = 0.8f;
         if (iteration_counter < 250)
         {
-            //accelerationRate = 0.5f;
+            accelerationRate = 0.5f;
         }
 
         #ifdef TIME_ALGORITHM 
@@ -380,7 +385,7 @@ public:
             int indexPrevPrev = indexTrackerPrev[i];
 
             embeddedPoints[indexPrev] = embeddedPointsPrev[indexPrev];
-            embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative;// +accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
+            embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative + accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
         }
         #ifdef TIME_ALGORITHM 
         time_update.endTimer("update positions");
@@ -399,6 +404,18 @@ public:
         #endif
 
         iteration_counter++;
+    }
+
+    void thetaFunction()
+    {
+        float progress = 1.0f - std::min(static_cast<float>(iteration_counter) / 1000.0f, 1.0f);
+        float diff_theta = max_theta - min_theta;
+        diff_theta *= progress;
+        float theta_result = diff_theta + min_theta;
+
+        std::cout << "set theta to: " << theta_result << std::endl;
+
+        setThetaForAll(theta_result);
     }
 
     void setThetaForAll(float new_theta)
@@ -435,6 +452,9 @@ public:
     {
         if (nBodySelect == "PM")
         {
+            NBodySolverPM<TsnePoint2D>* PMpointer = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(nBodySolvers["PM"]);
+            PMpointer->iteration_counter = iteration_counter;
+
             double QijTotal = 0.0f;
             nBodySolvers["PM"]->solveNbody(QijTotal, embeddedPoints, indexTracker);
         }
@@ -464,52 +484,6 @@ public:
             embeddedPoint.derivative = glm::vec2(0.0f);
     }
 
-    //void checkError()
-    //{
-    //    float QijTotalNaive = 0.0f;
-    //    
-    //    nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
-    //
-    //
-    //    float QijTotalCompare = 0.0f;
-    //    nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-    //    float error1 = 0.0f;
-    //    for (int i = 0; i < embeddedPoints.size(); i++)
-    //    {
-    //        error1 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-    //    }
-    //    error1 /= embeddedPoints.size();
-    //    totalError1 += error1;
-    //    if (error1 > maxError1) { maxError1 = error1; }
-    //
-    //    QijTotalCompare = 0.0f;
-    //    nBodySolvers["FMM"]->theta = 1.0f;
-    //    nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-    //    float error2 = 0.0f;
-    //    for (int i = 0; i < embeddedPoints.size(); i++)
-    //    {
-    //        error2 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-    //    }
-    //    error2 /= embeddedPoints.size();
-    //    totalError2 += error2;
-    //    if (error2 > maxError2) { maxError2 = error2; }
-    //
-    //
-    //
-    //    std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
-    //    std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
-    //
-    //    std::cout << "max error1:                  " << maxError1 << std::endl;
-    //    std::cout << "max error2:                  " << maxError2 << std::endl;
-    //
-    //    std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
-    //    std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
-    //
-    //    std::cout << "global time step: " << globalTimeStep << std::endl;
-    //
-    //    std::cout << "------------------------------------------------------" << std::endl;
-    //}
-
     void updateRepulsive()
     {
         double QijTotal = 0.0f;
@@ -518,7 +492,7 @@ public:
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            embeddedPoints[i].derivative *= (4.0f / QijTotal);
+            embeddedPoints[i].derivative *= (4.0f / QijTotal); // hmm wait maybe convert to doubles first then back to float??
         }
     }
 
@@ -537,7 +511,7 @@ public:
                 float exageration = 1.0f;
                 if (iteration_counter < 250)
                 {
-                    //exageration = 4.0f;
+                    exageration = 4.0f;
                 }
 
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));

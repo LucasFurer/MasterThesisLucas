@@ -111,6 +111,8 @@ public:
     std::vector<glm::vec2> C_vec_box_lower_bounds;
     std::vector<glm::vec2> C_vec_box_upper_bounds;
 
+    int iteration_counter = 0;
+
     NBodySolverPM() : 
         C_N(0), 
         C_D(2), 
@@ -122,7 +124,8 @@ public:
         C_inp_col_P(nullptr),
         C_inp_val_P(nullptr), 
         C_Y(nullptr), 
-        C_dC(nullptr) {}
+        C_dC(nullptr),
+        iteration_counter(0) {}
 
     NBodySolverPM
     (
@@ -219,6 +222,8 @@ public:
         std::copy(other.C_Y, other.C_Y + 2 * other.C_N, C_Y);
         C_dC = new double[C_N * 2];
         std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
+
+        iteration_counter = other.iteration_counter;
     }
 
     NBodySolverPM& operator=(const NBodySolverPM& other) // copy assignment operator
@@ -252,6 +257,8 @@ public:
             std::copy(other.C_Y, other.C_Y + 2 * other.C_N, C_Y);
             C_dC = new double[C_N * 2];
             std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
+
+            iteration_counter = other.iteration_counter;
         }
         return *this;
     }
@@ -1008,8 +1015,9 @@ private:
             neg_f[i * 2 + 0] = (xs[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 1]) / sum_Q;
             neg_f[i * 2 + 1] = (ys[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 2]) / sum_Q;
 
-            dC[i * 2 + 0] = 4.0f * (pos_f[i * 2] - neg_f[i * 2]);
-            dC[i * 2 + 1] = 4.0f * (pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
+            float exageration = iteration_counter < 250 ? 4.0f : 1.0f;
+            dC[i * 2 + 0] = 4.0f * (exageration * pos_f[i * 2] - neg_f[i * 2]);
+            dC[i * 2 + 1] = 4.0f * (exageration * pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
         }
 
         delete[] pos_f;

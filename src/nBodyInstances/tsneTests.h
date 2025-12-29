@@ -47,7 +47,7 @@ public:
 
 	void errorTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, int iteration_amount, float theta, int PM_grid_width, double cell_size, unsigned int seed)
     {
-        TSNE tsne;
+        TSNE_no_buffers tsne;
         tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, theta, seed);
         NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
         PM->C_min_num_intervals = PM_grid_width;
@@ -257,7 +257,7 @@ public:
             float chosenTheta = ((float)t / (float)(theta_diversity_amount-1)) * theta_range + theta_start;
             //std::cout << "chosenTheta: " << chosenTheta << std::endl;
 
-            TSNE tsne;
+            TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
             PM->C_min_num_intervals = PM_grid_width;
