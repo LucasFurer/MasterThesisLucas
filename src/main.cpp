@@ -147,7 +147,9 @@ int main(void)
         
         tsne.nBodySelect = "FMM_SYM_MORTON";
         //tsne.nBodySelect = "FMM_MORTON";
+        //tsne.nBodySelect = "FMM";
         //tsne.nBodySelect = "PM";
+        //tsne.nBodySelect = "BH";
         //tsne.nBodySelect = "naive";
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
@@ -182,10 +184,10 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 400, 1.0f, 5, 1.0, 296343u);
-        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, 200.0f, 10, 0.3f, 6, 1.0f, 5, 1.0, 296343u);
-        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, 200.0f, 2, 0.1f, 20, 2.0f, 0.1f, 2.0, 296343u);
-        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 200.0f, 1, 0.0f, 20, 2.0f, 0.1f, 2.0f, 296343u);
+        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 1000, 0.5f, -1, 1.0f, 296343u);
+        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 10, 0.3f, 6, 1.0f, 5, 1.0, 296343u);
+        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 2, 0.1f, 20, 2.0f, 0.1f, 2.0, 296343u);
+        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 1, 0.0f, 20, 2.0f, 0.1f, 2.0f, 296343u);
 
         //NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);

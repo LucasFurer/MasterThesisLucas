@@ -45,7 +45,6 @@ public:
     std::vector<TsnePoint2D> embeddedPointsPrev;
     std::vector<TsnePoint2D> embeddedPointsPrevPrev;
 
-
     std::vector<int> indexTracker;
     std::vector<int> indexTrackerPrev;
 
@@ -55,10 +54,7 @@ public:
 
     int nodeLevelToShow = 0;
 
-
     float forceSize = 1.0f;
-
-
 
     std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolvers;
     std::string nBodySelect = "naive"; // default selector
@@ -68,8 +64,6 @@ public:
 
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
-    //std::vector<std::vector<float>> Qmatrix;
-    //float Qsum;
 
     float desired_iteration_per_second; // limits the speed of tsne
     float time_since_last_iteration;
@@ -79,33 +73,34 @@ public:
     Timer thousand_iteration_timer;
     bool reached_thousand_iterations = false;
 
+    //float min_theta = 0.5f;
+    float min_theta = 0.5f;
+    //float max_theta = 2.0f;
+    float max_theta = 0.5f;
+
     TSNE_no_buffers()
     {
-        int dataAmount = 10000;
+        int dataAmount = 1000;
         float perplexity = 30.0f;
-        std::string dataSet = "MNIST_digits";
-        //std::string dataSet = "CIFAR10";
+        std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
 
-        learnRate = 200.0f;
+        learnRate = static_cast<float>(dataAmount) / 15.0f;
 
         desired_iteration_per_second = 0.0f;
 
         time_since_last_iteration = 0.0f;
 
-#ifdef _WIN32
+        #ifdef _WIN32
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-#endif
-#ifdef linux
+        #endif
+        #ifdef linux
         std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-#endif
+        #endif
 
         labels = Loader::loadLabels(labelsPath.string());
         Pmatrix = Loader::loadPmatrix(fileName.string());
-
-        //Qmatrix.resize(dataAmount);
-        //for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
 
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
@@ -115,9 +110,9 @@ public:
         indexTrackerPrev.resize(dataAmount);
 
         //errorCompare.resize(dataAmount);
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_point_creation;
-#endif
+        #endif
 
         //srand(time(NULL));
         srand(296343u);
@@ -149,20 +144,20 @@ public:
             indexTracker[i] = i;
             indexTrackerPrev[i] = i;
         }
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_point_creation.endTimer("tsne point creation");
-#endif
+        #endif
 
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_update_minmax;
-#endif
+        #endif
         updateMinMaxPos();
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_update_minmax.endTimer("tsne update minmax");
-#endif
+        #endif
 
         float set_theta = 0.48f;
-        int max_children_per_node = 10;
+        int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -180,9 +175,6 @@ public:
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-
-
-
     }
 
     ~TSNE_no_buffers()
@@ -202,18 +194,18 @@ public:
 
     void resetTsne(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, float theta, unsigned int seed)
     {
-        learnRate = learn_rate;
+        learnRate = static_cast<float>(data_size) / 15.0f;
         desired_iteration_per_second = 0.0f;
         time_since_last_iteration = 0.0f;
 
-#ifdef _WIN32
+        #ifdef _WIN32
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataset_type + "/" + std::to_string(data_size) + "/label_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataset_type + "/" + std::to_string(data_size) + "/P_matrix_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".mtx");
-#endif
-#ifdef linux
+        #endif
+        #ifdef linux
         std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".bin");
         std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".mtx");
-#endif
+        #endif
 
         labels = Loader::loadLabels(labelsPath.string());
         Pmatrix = Loader::loadPmatrix(fileName.string());
@@ -225,9 +217,9 @@ public:
         indexTracker.resize(data_size);
         indexTrackerPrev.resize(data_size);
 
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_point_creation;
-#endif
+        #endif
 
         //srand(time(NULL));
         srand(seed);
@@ -259,17 +251,17 @@ public:
             indexTracker[i] = i;
             indexTrackerPrev[i] = i;
         }
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_point_creation.endTimer("tsne point creation");
-#endif
+        #endif
 
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_update_minmax;
-#endif
+        #endif
         updateMinMaxPos();
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_update_minmax.endTimer("tsne update minmax");
-#endif
+        #endif
 
         setThetaForAll(theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -303,32 +295,30 @@ public:
 
             time_since_last_iteration = glfwGetTime();
 
-#ifdef TIME_ALGORITHM 
+            #ifdef TIME_ALGORITHM 
             Timer time_calculate_derivative;
-#endif
+            #endif
             Timer derivative_timer;
             updateDerivative();
             derivative_timer.endTimer("update derivative");
-#ifdef TIME_ALGORITHM 
+            #ifdef TIME_ALGORITHM 
             time_calculate_derivative.endTimer("derivative calculation time");
-#endif
+            #endif
 
             updatePoints();
 
-#ifdef TIME_ALGORITHM 
+            #ifdef TIME_ALGORITHM 
             Timer time_update_tree;
-#endif
+            #endif
             nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
 
-#ifdef TIME_ALGORITHM 
+            #ifdef TIME_ALGORITHM 
             time_update_tree.endTimer("update tree");
-#endif
+            #endif
 
-
-
-#ifdef TIME_ALGORITHM 
+            #ifdef TIME_ALGORITHM 
             std::cout << "done with iteration-----------------" << std::endl;
-#endif
+            #endif
 
             time_step_timer.endTimer("timeStep");
         }
@@ -339,15 +329,17 @@ public:
         embeddedPointsPrev.swap(embeddedPointsPrevPrev);
         embeddedPoints.swap(embeddedPointsPrev);
 
+        //thetaFunction();
+
         accelerationRate = 0.8f;
         if (iteration_counter < 250)
         {
             accelerationRate = 0.5f;
         }
 
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_update;
-#endif
+        #endif
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             int indexPrev = indexTracker[i];
@@ -356,23 +348,40 @@ public:
             embeddedPoints[indexPrev] = embeddedPointsPrev[indexPrev];
             embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative + accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
         }
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_update.endTimer("update positions");
-#endif
+        #endif
 
         indexTrackerPrev.swap(indexTracker);
 
-        //costFunction();
-
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         Timer time_update_minmax;
-#endif
+        #endif
         updateMinMaxPos();
-#ifdef TIME_ALGORITHM 
+        #ifdef TIME_ALGORITHM 
         time_update_minmax.endTimer("update minmax");
-#endif
+        #endif
 
         iteration_counter++;
+    }
+
+    void thetaFunction()
+    {
+        float falloff_strength = 5.0f;
+        float theta_result =
+            (max_theta - min_theta) *
+            std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
+            min_theta;
+
+        //std::cout << "set theta to: " << theta_result << std::endl;
+
+        setThetaForAll(theta_result);
+    }
+
+    void setMinMaxTheta(float set_min_theta, float set_max_theta)
+    {
+        min_theta = set_min_theta;
+        max_theta = set_max_theta;
     }
 
     void setThetaForAll(float new_theta)
@@ -421,8 +430,6 @@ public:
 
             resetDeriv();
 
-            //checkError();
-
             updateRepulsive();
 
             updateAttractive();
@@ -441,52 +448,6 @@ public:
             embeddedPoint.derivative = glm::vec2(0.0f);
     }
 
-    //void checkError()
-    //{
-    //    float QijTotalNaive = 0.0f;
-    //    
-    //    nBodySolvers["naive"]->solveNbody(&QijTotalNaive, &errorCompare, &embeddedPoints);
-    //
-    //
-    //    float QijTotalCompare = 0.0f;
-    //    nBodySolvers["BH"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-    //    float error1 = 0.0f;
-    //    for (int i = 0; i < embeddedPoints.size(); i++)
-    //    {
-    //        error1 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-    //    }
-    //    error1 /= embeddedPoints.size();
-    //    totalError1 += error1;
-    //    if (error1 > maxError1) { maxError1 = error1; }
-    //
-    //    QijTotalCompare = 0.0f;
-    //    nBodySolvers["FMM"]->theta = 1.0f;
-    //    nBodySolvers["FMM"]->solveNbody(&QijTotalCompare, &repulsForce, &embeddedPoints);
-    //    float error2 = 0.0f;
-    //    for (int i = 0; i < embeddedPoints.size(); i++)
-    //    {
-    //        error2 += powf(glm::length(repulsForce[i] - errorCompare[i]), 2.0f);
-    //    }
-    //    error2 /= embeddedPoints.size();
-    //    totalError2 += error2;
-    //    if (error2 > maxError2) { maxError2 = error2; }
-    //
-    //
-    //
-    //    std::cout << "difference in error:         " << error1 - error2 << " ,greater than 0.0 is good" << std::endl;
-    //    std::cout << "average error difference:    " << (totalError1 / globalTimeStep) - (totalError2 / globalTimeStep) << " ,greater than 0.0 is good" << std::endl;
-    //
-    //    std::cout << "max error1:                  " << maxError1 << std::endl;
-    //    std::cout << "max error2:                  " << maxError2 << std::endl;
-    //
-    //    std::cout << "ratio of error:              " << error1 / error2 << " ,greater than 1.0 is good" << std::endl;
-    //    std::cout << "ratio of average error:      " << (totalError1 / globalTimeStep) / (totalError2 / globalTimeStep) << " ,greater than 1.0 is good" << std::endl;
-    //
-    //    std::cout << "global time step: " << globalTimeStep << std::endl;
-    //
-    //    std::cout << "------------------------------------------------------" << std::endl;
-    //}
-
     void updateRepulsive()
     {
         double QijTotal = 0.0f;
@@ -496,8 +457,6 @@ public:
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             embeddedPoints[i].derivative *= (4.0f / QijTotal);
-            //embeddedPoints[i].derivative.x = static_cast<float>((static_cast<double>(embeddedPoints[i].derivative.x) * (4.0 / QijTotal))); // hmm wait maybe convert to doubles first then back to float??
-            //embeddedPoints[i].derivative.y = static_cast<float>((static_cast<double>(embeddedPoints[i].derivative.y) * (4.0 / QijTotal)));
         }
     }
 
@@ -522,41 +481,5 @@ public:
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
-    }
-
-    void costFunction()
-    {
-        float QijTotal = 0.0f;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                float distance = glm::length(diff);
-                QijTotal += 1.0f / (1.0f + (distance * distance));
-                //QijTotal += 1.0f + distance * distance;
-            }
-        }
-
-        float totalCost = 0.0f;
-        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
-        {
-            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
-            {
-                if (it.col() != it.row())
-                {
-                    glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
-                    float distance = glm::length(diff);
-                    float Qij = (1.0f / (1.0f + (distance * distance))) / QijTotal;
-                    //float Qij = 1.0f / (QijTotal / (1.0f + distance * distance));
-
-                    float Pij = (float)it.value();
-
-                    totalCost += Pij * std::log2(Pij / Qij);
-                }
-            }
-        }
-
-        std::cout << "total cost: " << totalCost << std::endl;
     }
 };

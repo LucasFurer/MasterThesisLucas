@@ -753,8 +753,10 @@ private:
         }
 
         // Precompute the FFT of the kernel generating matrix
-        fftw_plan p = fftw_plan_dft_r2c_2d(n_fft_coeffs, n_fft_coeffs, kernel_tilde, reinterpret_cast<fftw_complex*>(fft_kernel_tilde), FFTW_ESTIMATE);
+        fftw_plan p = fftw_plan_dft_r2c_2d(n_fft_coeffs, n_fft_coeffs, kernel_tilde, reinterpret_cast<fftw_complex*>(fft_kernel_tilde), FFTW_ESTIMATE);\
         fftw_execute(p);
+
+
 
         fftw_destroy_plan(p);
         delete[] kernel_tilde;
@@ -845,6 +847,7 @@ private:
         //}
 
         //n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
+        n_boxes_per_dim = std::max(2, n_boxes_per_dim);
 
         int n_boxes = n_boxes_per_dim * n_boxes_per_dim;
 

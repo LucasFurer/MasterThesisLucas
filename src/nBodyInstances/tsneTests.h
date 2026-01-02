@@ -49,6 +49,7 @@ public:
     {
         TSNE_no_buffers tsne;
         tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, theta, seed);
+        tsne.setMinMaxTheta(theta, theta);
         NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
         PM->C_min_num_intervals = PM_grid_width;
         PM->C_intervals_per_integer = cell_size;
@@ -259,6 +260,7 @@ public:
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
             PM->C_min_num_intervals = PM_grid_width;
             PM->C_intervals_per_integer = cell_size;
@@ -455,6 +457,7 @@ public:
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
             PM->C_min_num_intervals = 1;
             PM->C_intervals_per_integer = chosen_grid_size;
@@ -660,6 +663,7 @@ public:
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
             PM->C_min_num_intervals = 1;
             PM->C_intervals_per_integer = chosen_grid_size;
@@ -883,6 +887,47 @@ private:
     
         float NMAE = MAE / norm;
         return NMAE;
+    }
+
+    float costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double> Pmatrix)
+    {
+        double QijTotal = 0.0;
+        for (int i = 0; i < points_indices.size(); i++)
+        {
+            for (int j = 0; j < points_indices.size(); j++)
+            {
+                TsnePoint2D point_i = points[points_indices[i]];
+                TsnePoint2D point_j = points[points_indices[j]];
+
+
+                glm::vec2 diff = point_j.position - point_i.position;
+                float distance = glm::length(diff);
+                QijTotal += static_cast<double>(1.0f / (1.0f + (distance * distance)));
+            }
+        }
+
+        double totalCost = 0.0;
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
+            {
+                if (it.col() != it.row())
+                {
+                    TsnePoint2D point_col = points[points_indices[it.col()]];
+                    TsnePoint2D point_row = points[points_indices[it.row()]];
+
+                    glm::vec2 diff = point_col.position - point_row.position;
+                    float distance = glm::length(diff);
+                    double Qij = static_cast<double>(1.0f / (1.0f + (distance * distance))) / QijTotal;
+
+                    double Pij = it.value();
+
+                    totalCost += Pij * std::log2(Pij / Qij);
+                }
+            }
+        }
+
+        std::cout << "total cost: " << totalCost << std::endl;
     }
     
     template <typename T, typename I>

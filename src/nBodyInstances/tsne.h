@@ -59,8 +59,6 @@ public:
     float forceSize = 1.0f;
     Buffer* forceBuffer;
 
-    //std::vector<glm::vec2> errorCompare;
-
     std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolvers;
     std::string nBodySelect = "naive"; // default selector
 
@@ -69,8 +67,6 @@ public:
 
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
-    //std::vector<std::vector<float>> Qmatrix;
-    //float Qsum;
 
     float desired_iteration_per_second; // limits the speed of tsne
     float time_since_last_iteration;
@@ -81,16 +77,17 @@ public:
     bool reached_thousand_iterations = false;
 
     float min_theta = 0.5f;
+    //float min_theta = 0.5f;
     float max_theta = 2.0f;
+    //float max_theta = 0.5f;
     
 	TSNE()
 	{
-        int dataAmount = 70000;
+        int dataAmount = 10000;
         float perplexity = 30.0f;
-        std::string dataSet = "MNIST_digits";
-        //std::string dataSet = "CIFAR10";
+        std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
 
-        learnRate = static_cast<float>(dataAmount) / 12.0f;
+        learnRate = static_cast<float>(dataAmount) / 15.0f;
 
         desired_iteration_per_second = 0.0f;
 
@@ -108,9 +105,6 @@ public:
         labels = Loader::loadLabels(labelsPath.string());
         Pmatrix = Loader::loadPmatrix(fileName.string());
 
-        //Qmatrix.resize(dataAmount);
-        //for (int i = 0; i < dataAmount; i++) { Qmatrix[i].resize(dataAmount); }
-
         embeddedPoints.resize(dataAmount);
         embeddedPointsPrev.resize(dataAmount);
         embeddedPointsPrevPrev.resize(dataAmount);
@@ -118,14 +112,13 @@ public:
         indexTracker.resize(dataAmount);
         indexTrackerPrev.resize(dataAmount);
 
-        //errorCompare.resize(dataAmount);
         #ifdef TIME_ALGORITHM 
         Timer time_point_creation;
         #endif
         
         //srand(time(NULL));
         srand(296343u);
-        float sizeParam = 2.0f;
+        float sizeParam = 200.0f;
         for (int i = 0; i < dataAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
@@ -166,7 +159,7 @@ public:
         #endif
 
         float set_theta = 1.0f;
-        int max_children_per_node = 10;
+        int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -218,7 +211,7 @@ public:
 
     void resetTsne(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, float theta, unsigned int seed)
     {
-        learnRate = learn_rate;
+        learnRate = static_cast<float>(data_size) / 15.0f;
         desired_iteration_per_second = 0.0f;
         time_since_last_iteration = 0.0f;
 
@@ -345,9 +338,11 @@ public:
             #ifdef TIME_ALGORITHM 
             Timer time_update_tree;
             #endif
+
             nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
             std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
             nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
+
             #ifdef TIME_ALGORITHM 
             time_update_tree.endTimer("update tree");
             #endif
@@ -393,8 +388,6 @@ public:
 
         indexTrackerPrev.swap(indexTracker);
 
-        //costFunction();
-
         #ifdef TIME_ALGORITHM 
         Timer time_update_minmax;
         #endif
@@ -408,14 +401,21 @@ public:
 
     void thetaFunction()
     {
-        float progress = 1.0f - std::min(static_cast<float>(iteration_counter) / 1000.0f, 1.0f);
-        float diff_theta = max_theta - min_theta;
-        diff_theta *= progress;
-        float theta_result = diff_theta + min_theta;
+        float falloff_strength = 5.0f;
+        float theta_result = 
+            (max_theta - min_theta) *
+            std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
+            min_theta;
 
-        std::cout << "set theta to: " << theta_result << std::endl;
+        //std::cout << "set theta to: " << theta_result << std::endl;
 
         setThetaForAll(theta_result);
+    }
+
+    void setMinMaxTheta(float set_min_theta, float set_max_theta)
+    {
+        min_theta = set_min_theta;
+        max_theta = set_max_theta;
     }
 
     void setThetaForAll(float new_theta)
@@ -464,8 +464,6 @@ public:
 
             resetDeriv();
 
-            //checkError();
-
             updateRepulsive();
 
             updateAttractive();
@@ -492,7 +490,7 @@ public:
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
-            embeddedPoints[i].derivative *= (4.0f / QijTotal); // hmm wait maybe convert to doubles first then back to float??
+            embeddedPoints[i].derivative *= (4.0f / QijTotal);
         }
     }
 
@@ -517,41 +515,5 @@ public:
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
-    }
-
-    void costFunction()
-    {
-        float QijTotal = 0.0f;
-        for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            for (int j = 0; j < embeddedPoints.size(); j++)
-            {
-                glm::vec2 diff = embeddedPoints[j].position - embeddedPoints[i].position;
-                float distance = glm::length(diff);
-                QijTotal += 1.0f / (1.0f + (distance * distance));
-                //QijTotal += 1.0f + distance * distance;
-            }
-        }
-
-        float totalCost = 0.0f;
-        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
-        {
-            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
-            {
-                if (it.col() != it.row())
-                {
-                    glm::vec2 diff = embeddedPoints[it.col()].position - embeddedPoints[it.row()].position;
-                    float distance = glm::length(diff);
-                    float Qij = (1.0f / (1.0f + (distance * distance))) / QijTotal;
-                    //float Qij = 1.0f / (QijTotal / (1.0f + distance * distance));
-
-                    float Pij = (float)it.value();
-
-                    totalCost += Pij * std::log2(Pij / Qij);
-                }
-            }
-        }
-
-        std::cout << "total cost: " << totalCost << std::endl;
     }
 };

@@ -1,3 +1,5 @@
+// this FMM is not true O(n) as it uses the BH tree construction method
+
 #pragma once
 
 #include <functional>
