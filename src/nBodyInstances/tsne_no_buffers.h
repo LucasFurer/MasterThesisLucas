@@ -22,6 +22,7 @@
 #include "../openGLhelper/buffer.h"
 #include "../dataLoaders/loader.h"
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
+#include "../nbodysolvers/cpu/nBodySolverTest.h"
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
@@ -159,6 +160,7 @@ public:
         float set_theta = 0.48f;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
+        nBodySolvers["test"] = new NBodySolverTest<TsnePoint2D>(&TSNEtestKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, max_children_per_node, set_theta);

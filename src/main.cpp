@@ -145,8 +145,8 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "FMM_SYM_MORTON";
-        //tsne.nBodySelect = "FMM_MORTON";
+        //tsne.nBodySelect = "FMM_SYM_MORTON";
+        tsne.nBodySelect = "FMM_MORTON";
         //tsne.nBodySelect = "FMM";
         //tsne.nBodySelect = "PM";
         //tsne.nBodySelect = "BH";
@@ -184,10 +184,10 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 1000, 0.5f, -1, 1.0f, 296343u);
-        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 10, 0.3f, 6, 1.0f, 5, 1.0, 296343u);
-        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 2, 0.1f, 20, 2.0f, 0.1f, 2.0, 296343u);
-        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 1, 0.0f, 20, 2.0f, 0.1f, 2.0f, 296343u);
+        //tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 1000, 0.5f, -1, 1.0f, 296343u);
+        tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
+        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, 2, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
+        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
 
         //NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);

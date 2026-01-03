@@ -76,14 +76,14 @@ public:
     Timer thousand_iteration_timer; 
     bool reached_thousand_iterations = false;
 
-    float min_theta = 0.5f;
     //float min_theta = 0.5f;
-    float max_theta = 2.0f;
-    //float max_theta = 0.5f;
+    float min_theta = 0.5f;
+    //float max_theta = 2.0f;
+    float max_theta = 0.5f;
     
 	TSNE()
 	{
-        int dataAmount = 10000;
+        int dataAmount = 70000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
 
@@ -118,7 +118,7 @@ public:
         
         //srand(time(NULL));
         srand(296343u);
-        float sizeParam = 200.0f;
+        float sizeParam = 2.0f;
         for (int i = 0; i < dataAmount; i++)
         {
             float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
@@ -158,7 +158,7 @@ public:
         time_update_minmax.endTimer("tsne update minmax");
         #endif
 
-        float set_theta = 1.0f;
+        float set_theta = 0.5f;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);

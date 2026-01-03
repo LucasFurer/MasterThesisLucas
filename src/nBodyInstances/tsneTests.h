@@ -25,6 +25,7 @@
 #include "../openGLhelper/buffer.h"
 #include "../dataLoaders/loader.h"
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
+#include "../nbodysolvers/cpu/nBodySolverTest.h"
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
@@ -55,14 +56,15 @@ public:
         PM->C_intervals_per_integer = cell_size;
 
         // set graph size
-        std::vector<float> errorBH(iteration_amount, 0.0f);
-        std::vector<float> errorBHMP(iteration_amount, 0.0f);
-        std::vector<float> errorBHR(iteration_amount, 0.0f);
-        std::vector<float> errorBHRMP(iteration_amount, 0.0f);
-        std::vector<float> errorFMM(iteration_amount, 0.0f);
-        std::vector<float> errorPM(iteration_amount, 0.0f);
-        std::vector<float> errorFMM_MORTON(iteration_amount, 0.0f);
-        std::vector<float> errorFMM_SYM_MORTON(iteration_amount, 0.0f);
+        std::vector<double> errorBH(iteration_amount, 0.0f);
+        std::vector<double> errorBHMP(iteration_amount, 0.0f);
+        std::vector<double> errorBHR(iteration_amount, 0.0f);
+        std::vector<double> errorBHRMP(iteration_amount, 0.0f);
+        std::vector<double> errorFMM(iteration_amount, 0.0f);
+        std::vector<double> errorPM(iteration_amount, 0.0f);
+        std::vector<double> errorFMM_MORTON(iteration_amount, 0.0f);
+        std::vector<double> errorFMM_SYM_MORTON(iteration_amount, 0.0f);
+        //std::vector<float> errorTest(iteration_amount, 0.0f);
 
         std::vector<int> timeBH(iteration_amount, 0);
         std::vector<int> timeBHMP(iteration_amount, 0);
@@ -72,6 +74,7 @@ public:
         std::vector<int> timePM(iteration_amount, 0);
         std::vector<int> timeFMM_MORTON(iteration_amount, 0);
         std::vector<int> timeFMM_SYM_MORTON(iteration_amount, 0);
+        //std::vector<int> timeTest(iteration_amount, 0);
 
 
         std::vector<TsnePoint2D> naiveSolution(data_size);
@@ -194,6 +197,18 @@ public:
             tsne.embeddedPoints = naiveSolution;
             tsne.indexTracker = naiveSolutionIndexTracker;
 
+            //tsne.resetDeriv();
+            //tsne.iteration_counter = t;
+            //tsne.nBodySelect = "test";
+            //tsne.nBodySolvers["test"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            //tsne.updateDerivative();
+            //fastSolution = tsne.embeddedPoints;
+            //fastSolutionIndexTracker = tsne.indexTracker;
+            //errorTest[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+            //timeTest[t] = t;
+            //tsne.embeddedPoints = naiveSolution;
+            //tsne.indexTracker = naiveSolutionIndexTracker;
+
 
             // update points with naive solution
             tsne.resetDeriv();
@@ -224,23 +239,27 @@ public:
         writeToFile(timeFMM_MORTON, errorFMM_MORTON, methodPath);
         methodPath = projectFolder / ("tsneErrorTimestep" + std::string("FMM_SYM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + fltToStr(theta) + "_dataset" + dataset_type + ".csv");
         writeToFile(timeFMM_SYM_MORTON, errorFMM_SYM_MORTON, methodPath);
+        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("test") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + fltToStr(theta) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(timeTest, errorTest, methodPath);
 
         
         tsne.cleanup();
     }
 
 
-    void calculationtimeThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, int iteration_amount, float theta_start, int theta_diversity_amount, float theta_range, int PM_grid_width, double cell_size, unsigned int seed)
+    void calculationtimeThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {
-        std::vector<float> calculationtimeNaive(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBH(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimePM(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        int theta_diversity_amount = thetas.size();
+
+        std::vector<double> calculationtimeNaive(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBH(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimePM(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
     
         std::vector<float> thetaNaive(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
@@ -255,15 +274,16 @@ public:
     
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = ((float)t / (float)(theta_diversity_amount-1)) * theta_range + theta_start;
+            float chosenTheta = thetas[t];
+            float chosenCellSize = cell_sizes[t];
             //std::cout << "chosenTheta: " << chosenTheta << std::endl;
 
             TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, seed);
             tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            PM->C_min_num_intervals = PM_grid_width;
-            PM->C_intervals_per_integer = cell_size;
+            //PM->C_min_num_intervals = PM_grid_width;
+            PM->C_intervals_per_integer = chosenCellSize;
 
 
 
@@ -273,7 +293,9 @@ public:
             thetaBHR[t] = chosenTheta;
             thetaBHRMP[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
+            thetaPM[t] = chosenCellSize;
             thetaFMM_MORTON[t] = chosenTheta;
+            thetaFMM_SYM_MORTON[t] = chosenTheta;
 
 
 
@@ -323,7 +345,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBH[t] += glfwGetTime() - timeBefore;
+                calculationtimeBH[t] += static_cast<double>(glfwGetTime() - timeBefore);
     
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -331,7 +353,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
     
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -339,7 +361,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHR[t] += static_cast<double>(glfwGetTime() - timeBefore);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -347,7 +369,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHRMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -355,7 +377,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM[t] += static_cast<double>(glfwGetTime() - timeBefore);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -363,7 +385,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimePM[t] += glfwGetTime() - timeBefore;
+                calculationtimePM[t] += static_cast<double>(glfwGetTime() - timeBefore);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -371,7 +393,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_MORTON[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -379,7 +401,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_SYM_MORTON[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM_SYM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
     
 
 
@@ -391,15 +413,15 @@ public:
                 tsne.updatePoints();
             }
     
-            calculationtimeNaive[t]          /= iteration_amount;
-            calculationtimeBH[t]             /= iteration_amount;
-            calculationtimeBHMP[t]           /= iteration_amount;
-            calculationtimeBHR[t]            /= iteration_amount;
-            calculationtimeBHRMP[t]          /= iteration_amount;
-            calculationtimeFMM[t]            /= iteration_amount;
-            calculationtimePM[t]             /= iteration_amount;
-            calculationtimeFMM_MORTON[t]     /= iteration_amount;
-            calculationtimeFMM_SYM_MORTON[t] /= iteration_amount;
+            calculationtimeNaive[t]          /= static_cast<double>(iteration_amount);
+            calculationtimeBH[t]             /= static_cast<double>(iteration_amount);
+            calculationtimeBHMP[t]           /= static_cast<double>(iteration_amount);
+            calculationtimeBHR[t]            /= static_cast<double>(iteration_amount);
+            calculationtimeBHRMP[t]          /= static_cast<double>(iteration_amount);
+            calculationtimeFMM[t]            /= static_cast<double>(iteration_amount);
+            calculationtimePM[t]             /= static_cast<double>(iteration_amount);
+            calculationtimeFMM_MORTON[t]     /= static_cast<double>(iteration_amount);
+            calculationtimeFMM_SYM_MORTON[t] /= static_cast<double>(iteration_amount);
 
             tsne.cleanup();
         }
@@ -429,16 +451,17 @@ public:
     }
 
 
-    void errorThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, int iteration_amount, float theta_start, int theta_diversity_amount, float theta_range, float PM_grid_size_start, float PM_grid_size_range, unsigned int seed)
+    void errorThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {       
-        std::vector<float> errorBH(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> errorPM(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        int theta_diversity_amount = thetas.size();
+        std::vector<double> errorBH(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> errorPM(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
         std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
@@ -452,22 +475,22 @@ public:
 
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = ((float)t / (float)(theta_diversity_amount - 1)) * theta_range + theta_start;
-            float chosen_grid_size = ((float)t / (float)(theta_diversity_amount - 1)) * PM_grid_size_range + PM_grid_size_start;
+            float chosenTheta = thetas[t];
+            float chosenCellSize = cell_sizes[t];
 
             TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, seed);
             tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            PM->C_min_num_intervals = 1;
-            PM->C_intervals_per_integer = chosen_grid_size;
+            //PM->C_min_num_intervals = 1;
+            PM->C_intervals_per_integer = chosenCellSize;
 
             thetaBH[t] = chosenTheta;
             thetaBHMP[t] = chosenTheta;
             thetaBHR[t] = chosenTheta;
             thetaBHRMP[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
-            thetaPM[t] = chosenTheta;
+            thetaPM[t] = chosenCellSize;
             thetaFMM_MORTON[t] = chosenTheta;
             thetaFMM_SYM_MORTON[t] = chosenTheta;
 
@@ -515,7 +538,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBH[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBH[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -524,7 +547,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -533,7 +556,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHR[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHR[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -542,7 +565,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHRMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHRMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -551,7 +574,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -560,7 +583,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorPM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorPM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -569,7 +592,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM_MORTON[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -578,7 +601,7 @@ public:
                 tsne.updateDerivative();
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM_SYM_MORTON[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM_SYM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
 
                 tsne.resetDeriv();
@@ -589,14 +612,14 @@ public:
                 tsne.updatePoints();
             }
 
-            errorBH[t] /= iteration_amount;
-            errorBHMP[t] /= iteration_amount;
-            errorBHR[t] /= iteration_amount;
-            errorBHRMP[t] /= iteration_amount;
-            errorFMM[t] /= iteration_amount;
-            errorPM[t] /= iteration_amount;
-            errorFMM_MORTON[t] /= iteration_amount;
-            errorFMM_SYM_MORTON[t] /= iteration_amount;
+            errorBH[t] /= static_cast<double>(iteration_amount);
+            errorBHMP[t] /= static_cast<double>(iteration_amount);
+            errorBHR[t] /= static_cast<double>(iteration_amount);
+            errorBHRMP[t] /= static_cast<double>(iteration_amount);
+            errorFMM[t] /= static_cast<double>(iteration_amount);
+            errorPM[t] /= static_cast<double>(iteration_amount);
+            errorFMM_MORTON[t] /= static_cast<double>(iteration_amount);
+            errorFMM_SYM_MORTON[t] /= static_cast<double>(iteration_amount);
 
             tsne.cleanup();
         }
@@ -624,26 +647,27 @@ public:
     }
 
 
-    void calculationtimeErrorTSNE(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, int iteration_amount, float theta_start, int theta_diversity_amount, float theta_range, float PM_grid_size_start, float PM_grid_size_range, unsigned int seed)
+    void calculationtimeErrorTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {
-        std::vector<float> calculationtimeBH(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimePM(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        int theta_diversity_amount = thetas.size();
+        std::vector<double> calculationtimeBH(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimePM(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
         
-        std::vector<float> errorBH(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> errorBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> errorPM(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> errorFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBH(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> errorBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> errorPM(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> errorFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
         std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
@@ -657,16 +681,15 @@ public:
 
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = ((float)t / (float)(theta_diversity_amount - 1)) * theta_range + theta_start;
-            float chosen_grid_size = ((float)t / (float)(theta_diversity_amount - 1)) * PM_grid_size_range + PM_grid_size_start;
-
+            float chosenTheta = thetas[t];
+            float chosenCellSize = cell_sizes[t];
 
             TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, learn_rate, chosenTheta, seed);
+            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, seed);
             tsne.setMinMaxTheta(chosenTheta, chosenTheta);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            PM->C_min_num_intervals = 1;
-            PM->C_intervals_per_integer = chosen_grid_size;
+            //PM->C_min_num_intervals = 1;
+            PM->C_intervals_per_integer = chosenCellSize;
 
 
             std::vector<TsnePoint2D> naiveSolution(data_size);
@@ -715,10 +738,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBH[t] += glfwGetTime() - timeBefore;
+                calculationtimeBH[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBH[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBH[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -726,10 +749,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -737,10 +760,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHR[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHR[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHR[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -748,10 +771,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+                calculationtimeBHRMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHRMP[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorBHRMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -759,10 +782,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
 
                 tsne.resetDeriv();
@@ -771,10 +794,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimePM[t] += glfwGetTime() - timeBefore;
+                calculationtimePM[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorPM[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorPM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -782,10 +805,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_MORTON[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM_MORTON[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
 
                 tsne.resetDeriv();
@@ -794,10 +817,10 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_SYM_MORTON[t] += glfwGetTime() - timeBefore;
+                calculationtimeFMM_SYM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM_SYM_MORTON[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                errorFMM_SYM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
 
                 tsne.resetDeriv();
@@ -831,7 +854,7 @@ public:
             thetaBHR[t] = chosenTheta;
             thetaBHRMP[t] = chosenTheta;
             thetaFMM[t] = chosenTheta;
-            thetaPM[t] = chosen_grid_size;
+            thetaPM[t] = chosenCellSize;
             thetaFMM_MORTON[t] = chosenTheta;
             thetaFMM_SYM_MORTON[t] = chosenTheta;
 
@@ -871,25 +894,25 @@ private:
         }
     }
 
-    float getNMAE(const std::vector<TsnePoint2D>& points_naive, const std::vector<int>& points_naive_indices, const std::vector<TsnePoint2D>& points_approx, const std::vector<int>& points_approx_indices)
+    double getNMAE(const std::vector<TsnePoint2D>& points_naive, const std::vector<int>& points_naive_indices, const std::vector<TsnePoint2D>& points_approx, const std::vector<int>& points_approx_indices)
     {
-        float MAE = 0.0f;
-        float norm = 0.0f;
+        double MAE = 0.0;
+        double norm = 0.0;
     
         for (int i = 0; i < points_naive.size(); i++)
         {
             TsnePoint2D pointNaive = points_naive[points_naive_indices[i]];
             TsnePoint2D pointApprox = points_approx[points_approx_indices[i]];
 
-            MAE += glm::length(pointNaive.derivative - pointApprox.derivative);
-            norm += glm::length(pointNaive.derivative);
+            MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative));
+            norm += static_cast<double>(glm::length(pointNaive.derivative));
         }
     
-        float NMAE = MAE / norm;
+        double NMAE = MAE / norm;
         return NMAE;
     }
 
-    float costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double> Pmatrix)
+    double costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double> Pmatrix)
     {
         double QijTotal = 0.0;
         for (int i = 0; i < points_indices.size(); i++)
@@ -927,7 +950,8 @@ private:
             }
         }
 
-        std::cout << "total cost: " << totalCost << std::endl;
+        //std::cout << "total cost: " << totalCost << std::endl;
+        return totalCost;
     }
     
     template <typename T, typename I>
