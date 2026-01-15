@@ -77,9 +77,9 @@ public:
     bool reached_thousand_iterations = false;
 
     //float min_theta = 0.5f;
-    float min_theta = 0.5f;
+    float min_theta = 0.75f;
     //float max_theta = 2.0f;
-    float max_theta = 0.5f;
+    float max_theta = 2.0f;
     
 	TSNE()
 	{
@@ -171,7 +171,7 @@ public:
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, set_theta);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 1.0f, 5);
+        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 2.0f, 5);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -360,6 +360,9 @@ public:
 
     void updatePoints()
     {
+        //if (iteration_counter == 999)
+        //    costFunction(embeddedPoints, indexTracker, Pmatrix);
+
         embeddedPointsPrev.swap(embeddedPointsPrevPrev);
         embeddedPoints.swap(embeddedPointsPrev);
 
@@ -407,7 +410,7 @@ public:
             std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
             min_theta;
 
-        //std::cout << "set theta to: " << theta_result << std::endl;
+        std::cout << "set theta to: " << theta_result << std::endl;
 
         setThetaForAll(theta_result);
     }
@@ -515,5 +518,76 @@ public:
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
+    }
+
+    void costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double>& Pmatrix)
+    {
+        double QijTotal = 0.0;
+
+        const unsigned numThreads = std::thread::hardware_concurrency();
+        const size_t chunkSize = (points.size() + numThreads - 1) / numThreads;
+
+        std::vector<std::thread> threads;
+        std::vector<double> localTotals(numThreads, 0.0);
+
+        for (unsigned t = 0; t < numThreads; ++t)
+        {
+            size_t begin = t * chunkSize;
+            size_t end = std::min(begin + chunkSize, points.size());
+
+            threads.emplace_back
+            (
+                [&, t, begin, end]()
+                {
+                    double threadTotal = 0.0;
+
+                    for (size_t i = begin; i < end; ++i)
+                    {
+                        for (size_t j = 0; j < points.size(); ++j)
+                        {
+                            if (i == j) continue;
+
+                            const TsnePoint2D& point_i = points[points_indices[i]];
+                            const TsnePoint2D& point_j = points[points_indices[j]];
+
+
+                            glm::vec2 diff = point_j.position - point_i.position;
+                            float distance_squared = diff.x * diff.x + diff.y * diff.y;
+                            localTotals[t] += static_cast<double>(1.0f / (1.0f + distance_squared));
+                        }
+                    }
+                }
+            );
+        }
+
+        for (std::thread& th : threads)
+            th.join();
+
+        QijTotal = std::accumulate(localTotals.begin(), localTotals.end(), 0.0);
+
+
+        double totalCost = 0.0;
+        for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
+        {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
+            {
+                if (it.col() != it.row())
+                {
+                    const TsnePoint2D& point_col = points[points_indices[it.col()]];
+                    const TsnePoint2D& point_row = points[points_indices[it.row()]];
+
+                    glm::vec2 diff = point_col.position - point_row.position;
+                    float distance_squared = diff.x * diff.x + diff.y * diff.y;
+                    double Qij = static_cast<double>(1.0f / (1.0f + distance_squared)) / QijTotal;
+
+                    double Pij = it.value();
+
+                    totalCost += Pij * std::log2(Pij / Qij);
+                }
+            }
+        }
+
+        //std::cout << "total cost: " << totalCost << std::endl;
+        std::cout << "totalCost: " << totalCost << std::endl;
     }
 };

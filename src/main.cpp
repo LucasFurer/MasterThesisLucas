@@ -145,8 +145,8 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        //tsne.nBodySelect = "FMM_SYM_MORTON";
-        tsne.nBodySelect = "FMM_MORTON";
+        tsne.nBodySelect = "FMM_SYM_MORTON";
+        //tsne.nBodySelect = "FMM_MORTON";
         //tsne.nBodySelect = "FMM";
         //tsne.nBodySelect = "PM";
         //tsne.nBodySelect = "BH";
@@ -185,9 +185,43 @@ int main(void)
 
         TsneTest tsne_test;
         //tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 1000, 0.5f, -1, 1.0f, 296343u);
-        tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
-        //tsne_test.errorThetaTSNE("MNIST_digits", 70000, 30.0f, 2, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
-        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1, std::vector<float>{0.5f}, std::vector<double>{1.0}, 296343u);
+        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, 296343u);
+        //tsne_test.errorThetaTSNE("MNIST_digits", 10000, 30.0f, 5, std::vector<float>{0.5f, 0.7f, 0.9f}, std::vector<double>{1.0, 1.1, 1.2}, 296343u);
+        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
+        //tsne_test.costTimestepTSNE("MNIST_digits", 10000, 30.0f, 1000, 0.75f, 2.0f, 296343u, "FMM_SYM_MORTON");
+        //tsne_test.costTimestepTSNE("MNIST_digits", 70000, 30.0f, 1001, 0.75f, 2.0f, 296343u, "BH");
+        //tsne_test.calculationtimeCostTSNE("MNIST_digits", 70000, 30.0f, 1001, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2}, 296343u, "FMM_SYM_MORTON");
+
+
+
+        //std::vector<float> thetas = std::vector<float>{ 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
+        //std::vector<double> cellSizes = std::vector<double>{ 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2 };
+
+        //std::thread t1(
+        //    &TsneTest::calculationtimeThetaTSNE,
+        //    &tsne_test,
+        //    "MNIST_digits", 70000, 30.0f, 5, thetas, cellSizes, 296343u
+        //);
+
+        //std::thread t2(
+        //    &TsneTest::calculationtimeErrorTSNE,
+        //    &tsne_test,
+        //    "MNIST_digits", 70000, 30.0f, 5, thetas, cellSizes, 296343u
+        //);
+
+        //t1.join();
+        //t2.join();
+
+
+
+
+
+
+
+
+
+
+
 
         //NBodyScenarios nBodyScenarios;
         //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);

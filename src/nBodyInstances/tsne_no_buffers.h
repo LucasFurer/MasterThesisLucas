@@ -75,13 +75,13 @@ public:
     bool reached_thousand_iterations = false;
 
     //float min_theta = 0.5f;
-    float min_theta = 0.5f;
+    float min_theta = 0.75f;
     //float max_theta = 2.0f;
-    float max_theta = 0.5f;
+    float max_theta = 2.0f;
 
     TSNE_no_buffers()
     {
-        int dataAmount = 1000;
+        int dataAmount = 70000;
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
 
@@ -157,7 +157,7 @@ public:
         time_update_minmax.endTimer("tsne update minmax");
         #endif
 
-        float set_theta = 0.48f;
+        float set_theta = 0.5f;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["test"] = new NBodySolverTest<TsnePoint2D>(&TSNEtestKernel);
@@ -272,7 +272,7 @@ public:
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
         delete nBodySolvers["PM"];
-        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 0.9, 5);
+        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, 1.0, 5);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -331,7 +331,7 @@ public:
         embeddedPointsPrev.swap(embeddedPointsPrevPrev);
         embeddedPoints.swap(embeddedPointsPrev);
 
-        //thetaFunction();
+        thetaFunction();
 
         accelerationRate = 0.8f;
         if (iteration_counter < 250)
@@ -375,7 +375,12 @@ public:
             std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
             min_theta;
 
-        //std::cout << "set theta to: " << theta_result << std::endl;
+        //float theta_result =
+        //    (max_theta - min_theta) *
+        //    std::max(1.0f - static_cast<float>(iteration_counter) / 1000.0f, 0.0f) +
+        //    min_theta;
+
+        std::cout << "set theta to: " << theta_result << std::endl;
 
         setThetaForAll(theta_result);
     }
@@ -464,6 +469,8 @@ public:
 
     void updateAttractive()
     {
+        Timer attract_timer;
+
         for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
         {
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it)
@@ -483,5 +490,7 @@ public:
                 embeddedPoints[indexC].derivative += exageration * 4.0f * (float)it.value() * (diff / (1.0f + (dist * dist)));
             }
         }
+
+        attract_timer.endTimer("attractive time");
     }
 };

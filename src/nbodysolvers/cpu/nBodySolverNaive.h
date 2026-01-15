@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <utility>
 #include <vector>
-
 #include <thread>
 #include <atomic>
 #include <numeric>

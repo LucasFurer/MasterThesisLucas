@@ -17,6 +17,9 @@
 #include <exception>
 #include <fstream>
 #include <cstdint>
+#include <thread>
+#include <atomic>
+#include <numeric>
 
 #include "../particles/embeddedPoint.h"
 #include "../particles/tsnePoint2D.h"
@@ -92,6 +95,8 @@ public:
         // find error at every time step
         for (int t = 0; t < iteration_amount; t++)
         {
+            std::cout << "find error at iteration: " << t << std::endl;
+
             tsne.updateMinMaxPos();
 
             // correct solution up to machine precision
@@ -251,7 +256,7 @@ public:
     {
         int theta_diversity_amount = thetas.size();
 
-        std::vector<double> calculationtimeNaive(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeNaive(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeBH(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeBHMP(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeBHR(theta_diversity_amount, 0.0f);
@@ -261,7 +266,7 @@ public:
         std::vector<double> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
     
-        std::vector<float> thetaNaive(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaNaive(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
         std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
@@ -270,6 +275,21 @@ public:
         std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
         std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<float> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+
+
+        //std::vector<std::vector<TsnePoint2D>> naiveSolutions(1000);
+        //std::vector<std::vector<int>> naiveSolutionIndexTrackers(1000);
+        //std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+        //for (int i = 0; i < 1000; i++)
+        //{
+        //    if (std::filesystem::exists(pre_computed_path / std::to_string(i)))
+        //    {
+        //        naiveSolutions[i] = std::vector<TsnePoint2D>(data_size);
+        //        naiveSolutionIndexTrackers[i] = std::vector<int>(data_size);
+
+        //        loadPrecomputed(naiveSolutions[i], naiveSolutionIndexTrackers[i], pre_computed_path / std::to_string(i));
+        //    }
+        //}
     
     
         for (int t = 0; t < theta_diversity_amount; t++)
@@ -287,7 +307,7 @@ public:
 
 
 
-            thetaNaive[t] = chosenTheta;
+            //thetaNaive[t] = chosenTheta;
             thetaBH[t] = chosenTheta;
             thetaBHMP[t] = chosenTheta;
             thetaBHR[t] = chosenTheta;
@@ -297,10 +317,10 @@ public:
             thetaFMM_MORTON[t] = chosenTheta;
             thetaFMM_SYM_MORTON[t] = chosenTheta;
 
-
-
             std::vector<TsnePoint2D> naiveSolution(data_size);
             std::vector<int> naiveSolutionIndexTracker(data_size);
+
+
 
             std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
             if (!std::filesystem::exists(pre_computed_path))
@@ -309,17 +329,23 @@ public:
             }
 
     
-            float timeBefore = 0.0f;
+            double timeBefore = 0.0;
             for(int j = 0; j < iteration_amount; j++)
             { 
+                //std::vector<TsnePoint2D>& naiveSolution = naiveSolutions[j];
+                //std::vector<int>& naiveSolutionIndexTracker = naiveSolutionIndexTrackers[j];
+
+                std::cout << "find calc time at iteration: " << j << ", for theta: " << chosenTheta << std::endl;
+
                 tsne.updateMinMaxPos();
 
-                // correct solution up to machine precision
+                //correct solution up to machine precision
                 if (std::filesystem::exists(pre_computed_path / std::to_string(j)))
                 {
                     loadPrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(j));
                 }
                 else
+                //if (naiveSolution.size() == 0)
                 {
                     tsne.resetDeriv();
                     tsne.iteration_counter = j;
@@ -339,45 +365,45 @@ public:
                 //tsne.updateDerivative();
                 //calculationtimeNaive[t] += glfwGetTime() - timeBefore;
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BH";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBH[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BH";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBH[t] += glfwGetTime() - timeBefore;
     
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
     
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHR";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHR[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHR";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHR[t] += glfwGetTime() - timeBefore;
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHRMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHRMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHRMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "FMM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeFMM[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "FMM";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeFMM[t] += glfwGetTime() - timeBefore;
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -385,23 +411,25 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimePM[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                calculationtimePM[t] += glfwGetTime() - timeBefore;
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "FMM_MORTON";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeFMM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "FMM_MORTON";
+                ////tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeFMM_MORTON[t] += glfwGetTime() - timeBefore;
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "FMM_SYM_MORTON";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeFMM_SYM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "FMM_SYM_MORTON";
+                ////tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeFMM_SYM_MORTON[t] += glfwGetTime() - timeBefore;
     
 
 
@@ -413,7 +441,7 @@ public:
                 tsne.updatePoints();
             }
     
-            calculationtimeNaive[t]          /= static_cast<double>(iteration_amount);
+            //calculationtimeNaive[t]          /= static_cast<double>(iteration_amount);
             calculationtimeBH[t]             /= static_cast<double>(iteration_amount);
             calculationtimeBHMP[t]           /= static_cast<double>(iteration_amount);
             calculationtimeBHR[t]            /= static_cast<double>(iteration_amount);
@@ -430,24 +458,24 @@ public:
         std::filesystem::path projectFolder = root_folder / "graphCSV" / dataset_type / std::to_string(data_size) / ("perp" + std::to_string(static_cast<int>(perplexity_value)));
 
         std::filesystem::path methodPath;
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("Naive") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaNaive, calculationtimeNaive, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaBH, calculationtimeBH, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaBHMP, calculationtimeBHMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaBHR, calculationtimeBHR, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaBHRMP, calculationtimeBHRMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaFMM, calculationtimeFMM, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("Naive") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaNaive, calculationtimeNaive, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaBH, calculationtimeBH, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaBHMP, calculationtimeBHMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaBHR, calculationtimeBHR, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaBHRMP, calculationtimeBHRMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaFMM, calculationtimeFMM, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile(thetaPM, calculationtimePM, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaFMM_MORTON, calculationtimeFMM_MORTON, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM_SYM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile(thetaFMM_SYM_MORTON, calculationtimeFMM_SYM_MORTON, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaFMM_MORTON, calculationtimeFMM_MORTON, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("FMM_SYM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile(thetaFMM_SYM_MORTON, calculationtimeFMM_SYM_MORTON, methodPath);
     }
 
 
@@ -507,6 +535,8 @@ public:
 
             for (int j = 0; j < iteration_amount; j++)
             {
+                std::cout << "find error at iteration: " << j << ", for theta: " << chosenTheta << std::endl;
+
                 tsne.updateMinMaxPos();
 
                 // correct solution up to machine precision
@@ -650,31 +680,31 @@ public:
     void calculationtimeErrorTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {
         int theta_diversity_amount = thetas.size();
-        std::vector<double> calculationtimeBH(theta_diversity_amount, 0.0f);
-        std::vector<double> calculationtimeBHMP(theta_diversity_amount, 0.0f);
-        std::vector<double> calculationtimeBHR(theta_diversity_amount, 0.0f);
-        std::vector<double> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<double> calculationtimeFMM(theta_diversity_amount, 0.0f);
-        std::vector<double> calculationtimePM(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeBH(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeBHMP(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeBHR(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeBHRMP(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimeFMM(theta_diversity_amount, 0.0f);
+        //std::vector<double> calculationtimePM(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<double> calculationtimeFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
         
-        std::vector<double> errorBH(theta_diversity_amount, 0.0f);
-        std::vector<double> errorBHMP(theta_diversity_amount, 0.0f);
-        std::vector<double> errorBHR(theta_diversity_amount, 0.0f);
-        std::vector<double> errorBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<double> errorFMM(theta_diversity_amount, 0.0f);
-        std::vector<double> errorPM(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorBH(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorBHMP(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorBHR(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorBHRMP(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorFMM(theta_diversity_amount, 0.0f);
+        //std::vector<double> errorPM(theta_diversity_amount, 0.0f);
         std::vector<double> errorFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<double> errorFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
-        std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
+        //std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
         std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<float> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
 
@@ -686,10 +716,9 @@ public:
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, seed);
-            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
-            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            //PM->C_min_num_intervals = 1;
-            PM->C_intervals_per_integer = chosenCellSize;
+            tsne.setMinMaxTheta(chosenTheta, 2.0f);
+            //NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
+            //PM->C_intervals_per_integer = chosenCellSize;
 
 
             std::vector<TsnePoint2D> naiveSolution(data_size);
@@ -705,9 +734,11 @@ public:
             }
 
 
-            float timeBefore = 0.0f;
+            double timeBefore = 0.0f;
             for (int j = 0; j < iteration_amount; j++)
             {
+                std::cout << "find calc time and error at iteration: " << j << ", for theta: " << chosenTheta << std::endl;
+
                 tsne.updateMinMaxPos();
 
                 // correct solution up to machine precision
@@ -732,72 +763,72 @@ public:
                 }
                 
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BH";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBH[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorBH[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BH";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBH[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBH[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHR";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHR[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHR[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHR";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHR[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHRMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeBHRMP[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHRMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHRMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHRMP[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "FMM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimeFMM[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "FMM";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorFMM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "PM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
-                calculationtimePM[t] += static_cast<double>(glfwGetTime() - timeBefore);
-                fastSolution = tsne.embeddedPoints;
-                fastSolutionIndexTracker = tsne.indexTracker;
-                errorPM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "PM";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                //tsne.updateDerivative();
+                //calculationtimePM[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                //errorPM[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
 
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
@@ -805,7 +836,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                calculationtimeFMM_MORTON[t] += glfwGetTime() - timeBefore;
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
                 errorFMM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
@@ -817,7 +848,7 @@ public:
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
-                calculationtimeFMM_SYM_MORTON[t] += static_cast<double>(glfwGetTime() - timeBefore);
+                calculationtimeFMM_SYM_MORTON[t] += glfwGetTime() - timeBefore;
                 fastSolution = tsne.embeddedPoints;
                 fastSolutionIndexTracker = tsne.indexTracker;
                 errorFMM_SYM_MORTON[t] += getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
@@ -831,30 +862,30 @@ public:
                 tsne.updatePoints();
             }
 
-            errorBH[t] /= iteration_amount;
-            errorBHMP[t] /= iteration_amount;
-            errorBHR[t] /= iteration_amount;
-            errorBHRMP[t] /= iteration_amount;
-            errorFMM[t] /= iteration_amount;
-            errorPM[t] /= iteration_amount;
+            //errorBH[t] /= iteration_amount;
+            //errorBHMP[t] /= iteration_amount;
+            //errorBHR[t] /= iteration_amount;
+            //errorBHRMP[t] /= iteration_amount;
+            //errorFMM[t] /= iteration_amount;
+            //errorPM[t] /= iteration_amount;
             errorFMM_MORTON[t] /= iteration_amount;
             errorFMM_SYM_MORTON[t] /= iteration_amount;
 
-            calculationtimeBH[t] /= iteration_amount;
-            calculationtimeBHMP[t] /= iteration_amount;
-            calculationtimeBHR[t] /= iteration_amount;
-            calculationtimeBHRMP[t] /= iteration_amount;
-            calculationtimeFMM[t] /= iteration_amount;
-            calculationtimePM[t] /= iteration_amount;
+            //calculationtimeBH[t] /= iteration_amount;
+            //calculationtimeBHMP[t] /= iteration_amount;
+            //calculationtimeBHR[t] /= iteration_amount;
+            //calculationtimeBHRMP[t] /= iteration_amount;
+            //calculationtimeFMM[t] /= iteration_amount;
+            //calculationtimePM[t] /= iteration_amount;
             calculationtimeFMM_MORTON[t] /= iteration_amount;
             calculationtimeFMM_SYM_MORTON[t] /= iteration_amount;
 
-            thetaBH[t] = chosenTheta;
-            thetaBHMP[t] = chosenTheta;
-            thetaBHR[t] = chosenTheta;
-            thetaBHRMP[t] = chosenTheta;
-            thetaFMM[t] = chosenTheta;
-            thetaPM[t] = chosenCellSize;
+            //thetaBH[t] = chosenTheta;
+            //thetaBHMP[t] = chosenTheta;
+            //thetaBHR[t] = chosenTheta;
+            //thetaBHRMP[t] = chosenTheta;
+            //thetaFMM[t] = chosenTheta;
+            //thetaPM[t] = chosenCellSize;
             thetaFMM_MORTON[t] = chosenTheta;
             thetaFMM_SYM_MORTON[t] = chosenTheta;
 
@@ -867,22 +898,154 @@ public:
         std::filesystem::path projectFolder = root_folder / "graphCSV" / dataset_type / std::to_string(data_size) / ("perp" + std::to_string(static_cast<int>(perplexity_value)));
 
         std::filesystem::path methodPath;
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBH, calculationtimeBH, thetaBH, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHMP, calculationtimeBHMP, thetaBHMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHR, calculationtimeBHR, thetaBHR, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorPM, calculationtimePM, thetaPM, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBH, calculationtimeBH, thetaBH, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHMP, calculationtimeBHMP, thetaBHMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHR, calculationtimeBHR, thetaBHR, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorPM, calculationtimePM, thetaPM, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorFMM_MORTON, calculationtimeFMM_MORTON, thetaFMM_MORTON, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM_SYM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorFMM_SYM_MORTON, calculationtimeFMM_SYM_MORTON, thetaFMM_SYM_MORTON, methodPath);
+    }
+
+    void costTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, float min_theta, float max_theta, unsigned int seed, std::string method)
+    {
+        TSNE_no_buffers tsne;
+        tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, min_theta, seed);
+        tsne.setMinMaxTheta(min_theta, max_theta);
+        //NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
+        //PM->C_min_num_intervals = PM_grid_width;
+        //PM->C_intervals_per_integer = cell_size;
+
+        // set graph size
+        std::vector<double> costs(iteration_amount, 0.0);
+
+        std::vector<int> times(iteration_amount, 0);
+
+
+        // find error at every time step
+        for (int t = 0; t < iteration_amount; t++)
+        {
+            std::cout << "find error at iteration: " << t << std::endl;
+
+            tsne.updateMinMaxPos();
+
+            // calculate the result of every approximation technique and find the error by comparing to naive
+            tsne.resetDeriv();
+            tsne.iteration_counter = t;
+            tsne.nBodySelect = method;
+            tsne.nBodySolvers[method]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+            tsne.updateDerivative();
+            if (t % 10 == 0)
+            {
+                costs[t] = costFunction(tsne.embeddedPoints, tsne.indexTracker, tsne.Pmatrix);
+
+                if (t > 0)
+                {
+                    double prevCost = costs[t - 10];
+                    double currCost = costs[t];
+
+                    for (int i = 1; i < 10; ++i)
+                    {
+                        double alpha = static_cast<double>(i) / 10.0;
+                        costs[t - 10 + i] = prevCost + alpha * (currCost - prevCost);
+                    }
+                }
+            }
+            times[t] = t;
+
+            tsne.updatePoints();
+        }
+
+        // write results to csv files
+        std::filesystem::path projectFolder = root_folder / "graphCSV" / dataset_type / std::to_string(data_size) / ("perp" + std::to_string(static_cast<int>(perplexity_value)));
+
+        std::filesystem::path methodPath;
+        methodPath = projectFolder / ("costTimestep" + std::string(method) + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_minTheta" + fltToStr(min_theta) + "_maxTheta" + fltToStr(max_theta) + "_dataset" + dataset_type + ".csv");
+        writeToFile(times, costs, methodPath);
+
+        tsne.cleanup();
+    }
+
+    void calculationtimeCostTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed, std::string method)
+    {
+        int theta_diversity_amount = thetas.size();
+        std::vector<double> calculationtime(theta_diversity_amount, 0.0f);
+
+        std::vector<double> finalCost(theta_diversity_amount, 0.0f);
+
+        //std::vector<float> thetas(theta_diversity_amount, 0.0f);
+
+
+        for (int t = 0; t < theta_diversity_amount; t++)
+        {
+            float chosenTheta = thetas[t];
+            float chosenCellSize = cell_sizes[t];
+
+            TSNE_no_buffers tsne;
+            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, seed);
+            tsne.setMinMaxTheta(chosenTheta, 2.0f);
+            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
+            PM->C_intervals_per_integer = chosenCellSize;
+
+
+
+
+
+
+
+            double timeBefore = 0.0f;
+            for (int j = 0; j < iteration_amount; j++)
+            {
+                std::cout << "find calc time and error at iteration: " << j << ", for theta: " << chosenTheta << std::endl;
+
+                tsne.updateMinMaxPos();
+
+
+
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = method;
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers[method]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtime[t] += glfwGetTime() - timeBefore;
+
+
+                tsne.updatePoints();
+            }
+
+            finalCost[t] = costFunction(tsne.embeddedPoints, tsne.indexTracker, tsne.Pmatrix);
+
+
+
+            //errorFMM_SYM_MORTON[t] /= iteration_amount;
+
+
+            calculationtime[t] /= iteration_amount;
+
+
+            //thetas[t] = chosenTheta;
+
+
+            tsne.cleanup();
+        }
+
+
+        // write results to csv files
+        std::filesystem::path projectFolder = root_folder / "graphCSV" / dataset_type / std::to_string(data_size) / ("perp" + std::to_string(static_cast<int>(perplexity_value)));
+
+        std::filesystem::path methodPath;
+        methodPath = projectFolder / ("tsneCalculationtimeCost" + std::string(method) + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        writeToFile3(finalCost, calculationtime, thetas, methodPath);
     }
 
 private:
@@ -912,22 +1075,51 @@ private:
         return NMAE;
     }
 
-    double costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double> Pmatrix)
+    double costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double>& Pmatrix)
     {
         double QijTotal = 0.0;
-        for (int i = 0; i < points_indices.size(); i++)
+
+        const unsigned numThreads = std::thread::hardware_concurrency();
+        const size_t chunkSize = (points.size() + numThreads - 1) / numThreads;
+
+        std::vector<std::thread> threads;
+        std::vector<double> localTotals(numThreads, 0.0);
+
+        for (unsigned t = 0; t < numThreads; ++t)
         {
-            for (int j = 0; j < points_indices.size(); j++)
-            {
-                TsnePoint2D point_i = points[points_indices[i]];
-                TsnePoint2D point_j = points[points_indices[j]];
+            size_t begin = t * chunkSize;
+            size_t end = std::min(begin + chunkSize, points.size());
+
+            threads.emplace_back
+            (
+                [&, t, begin, end]()
+                {
+                    double threadTotal = 0.0;
+
+                    for (size_t i = begin; i < end; ++i)
+                    {
+                        for (size_t j = 0; j < points.size(); ++j)
+                        {
+                            if (i == j) continue;
+
+                            const TsnePoint2D& point_i = points[points_indices[i]];
+                            const TsnePoint2D& point_j = points[points_indices[j]];
 
 
-                glm::vec2 diff = point_j.position - point_i.position;
-                float distance = glm::length(diff);
-                QijTotal += static_cast<double>(1.0f / (1.0f + (distance * distance)));
-            }
+                            glm::vec2 diff = point_j.position - point_i.position;
+                            float distance_squared = diff.x * diff.x + diff.y * diff.y;
+                            localTotals[t] += static_cast<double>(1.0f / (1.0f + distance_squared));
+                        }
+                    }
+                }
+            );
         }
+
+        for (std::thread& th : threads)
+            th.join();
+
+        QijTotal = std::accumulate(localTotals.begin(), localTotals.end(), 0.0);
+
 
         double totalCost = 0.0;
         for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
@@ -936,12 +1128,12 @@ private:
             {
                 if (it.col() != it.row())
                 {
-                    TsnePoint2D point_col = points[points_indices[it.col()]];
-                    TsnePoint2D point_row = points[points_indices[it.row()]];
+                    const TsnePoint2D& point_col = points[points_indices[it.col()]];
+                    const TsnePoint2D& point_row = points[points_indices[it.row()]];
 
                     glm::vec2 diff = point_col.position - point_row.position;
-                    float distance = glm::length(diff);
-                    double Qij = static_cast<double>(1.0f / (1.0f + (distance * distance))) / QijTotal;
+                    float distance_squared = diff.x * diff.x + diff.y * diff.y;
+                    double Qij = static_cast<double>(1.0f / (1.0f + distance_squared)) / QijTotal;
 
                     double Pij = it.value();
 

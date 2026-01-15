@@ -303,7 +303,7 @@ public:
             C_dC,
             C_n_interpolation_points,
             C_intervals_per_integer,
-            C_min_num_intervals,
+            C_min_num_intervals,// make 2
             C_nthreads
         );
 
@@ -847,7 +847,8 @@ private:
         //}
 
         //n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
-        n_boxes_per_dim = std::max(2, n_boxes_per_dim);
+        n_boxes_per_dim = std::max(4, n_boxes_per_dim);
+        std::cout << "chosen n_boxes_per_dim: " << n_boxes_per_dim << std::endl;
 
         int n_boxes = n_boxes_per_dim * n_boxes_per_dim;
 
