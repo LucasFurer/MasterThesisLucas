@@ -11,7 +11,7 @@ void main()
 {
 	vec2 coord = gl_PointCoord - vec2(0.5);
 	//if(length(coord) > 0.2)
-	if(length(coord) > 0.1)
+	if(length(coord) > 0.15)
 	{
 		discard;
 	}

@@ -88,6 +88,7 @@
 #include "../../particles/embeddedPoint.h"
 #include "../../particles/tsnePoint2D.h"
 #include "../../particles/Particle2D.h"
+#include "../../Timer.h"
 
 template <typename T>
 class NBodySolverPM : public NBodySolver<T>
@@ -103,7 +104,7 @@ public:
 
     double* C_dC = nullptr; // derivative array
     int C_n_interpolation_points = 0; // how many interpolation points per box, typically is 4
-    double C_intervals_per_integer = 0.0; // desired side length of the boxes
+    //double C_intervals_per_integer = 0.0; // desired side length of the boxes : renamed to cell_size
     int C_min_num_intervals = 0; // minimun amount of boxes per dim
 
     unsigned int C_nthreads = 1u; // number of threads used
@@ -111,21 +112,19 @@ public:
     std::vector<glm::vec2> C_vec_box_lower_bounds;
     std::vector<glm::vec2> C_vec_box_upper_bounds;
 
-    int iteration_counter = 0;
+    //int iteration_counter = 0;
 
-    NBodySolverPM() : 
-        C_N(0), 
-        C_D(2), 
+    NBodySolverPM() :
+        C_N(0),
+        C_D(2),
         C_nthreads(1u),
         C_n_interpolation_points(0),
-        C_intervals_per_integer(0.0),
         C_min_num_intervals(0),
-        C_inp_row_P(nullptr), 
+        C_inp_row_P(nullptr),
         C_inp_col_P(nullptr),
-        C_inp_val_P(nullptr), 
-        C_Y(nullptr), 
-        C_dC(nullptr),
-        iteration_counter(0) {}
+        C_inp_val_P(nullptr),
+        C_Y(nullptr),
+        C_dC(nullptr) {}
 
     NBodySolverPM
     (
@@ -197,7 +196,7 @@ public:
         }
 
         C_n_interpolation_points = init_n_interpolation_points;
-        C_intervals_per_integer = init_intervals_per_integer;
+        this->cell_size = init_intervals_per_integer;
         C_min_num_intervals = init_min_num_intervals;
     }
 
@@ -207,7 +206,7 @@ public:
         C_D = other.C_D;
         C_nthreads = other.C_nthreads;
         C_n_interpolation_points = other.C_n_interpolation_points;
-        C_intervals_per_integer = other.C_intervals_per_integer;
+        this->cell_size = other.cell_size;
         C_min_num_intervals = other.C_min_num_intervals;
 
         C_inp_row_P = new unsigned int[C_N + 1];
@@ -223,7 +222,7 @@ public:
         C_dC = new double[C_N * 2];
         std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
 
-        iteration_counter = other.iteration_counter;
+        //iteration_counter = other.iteration_counter;
     }
 
     NBodySolverPM& operator=(const NBodySolverPM& other) // copy assignment operator
@@ -242,7 +241,7 @@ public:
             C_D = other.C_D;
             C_nthreads = other.C_nthreads;
             C_n_interpolation_points = other.C_n_interpolation_points;
-            C_intervals_per_integer = other.C_intervals_per_integer;
+            this->cell_size = other.cell_size;
             C_min_num_intervals = other.C_min_num_intervals;
 
             C_inp_row_P = new unsigned int[C_N + 1];
@@ -258,7 +257,7 @@ public:
             C_dC = new double[C_N * 2];
             std::copy(other.C_dC, other.C_dC + 2 * other.C_N, C_dC);
 
-            iteration_counter = other.iteration_counter;
+            //iteration_counter = other.iteration_counter;
         }
         return *this;
     }
@@ -274,13 +273,13 @@ public:
         delete[] C_dC;
     }
 
+    #ifdef INDEX_TRACKER
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+	#else
+    void solveNbody(double& total, std::vector<T>& points) override
+	#endif
     {
-        //std::cout << "solving PM with grid width: " << min_num_intervals << std::endl;
-        //C_N = points.size();
-        if (C_N != points.size())
-            std::cout << "C_N: " << C_N << std::endl;
-
+        #ifdef INDEX_TRACKER
         for (int i = 0; i < points.size(); i++)
             indexTracker[points[i].ID] = i;
 
@@ -290,6 +289,13 @@ public:
             C_Y[2 * i + 0] = points[tracketIndex].position.x;
             C_Y[2 * i + 1] = points[tracketIndex].position.y;
         }
+        #else
+        for (int i = 0; i < points.size(); i++)
+        {
+            C_Y[2 * i + 0] = points[i].position.x;
+            C_Y[2 * i + 1] = points[i].position.y;
+        }
+        #endif  
 
         computeFftGradient
         (
@@ -302,19 +308,30 @@ public:
             C_D,
             C_dC,
             C_n_interpolation_points,
-            C_intervals_per_integer,
+            this->cell_size,
             C_min_num_intervals,// make 2
-            C_nthreads
+            C_nthreads,
+            total
         );
+
 
         for (int i = 0; i < C_N; i++)
         {
+            #ifdef INDEX_TRACKER
             int tracketIndex = indexTracker[i];
+
             points[tracketIndex].derivative = -glm::vec2
             (
                 C_dC[2 * i + 0],
                 C_dC[2 * i + 1]
             );
+            #else
+            points[i].derivative = -glm::vec2
+            (
+                C_dC[2 * i + 0],
+                C_dC[2 * i + 1]
+            );
+            #endif
         }
     }
 
@@ -606,50 +623,50 @@ private:
          //        }
          //    });
         {
-            if (nthreads > 1)
-            {
-                std::vector<std::thread> threads(nthreads);
-                for (int t = 0; t < nthreads; t++)
-                {
-                    threads[t] = std::thread
-                    (
-                        std::bind
-                        (
-                            [&](const int bi, const int ei, const int t)
-                            {
-                                for (int loop_i = bi;loop_i < ei;loop_i++)
-                                {
-                                    {
-                                        int box_idx = point_box_idx[loop_i];
-                                        int box_i = box_idx % n_boxes;
-                                        int box_j = box_idx / n_boxes;
-                                        for (int interp_i = 0; interp_i < n_interpolation_points; interp_i++)
-                                        {
-                                            for (int interp_j = 0; interp_j < n_interpolation_points; interp_j++)
-                                            {
-                                                for (int d = 0; d < n_terms; d++)
-                                                {
-                                                    // Compute the index of the point in the interpolation grid of points
-                                                    int idx = (box_i * n_interpolation_points + interp_i) * (n_boxes * n_interpolation_points) + (box_j * n_interpolation_points) + interp_j;
-                                                    potentialQij[loop_i * n_terms + d] +=
-                                                        x_interpolated_values[interp_i * N + loop_i] *
-                                                        y_interpolated_values[interp_j * N + loop_i] *
-                                                        y_tilde_values[idx * n_terms + d];
-                                                }
-                                            }
-                                        }
-                                    };
-                                }
-                            },
-                            t * N / nthreads,
-                                (t + 1) == nthreads ? N : (t + 1) * N / nthreads,
-                                t
-                                )
-                    );
-                }
-                std::for_each(threads.begin(), threads.end(), [](std::thread& x) {x.join();});
-            }
-            else
+            //if (nthreads > 1)
+            //{
+            //    std::vector<std::thread> threads(nthreads);
+            //    for (int t = 0; t < nthreads; t++)
+            //    {
+            //        threads[t] = std::thread
+            //        (
+            //            std::bind
+            //            (
+            //                [&](const int bi, const int ei, const int t)
+            //                {
+            //                    for (int loop_i = bi;loop_i < ei;loop_i++)
+            //                    {
+            //                        {
+            //                            int box_idx = point_box_idx[loop_i];
+            //                            int box_i = box_idx % n_boxes;
+            //                            int box_j = box_idx / n_boxes;
+            //                            for (int interp_i = 0; interp_i < n_interpolation_points; interp_i++)
+            //                            {
+            //                                for (int interp_j = 0; interp_j < n_interpolation_points; interp_j++)
+            //                                {
+            //                                    for (int d = 0; d < n_terms; d++)
+            //                                    {
+            //                                        // Compute the index of the point in the interpolation grid of points
+            //                                        int idx = (box_i * n_interpolation_points + interp_i) * (n_boxes * n_interpolation_points) + (box_j * n_interpolation_points) + interp_j;
+            //                                        potentialQij[loop_i * n_terms + d] +=
+            //                                            x_interpolated_values[interp_i * N + loop_i] *
+            //                                            y_interpolated_values[interp_j * N + loop_i] *
+            //                                            y_tilde_values[idx * n_terms + d];
+            //                                    }
+            //                                }
+            //                            }
+            //                        };
+            //                    }
+            //                },
+            //                t * N / nthreads,
+            //                    (t + 1) == nthreads ? N : (t + 1) * N / nthreads,
+            //                    t
+            //                    )
+            //        );
+            //    }
+            //    std::for_each(threads.begin(), threads.end(), [](std::thread& x) {x.join();});
+            //}
+            //else
             {
                 for (int loop_i = 0; loop_i < N; loop_i++)
                 {
@@ -772,7 +789,8 @@ private:
         int n_interpolation_points,
         double intervals_per_integer,
         int min_num_intervals,
-        unsigned int nthreads)
+        unsigned int nthreads,
+        double& total)
     {
         //fftw_init_threads();
         //fftw_plan_with_nthreads(1);
@@ -833,7 +851,6 @@ private:
         //auto n_boxes_per_dim = static_cast<int>(min_num_intervals);
         auto n_boxes_per_dim = static_cast<int>((max_coord - min_coord) / intervals_per_integer);
 
-
         // FFTW works faster on numbers that can be written as  2^a 3^b 5^c 7^d
         // 11^e 13^f, where e+f is either 0 or 1, and the other exponents are
         // arbitrary
@@ -847,8 +864,8 @@ private:
         //}
 
         //n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
-        n_boxes_per_dim = std::max(4, n_boxes_per_dim);
-        std::cout << "chosen n_boxes_per_dim: " << n_boxes_per_dim << std::endl;
+        n_boxes_per_dim = std::max(8, n_boxes_per_dim);
+        //std::cout << "n_boxes_per_dim: " << n_boxes_per_dim << std::endl;
 
         int n_boxes = n_boxes_per_dim * n_boxes_per_dim;
 
@@ -901,10 +918,10 @@ private:
             sum_Q += (1 + xs[i] * xs[i] + ys[i] * ys[i]) * phi1 - 2 * (xs[i] * phi2 + ys[i] * phi3) + phi4;
         }
         sum_Q -= N;
-
+        total = sum_Q;
         //this->current_sum_Q = sum_Q;
 
-        double* pos_f = new double[N * 2];
+        //double* pos_f = new double[N * 2];
 
         //END_TIME("Total Interpolation");
             //START_TIME;
@@ -933,71 +950,76 @@ private:
         //        pos_f[loop_i * 2 + 1] = dim2;
         //    }
         //);
-        {
-            if (nthreads > 1)
-            {
-                std::vector<std::thread> threads(nthreads);
-                for (int t = 0; t < nthreads; t++)
-                {
-                    threads[t] = std::thread
-                    (
-                        std::bind
-                        (
-                            [&](const int bi, const int ei, const int t)
-                            {
-                                for (int loop_i = bi;loop_i < ei;loop_i++)
-                                {
-                                    {
-                                        double dim1 = 0;
-                                        double dim2 = 0;
+        
+        //{
+        //    if (nthreads > 1)
+        //    {
+        //        std::vector<std::thread> threads(nthreads);
+        //        for (int t = 0; t < nthreads; t++)
+        //        {
+        //            threads[t] = std::thread
+        //            (
+        //                std::bind
+        //                (
+        //                    [&](const int bi, const int ei, const int t)
+        //                    {
+        //                        for (int loop_i = bi;loop_i < ei;loop_i++)
+        //                        {
+        //                            {
+        //                                double dim1 = 0;
+        //                                double dim2 = 0;
 
-                                        for (unsigned int i = inp_row_P[loop_i]; i < inp_row_P[loop_i + 1]; i++)
-                                        {
-                                            // Compute pairwise distance and Q-value
-                                            unsigned int ind3 = inp_col_P[i];
-                                            double d_ij = (xs[loop_i] - xs[ind3]) * (xs[loop_i] - xs[ind3]) + (ys[loop_i] - ys[ind3]) * (ys[loop_i] - ys[ind3]);
-                                            double q_ij = 1 / (1 + d_ij);
+        //                                for (unsigned int i = inp_row_P[loop_i]; i < inp_row_P[loop_i + 1]; i++)
+        //                                {
+        //                                    // Compute pairwise distance and Q-value
+        //                                    unsigned int ind3 = inp_col_P[i];
+        //                                    double d_ij = (xs[loop_i] - xs[ind3]) * (xs[loop_i] - xs[ind3]) + (ys[loop_i] - ys[ind3]) * (ys[loop_i] - ys[ind3]);
+        //                                    double q_ij = 1 / (1 + d_ij);
 
-                                            dim1 += inp_val_P[i] * q_ij * (xs[loop_i] - xs[ind3]);
-                                            dim2 += inp_val_P[i] * q_ij * (ys[loop_i] - ys[ind3]);
-                                        }
-                                        pos_f[loop_i * 2 + 0] = dim1;
-                                        pos_f[loop_i * 2 + 1] = dim2;
-                                    };
-                                }
-                            },
-                            t * N / nthreads,
-                                (t + 1) == nthreads ? N : (t + 1) * N / nthreads,
-                                t
-                                )
-                    );
-                }
-                std::for_each(threads.begin(), threads.end(), [](std::thread& x) {x.join();});
-            }
-            else
-            {
-                for (int loop_i = 0; loop_i < N; loop_i++)
-                {
-                    {
-                        double dim1 = 0;
-                        double dim2 = 0;
+        //                                    dim1 += inp_val_P[i] * q_ij * (xs[loop_i] - xs[ind3]);
+        //                                    dim2 += inp_val_P[i] * q_ij * (ys[loop_i] - ys[ind3]);
+        //                                }
+        //                                pos_f[loop_i * 2 + 0] = dim1;
+        //                                pos_f[loop_i * 2 + 1] = dim2;
+        //                            };
+        //                        }
+        //                    },
+        //                    t * N / nthreads,
+        //                        (t + 1) == nthreads ? N : (t + 1) * N / nthreads,
+        //                        t
+        //                        )
+        //            );
+        //        }
+        //        std::for_each(threads.begin(), threads.end(), [](std::thread& x) {x.join();});
+        //    }
+        //    else
+        //    {
+        //        Timer timer;
 
-                        for (unsigned int i = inp_row_P[loop_i]; i < inp_row_P[loop_i + 1]; i++)
-                        {
-                            // Compute pairwise distance and Q-value
-                            unsigned int ind3 = inp_col_P[i];
-                            double d_ij = (xs[loop_i] - xs[ind3]) * (xs[loop_i] - xs[ind3]) + (ys[loop_i] - ys[ind3]) * (ys[loop_i] - ys[ind3]);
-                            double q_ij = 1 / (1 + d_ij);
+        //        for (int loop_i = 0; loop_i < N; loop_i++)
+        //        {
+        //            {
+        //                double dim1 = 0;
+        //                double dim2 = 0;
 
-                            dim1 += inp_val_P[i] * q_ij * (xs[loop_i] - xs[ind3]);
-                            dim2 += inp_val_P[i] * q_ij * (ys[loop_i] - ys[ind3]);
-                        }
-                        pos_f[loop_i * 2 + 0] = dim1;
-                        pos_f[loop_i * 2 + 1] = dim2;
-                    };
-                }
-            }
-        }
+        //                for (unsigned int i = inp_row_P[loop_i]; i < inp_row_P[loop_i + 1]; i++)
+        //                {
+        //                    // Compute pairwise distance and Q-value
+        //                    unsigned int ind3 = inp_col_P[i];
+        //                    double d_ij = (xs[loop_i] - xs[ind3]) * (xs[loop_i] - xs[ind3]) + (ys[loop_i] - ys[ind3]) * (ys[loop_i] - ys[ind3]);
+        //                    double q_ij = 1 / (1 + d_ij);
+
+        //                    dim1 += inp_val_P[i] * q_ij * (xs[loop_i] - xs[ind3]);
+        //                    dim2 += inp_val_P[i] * q_ij * (ys[loop_i] - ys[ind3]);
+        //                }
+        //                pos_f[loop_i * 2 + 0] = dim1;
+        //                pos_f[loop_i * 2 + 1] = dim2;
+        //            };
+        //        }
+
+        //        timer.endTimer("PM attractive");
+        //    }
+        //}
 
 
 
@@ -1013,19 +1035,22 @@ private:
 
 
         // Make the negative term, or F_rep in the equation 3 of the paper
-        double* neg_f = new double[N * 2];
+        //double* neg_f = new double[N * 2];
         for (unsigned int i = 0; i < N; i++)
         {
-            neg_f[i * 2 + 0] = (xs[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 1]) / sum_Q;
-            neg_f[i * 2 + 1] = (ys[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 2]) / sum_Q;
+            //neg_f[i * 2 + 0] = (xs[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 1]) / sum_Q;
+            //neg_f[i * 2 + 1] = (ys[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 2]) / sum_Q;
 
-            float exageration = iteration_counter < 250 ? 4.0f : 1.0f;
-            dC[i * 2 + 0] = 4.0f * (exageration * pos_f[i * 2] - neg_f[i * 2]);
-            dC[i * 2 + 1] = 4.0f * (exageration * pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
+            //float exageration = iteration_counter < 250 ? 4.0f : 1.0f;
+            //dC[i * 2 + 0] = 4.0f * (exageration * pos_f[i * 2] - neg_f[i * 2]);
+            //dC[i * 2 + 1] = 4.0f * (exageration * pos_f[i * 2 + 1] - neg_f[i * 2 + 1]);
+
+            dC[i * 2 + 0] = -(xs[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 1]);
+            dC[i * 2 + 1] = -(ys[i] * potentialsQij[i * n_terms] - potentialsQij[i * n_terms + 2]);
         }
 
-        delete[] pos_f;
-        delete[] neg_f;
+        //delete[] pos_f;
+        //delete[] neg_f;
         delete[] potentialsQij;
         delete[] chargesQij;
         delete[] xs;

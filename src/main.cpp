@@ -1,5 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
+//#define INDEX_TRACKER
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <string>
@@ -145,12 +147,15 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
+        #ifdef INDEX_TRACKER
         tsne.nBodySelect = "FMM_SYM_MORTON";
         //tsne.nBodySelect = "FMM_MORTON";
-        //tsne.nBodySelect = "FMM";
+        #else
+        tsne.nBodySelect = "FMM";
         //tsne.nBodySelect = "PM";
         //tsne.nBodySelect = "BH";
         //tsne.nBodySelect = "naive";
+        #endif
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
@@ -184,12 +189,13 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        //tsne_test.errorTimestepTSNE("MNIST_digits", 10000, 30.0f, -1.0f, 1000, 0.5f, -1, 1.0f, 296343u);
+        //tsne_test.errorTimestepTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 10, 1.0f, -1, 1.0f, 296343u);
         //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, 296343u);
         //tsne_test.errorThetaTSNE("MNIST_digits", 10000, 30.0f, 5, std::vector<float>{0.5f, 0.7f, 0.9f}, std::vector<double>{1.0, 1.1, 1.2}, 296343u);
-        //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
+            //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 1000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
+            tsne_test.calculationtimeErrorTSNE("MNIST_digits", 1000, 30.0f, 400, std::vector<float>{1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
         //tsne_test.costTimestepTSNE("MNIST_digits", 10000, 30.0f, 1000, 0.75f, 2.0f, 296343u, "FMM_SYM_MORTON");
-        //tsne_test.costTimestepTSNE("MNIST_digits", 70000, 30.0f, 1001, 0.75f, 2.0f, 296343u, "BH");
+        //tsne_test.costTimestepTSNE("MNIST_digits", 70000, 30.0f, 1001, 0.75f, 2.0f, 1.0, 296343u, "BH");
         //tsne_test.calculationtimeCostTSNE("MNIST_digits", 70000, 30.0f, 1001, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2}, 296343u, "FMM_SYM_MORTON");
 
 

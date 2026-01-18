@@ -38,17 +38,17 @@ public:
 		C3(0.0f)
 	{}
 
-	std::string toString()
-	{
-		std::string result =
-			"    BBcentre: " + glm::to_string(BBcentre) + "\n" +
-			"    BBlength: " + std::to_string(BBlength) + "\n" +
-			"    firstChildIndex: " + std::to_string(firstChildIndex) + "\n" +
-			"    firstParticleIndex: " + std::to_string(firstParticleIndex) + "\n" +
-			"    particleIndexAmount: " + std::to_string(particleIndexAmount) + "\n" +
-			"    centreOfMass: " + glm::to_string(centreOfMass)
-		;
+	//std::string toString()
+	//{
+	//	std::string result =
+	//		"    BBcentre: " + glm::to_string(BBcentre) + "\n" +
+	//		"    BBlength: " + std::to_string(BBlength) + "\n" +
+	//		"    firstChildIndex: " + std::to_string(firstChildIndex) + "\n" +
+	//		"    firstParticleIndex: " + std::to_string(firstParticleIndex) + "\n" +
+	//		"    particleIndexAmount: " + std::to_string(particleIndexAmount) + "\n" +
+	//		"    centreOfMass: " + glm::to_string(centreOfMass)
+	//	;
 
-		return result;
-	}
+	//	return result;
+	//}
 };

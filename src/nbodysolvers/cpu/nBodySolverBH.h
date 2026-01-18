@@ -30,7 +30,11 @@ public:
         this->theta = initTheta;
     }
 
+    #ifdef INDEX_TRACKER
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+	#else
+    void solveNbody(double& total, std::vector<T>& points) override
+	#endif
     {
         total = 0.0;
 
@@ -69,7 +73,7 @@ private:
         {
             for (int i : node->occupants)
             {
-                if ((*node->allParticles)[i].ID != point.ID) // self intersection test
+                if (&(*node->allParticles)[i] != &point) // self intersection test
                 {
 
                     kernelPP(total, point, (*node->allParticles)[i]);

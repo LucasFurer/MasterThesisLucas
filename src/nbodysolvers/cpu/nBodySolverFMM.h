@@ -46,7 +46,11 @@ public:
         this->theta = initTheta;
     }
 
+    #ifdef INDEX_TRACKER
     void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
+	#else
+    void solveNbody(double& total, std::vector<T>& points) override
+	#endif
     {
         traverseFMM(total, points, &root, &root, this->theta);
 
@@ -129,7 +133,7 @@ private:
         {
             for (int i : sourceNode->occupants)
             {
-                if ((*sourceNode->allParticles)[i].ID != sinkPoint.ID)
+                if (&(*sourceNode->allParticles)[i] != &sinkPoint)
                 {
 
                     kernelPP(total, sinkPoint, (*sourceNode->allParticles)[i]);
@@ -161,7 +165,7 @@ private:
         {
             for (int i : sinkNode->occupants)
             {
-                if ((*sinkNode->allParticles)[i].ID != sourcePoint.ID)
+                if (&(*sinkNode->allParticles)[i] != &sourcePoint)
                 {
 
                     kernelPP(total, (*sinkNode->allParticles)[i], sourcePoint);
