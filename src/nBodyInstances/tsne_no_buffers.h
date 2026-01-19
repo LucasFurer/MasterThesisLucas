@@ -178,7 +178,7 @@ public:
         #endif
 
         float set_theta = 0.5f;
-        float set_cell_size = 1.0f;
+        float set_cell_size = cell_size;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         //nBodySolvers["test"] = new NBodySolverTest<TsnePoint2D>(&TSNEtestKernel);
@@ -217,7 +217,7 @@ public:
 
     }
 
-    void resetTsne(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, float theta, float cell_size, unsigned int seed)
+    void resetTsne(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, float theta, float set_cell_size, unsigned int seed)
     {
         learnRate = static_cast<float>(data_size) / 15.0f;
         desired_iteration_per_second = 0.0f;
@@ -299,7 +299,7 @@ public:
         time_update_minmax.endTimer("tsne update minmax");
         #endif
 
-        setThetaForAll(theta, cell_size);
+        setThetaForAll(theta, set_cell_size);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHR"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);

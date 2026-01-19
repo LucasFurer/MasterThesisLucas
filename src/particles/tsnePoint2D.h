@@ -35,3 +35,21 @@ public:
 
     TsnePoint2D() {}
 };
+
+#ifdef INDEX_TRACKER
+struct TsnePoint2DLessthan
+{
+    inline bool operator()(const TsnePoint2D& x, const TsnePoint2D& y) const
+    {
+        return x.morton_code < y.morton_code;
+    }
+};
+
+struct TsnePoint2DRightshift
+{
+    inline uint32_t operator()(const  TsnePoint2D& x, const unsigned offset) const
+    {
+        return x.morton_code >> offset;
+    }
+};
+#endif

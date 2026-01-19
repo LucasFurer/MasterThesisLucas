@@ -85,14 +85,18 @@ public:
         glm::vec2 negMinPos = -minPos;
         float largestAxis = glm::compMax(maxPos + negMinPos);
 
-
+        /*
         std::vector<MortonPoint<T>> pointsMortons(points.size());
         for (int i = 0; i < points.size(); i++)
             pointsMortons[i] = MortonPoint<T>(createMortonCode(points[i].position, negMinPos, largestAxis), points[i]);
         boost::sort::spreadsort::integer_sort(pointsMortons.begin(), pointsMortons.end(), rightshift<T>(), lessthan<T>());
         for (int i = 0; i < points.size(); i++)
             points[i] = pointsMortons[i].point;
-
+        */
+        #ifdef INDEX_TRACKER
+        createMortonCode(points, negMinPos, largestAxis);
+        boost::sort::spreadsort::integer_sort(points.begin(), points.end(), TsnePoint2DRightshift(), TsnePoint2DLessthan());
+        #endif
 
         createLeafNodes(points, minPos, maxPos);
 
@@ -488,13 +492,20 @@ private:
         }
     }
 
-    uint32_t createMortonCode(glm::vec2 position, glm::vec2 negMinPos, float largestAxis)
+    void createMortonCode(std::vector<TsnePoint2D>& points, glm::vec2 negMinPos, float largestAxis)
     {
-        position = (position + negMinPos) / (largestAxis); // rescale such that range is between [0-1]
+        glm::vec2 position{ 0.0f };
+        for (int i = 0; i < points.size(); i++)
+        {
+            position = points[i].position;
 
-        position = glm::min(glm::max(position * 65536.0f, glm::vec2(0.0f)), glm::vec2(65535.0f)); // rescale such that range is between [0-65535] which is the max number for 16 bits
+            position = (position + negMinPos) / (largestAxis); // rescale such that range is between [0-1]
 
-        return (spread16((uint32_t)position.y) << 1) | spread16((uint32_t)position.x);
+            position = glm::min(glm::max(position * 65536.0f, glm::vec2(0.0f)), glm::vec2(65535.0f)); // rescale such that range is between [0-65535] which is the max number for 16 bits
+            #ifdef INDEX_TRACKER
+            points[i].morton_code = (spread16((uint32_t)position.y) << 1) | spread16((uint32_t)position.x);
+            #endif
+        }
     }
 
     inline uint32_t spread16(uint32_t x)

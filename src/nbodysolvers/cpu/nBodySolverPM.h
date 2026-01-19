@@ -297,6 +297,7 @@ public:
         }
         #endif  
 
+        std::cout << "running with cell size: " << this->cell_size << "\n";
         computeFftGradient
         (
             nullptr,
@@ -864,7 +865,7 @@ private:
         //}
 
         //n_boxes_per_dim = min_num_intervals; // delete this for extra performance!!!!!!!!!!!!!!!!!!!!!!!!
-        n_boxes_per_dim = std::max(8, n_boxes_per_dim);
+        n_boxes_per_dim = std::max(4, n_boxes_per_dim);
         //std::cout << "n_boxes_per_dim: " << n_boxes_per_dim << std::endl;
 
         int n_boxes = n_boxes_per_dim * n_boxes_per_dim;

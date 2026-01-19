@@ -86,9 +86,9 @@ public:
     //float min_theta = 0.5f;
     float min_theta = 0.75f;
     //float max_theta = 2.0f;
-    float max_theta = 0.75f;
+    float max_theta = 2.0f;
 
-    float cell_size = 1.0f;
+    float cell_size = 3.5f;
     
 	TSNE()
 	{
@@ -181,8 +181,8 @@ public:
         time_update_minmax.endTimer("tsne update minmax");
         #endif
 
-        float set_theta = 0.5f;
-        float set_cell_size = 1.0f;
+        float set_theta = 1.0f;
+        float set_cell_size = cell_size;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
