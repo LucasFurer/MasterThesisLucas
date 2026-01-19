@@ -24,7 +24,7 @@ public:
 
 		std::chrono::microseconds elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-		std::cout << message << ": " << formatWithDots(elapsed_time.count()) << " microseconds" << std::endl;
+		std::cout << message << ": " << formatWithDots(elapsed_time.count()) << " microseconds\n";
 	}
 private:
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::time_point();

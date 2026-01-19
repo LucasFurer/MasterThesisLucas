@@ -84,11 +84,11 @@ public:
     bool reached_thousand_iterations = false;
 
     //float min_theta = 0.5f;
-    float min_theta = 0.75f;
+    float min_theta = 0.5f;
     //float max_theta = 2.0f;
-    float max_theta = 2.0f;
+    float max_theta = 0.5f;
 
-    float cell_size = 3.5f;
+    float cell_size = 0.5f;
     
 	TSNE()
 	{
@@ -124,10 +124,6 @@ public:
 
 
 
-
-        #ifdef TIME_ALGORITHM 
-        Timer time_point_creation;
-        #endif
         
         //srand(time(NULL));
         srand(296343u);
@@ -167,19 +163,13 @@ public:
             indexTrackerPrev[i] = i;
             #endif
         }
-        #ifdef TIME_ALGORITHM 
-        time_point_creation.endTimer("tsne point creation");
-        #endif
+
 
         setupEfficientPmatrix();
 
-        #ifdef TIME_ALGORITHM 
-        Timer time_update_minmax;
-        #endif
+
         updateMinMaxPos();
-        #ifdef TIME_ALGORITHM 
-        time_update_minmax.endTimer("tsne update minmax");
-        #endif
+
 
         float set_theta = 1.0f;
         float set_cell_size = cell_size;
@@ -265,9 +255,7 @@ public:
         indexTrackerPrev.resize(data_size);
         #endif
 
-        #ifdef TIME_ALGORITHM 
-        Timer time_point_creation;
-        #endif
+
         
         //srand(time(NULL));
         srand(seed);
@@ -307,19 +295,13 @@ public:
             indexTrackerPrev[i] = i;
             #endif
         }
-        #ifdef TIME_ALGORITHM 
-        time_point_creation.endTimer("tsne point creation");
-        #endif
+
 
         setupEfficientPmatrix();
 
-        #ifdef TIME_ALGORITHM 
-        Timer time_update_minmax;
-        #endif
+
         updateMinMaxPos();
-        #ifdef TIME_ALGORITHM 
-        time_update_minmax.endTimer("tsne update minmax");
-        #endif
+
 
         setThetaForAll(theta, cell_size);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -357,22 +339,29 @@ public:
             reached_thousand_iterations = true;
             desired_iteration_per_second = 0.0f;
             thousand_iteration_timer.endTimer("A thousand iterations");
+
+            #ifdef INDEX_TRACKER
+            costFunction(embeddedPoints, indexTracker, Pmatrix);
+            #else
+            costFunction(embeddedPoints, Pmatrix);
+            #endif
         }
         
 
         if (glfwGetTime() - time_since_last_iteration >= 1.0f / desired_iteration_per_second)
         {
+            std::cout << "------------------------------------\n";
             Timer time_step_timer;
 
             time_since_last_iteration = glfwGetTime();
 
             Timer derivative_timer;
             updateDerivative();
-            derivative_timer.endTimer("updateDerivative");
+            derivative_timer.endTimer("__updateDerivative");
 
             Timer update_timer;
             updatePoints();
-            update_timer.endTimer("updatePoints");
+            update_timer.endTimer("__updatePoints");
 
             #ifdef INDEX_TRACKER
             embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1Int1Int32_t1);
@@ -383,9 +372,10 @@ public:
 
             Timer time_update_tree;
             nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
+            time_update_tree.endTimer("__update tree");
             std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
             nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
-            time_update_tree.endTimer("update tree");
+
 
 
             std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, forceSize);
@@ -414,9 +404,7 @@ public:
             accelerationRate = 0.5f;
         }
 
-        #ifdef TIME_ALGORITHM 
-        Timer time_update;
-        #endif
+
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             #ifdef INDEX_TRACKER
@@ -433,21 +421,15 @@ public:
             embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             #endif
         }
-        #ifdef TIME_ALGORITHM 
-        time_update.endTimer("update positions");
-        #endif
+
 
         #ifdef INDEX_TRACKER
         indexTrackerPrev.swap(indexTracker);
         #endif
 
-        #ifdef TIME_ALGORITHM 
-        Timer time_update_minmax;
-        #endif
+
         updateMinMaxPos();
-        #ifdef TIME_ALGORITHM 
-        time_update_minmax.endTimer("update minmax");
-        #endif
+
 
         iteration_counter++;
 
@@ -464,7 +446,7 @@ public:
         //    std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
         //    min_theta;
 
-        float sharpness = 2.0f;
+        float sharpness = 1.0f;
         float extra_theta_ratio = 0.5f + 0.5f * std::cos
         (
             std::numbers::pi_v<float> *
@@ -482,7 +464,7 @@ public:
 
         setThetaForAll(theta_result, cell_size);
 
-        timer.endTimer("calculating theta");
+        timer.endTimer("____calculating theta");
     }
 
     void setMinMaxTheta(float set_min_theta, float set_max_theta)
@@ -525,14 +507,22 @@ public:
     void updateDerivative()
     {
         #ifdef INDEX_TRACKER
+        Timer timerIndexTracker;
         updateIndexTracker();
+        timerIndexTracker.endTimer("____updateIndexTracker");
         #endif
 
+        Timer timerResetDeriv;
         resetDeriv();
+        timerResetDeriv.endTimer("____resetDeriv");
 
+        Timer timerUpdateRepulsive;
         updateRepulsive();
+        timerUpdateRepulsive.endTimer("____updateRepulsive");
 
+        Timer timerUpdateAttractive;
         updateAttractive();
+        timerUpdateAttractive.endTimer("____updateAttractive");
     }
 
     #ifdef INDEX_TRACKER
@@ -551,8 +541,6 @@ public:
 
     void updateRepulsive()
     {
-        Timer timer;
-
         double QijTotal = 0.0f;
 
         #ifdef INDEX_TRACKER
@@ -565,8 +553,6 @@ public:
         {
             embeddedPoints[i].derivative *= (4.0 / QijTotal);
         }
-
-        timer.endTimer("repulsive");
     }
 
     void updateAttractiveOUTDATED()
@@ -599,8 +585,6 @@ public:
 
     void updateAttractive()
     {
-        Timer timer;
-
         float exageration = iteration_counter < 250 ? 16.0f : 4.0f;
 
         for (int n = 0; n < embeddedPoints.size(); n++)
@@ -631,11 +615,13 @@ public:
 
             pointR.derivative += dim;
         }
-
-        timer.endTimer("attractive");
     }
 
+    #ifdef INDEX_TRACKER
     void costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double>& Pmatrix)
+    #else
+    void costFunction(const std::vector<TsnePoint2D>& points, Eigen::SparseMatrix<double>& Pmatrix)
+    #endif
     {
         double QijTotal = 0.0;
 

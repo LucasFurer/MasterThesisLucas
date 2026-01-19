@@ -73,7 +73,10 @@ public:
 	#endif
     {
         traverse_SYM_NN(total, points, nodes[0], nodes[0], this->theta);
-        divide_by_mass();
+        
+        float one_over_M0 = 1.0f / nodes[0].M0;
+        nodes[0].C2 *= one_over_M0;
+        nodes[0].C3 *= one_over_M0;
         applyForces(points, nodes[0]);
     }
 
@@ -85,14 +88,6 @@ public:
         glm::vec2 negMinPos = -minPos;
         float largestAxis = glm::compMax(maxPos + negMinPos);
 
-        /*
-        std::vector<MortonPoint<T>> pointsMortons(points.size());
-        for (int i = 0; i < points.size(); i++)
-            pointsMortons[i] = MortonPoint<T>(createMortonCode(points[i].position, negMinPos, largestAxis), points[i]);
-        boost::sort::spreadsort::integer_sort(pointsMortons.begin(), pointsMortons.end(), rightshift<T>(), lessthan<T>());
-        for (int i = 0; i < points.size(); i++)
-            points[i] = pointsMortons[i].point;
-        */
         #ifdef INDEX_TRACKER
         createMortonCode(points, negMinPos, largestAxis);
         boost::sort::spreadsort::integer_sort(points.begin(), points.end(), TsnePoint2DRightshift(), TsnePoint2DLessthan());
@@ -287,7 +282,7 @@ private:
         {
             if (nodes[i].M0 != 0.0f)
             {
-                nodes[i].C1 /= nodes[i].M0;
+                //nodes[i].C1 /= nodes[i].M0;
                 nodes[i].C2 /= nodes[i].M0;
                 nodes[i].C3 /= nodes[i].M0;
             }
@@ -450,11 +445,17 @@ private:
             {
                 if (nodes[nodeIndex].particleIndexAmount != 0)
                 {
+                    float one_over_M0 = 1.0f / nodes[nodeIndex].M0;
+                    nodes[nodeIndex].C2 *= one_over_M0;
+                    nodes[nodeIndex].C3 *= one_over_M0;
+
+
+
                     glm::vec2 oldZ = nodes[nodeIndex].centreOfMass;
                     glm::vec2 newZ = node.centreOfMass;
                     Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
-                    Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-                    Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+                    //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+                    //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
                     Fastor::Tensor<float, 2> newC1 = node.C1 +
                         Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
@@ -480,8 +481,8 @@ private:
                 glm::vec2 x = points[pointIndex].position;
                 glm::vec2 Z0 = node.centreOfMass;
                 Fastor::Tensor<float, 2> diff1 = { x.x - Z0.x, x.y - Z0.y };
-                Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-                Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+                //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+                //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
                 Fastor::Tensor<float, 2> newC1 = node.C1 +
                     Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
@@ -594,7 +595,7 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
+    Fastor::Tensor<float, 2> C1 = Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
@@ -656,7 +657,7 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    C1 = MA0 * Fastor::Tensor<float, 2>
+    C1 = Fastor::Tensor<float, 2>
     {
         MB0 * (R.x* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
@@ -693,7 +694,7 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 = MA0 * Fastor::Tensor<float, 2>
+    Fastor::Tensor<float, 2> C1 = Fastor::Tensor<float, 2>
     {
         MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
         MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
@@ -708,7 +709,7 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     MA0 = sourceNode.M0;
     MB0 = 1.0f;
 
-    C1 = MA0 * Fastor::Tensor<float, 2>
+    C1 = Fastor::Tensor<float, 2>
     {
         (R.x * D1),
         (R.y * D1)

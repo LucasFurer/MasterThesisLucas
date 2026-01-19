@@ -55,8 +55,8 @@ public:
         tsne.resetTsne(dataset_type, data_size, perplexity_value, -1.0f, theta, cell_size, seed);
         tsne.setMinMaxTheta(theta, theta);
         NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-        //PM->C_min_num_intervals = PM_grid_width;
         PM->cell_size = cell_size;
+        tsne.cell_size = cell_size;
 
         // set graph size
         #ifndef INDEX_TRACKER
@@ -850,60 +850,60 @@ public:
                 }
                 
                 #ifndef INDEX_TRACKER
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "BH";
-                //timeBefore = glfwGetTime();
-                //tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                //calculationtimeBH[t] += glfwGetTime() - timeBefore;
-                //fastSolution = tsne.embeddedPoints;
-                ////fastSolutionIndexTracker = tsne.indexTracker;
-                //errorBH[t] += getNMAE(naiveSolution, fastSolution);
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = "BH";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeBH[t] += glfwGetTime() - timeBefore;
+                fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                errorBH[t] += getNMAE(naiveSolution, fastSolution);
 
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "BHMP";
-                //timeBefore = glfwGetTime();
-                //tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                //calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
-                //fastSolution = tsne.embeddedPoints;
-                ////fastSolutionIndexTracker = tsne.indexTracker;
-                //errorBHMP[t] += getNMAE(naiveSolution, fastSolution);
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = "BHMP";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+                fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                errorBHMP[t] += getNMAE(naiveSolution, fastSolution);
 
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "BHR";
-                //timeBefore = glfwGetTime();
-                //tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                //calculationtimeBHR[t] += glfwGetTime() - timeBefore;
-                //fastSolution = tsne.embeddedPoints;
-                ////fastSolutionIndexTracker = tsne.indexTracker;
-                //errorBHR[t] += getNMAE(naiveSolution, fastSolution);
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = "BHR";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+                fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                errorBHR[t] += getNMAE(naiveSolution, fastSolution);
 
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "BHRMP";
-                //timeBefore = glfwGetTime();
-                //tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                //calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
-                //fastSolution = tsne.embeddedPoints;
-                ////fastSolutionIndexTracker = tsne.indexTracker;
-                //errorBHRMP[t] += getNMAE(naiveSolution, fastSolution);
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = "BHRMP";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+                fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                errorBHRMP[t] += getNMAE(naiveSolution, fastSolution);
 
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "FMM";
-                //timeBefore = glfwGetTime();
-                //tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                //calculationtimeFMM[t] += glfwGetTime() - timeBefore;
-                //fastSolution = tsne.embeddedPoints;
-                ////fastSolutionIndexTracker = tsne.indexTracker;
-                //errorFMM[t] += getNMAE(naiveSolution, fastSolution);
+                tsne.resetDeriv();
+                tsne.iteration_counter = j;
+                tsne.nBodySelect = "FMM";
+                timeBefore = glfwGetTime();
+                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                tsne.updateDerivative();
+                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+                fastSolution = tsne.embeddedPoints;
+                //fastSolutionIndexTracker = tsne.indexTracker;
+                errorFMM[t] += getNMAE(naiveSolution, fastSolution);
 
 
                 tsne.resetDeriv();
@@ -1002,7 +1002,7 @@ public:
 
         std::filesystem::path methodPath;
         #ifndef INDEX_TRACKER
- /*       methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorBH, calculationtimeBH, thetaBH, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorBHMP, calculationtimeBHMP, thetaBHMP, methodPath);
@@ -1011,7 +1011,7 @@ public:
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);*/
+        writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorPM, calculationtimePM, thetaPM, methodPath);
         #endif
@@ -1110,6 +1110,7 @@ public:
             tsne.setMinMaxTheta(chosenTheta, 2.0f);
             NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
             PM->cell_size = chosenCellSize;
+            tsne.cell_size = chosenCellSize;
 
 
 
