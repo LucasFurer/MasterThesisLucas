@@ -80,10 +80,10 @@ struct VertexPos2Col3
 		result.reserve(points.size() * 2);
 		for (int i = 0; i < points.size(); i++)
 		{
-			glm::vec2 linePosB = points[i].position;
+			glm::vec2 linePosB = glm::vec2(points[i].position.x, points[i].position.y);
 			glm::vec3 lineColB = glm::vec3(1.0f, 0.0f, 0.0f);
 
-			glm::vec2 linePosE = points[i].position + forceSize * forceSize * points[i].derivative;
+			glm::vec2 linePosE = points[i].position + static_cast<double>(forceSize * forceSize) * points[i].derivative;
 			//glm::vec2 linePosE = particles[i].position + particles[i].speed;
 			glm::vec3 lineColE = glm::vec3(1.0f, 0.0f, 0.0f);
 

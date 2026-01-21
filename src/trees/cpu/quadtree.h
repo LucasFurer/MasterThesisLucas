@@ -15,10 +15,10 @@ public:
 	std::vector<T>* allParticles;
 
 	float totalMass;
-	glm::vec2 centreOfMass;
+	glm::dvec2 centreOfMass;
 
-	glm::vec2 lowestCorner;
-	glm::vec2 highestCorner;
+	glm::dvec2 lowestCorner;
+	glm::dvec2 highestCorner;
 
 	std::vector<int> occupants;
 
@@ -31,8 +31,8 @@ public:
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
 
-		glm::vec2 setLowestCorner(std::numeric_limits<float>::infinity());
-		glm::vec2 setHighestCorner(-std::numeric_limits<float>::infinity());
+		glm::dvec2 setLowestCorner(std::numeric_limits<double>::infinity());
+		glm::dvec2 setHighestCorner(-std::numeric_limits<double>::infinity());
 
 		for (int i = 0; i < allParticles->size(); i++)
 		{
@@ -42,17 +42,17 @@ public:
 			setHighestCorner = glm::max(setHighestCorner, (*allParticles)[i].position);
 		}
 
-		float largestDifference = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
-		setHighestCorner.x = setLowestCorner.x + largestDifference + 0.0001f;
-		setHighestCorner.y = setLowestCorner.y + largestDifference + 0.0001f;
+		double largestDifference = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
+		setHighestCorner.x = setLowestCorner.x + largestDifference + 0.0001;
+		setHighestCorner.y = setLowestCorner.y + largestDifference + 0.0001;
 
 		lowestCorner = setLowestCorner;
 		highestCorner = setHighestCorner;
 
-		std::pair<float, glm::vec2> childMassPosition = createTree();
+		std::pair<double, glm::vec2> childMassPosition = createTree();
 	}
 
-	QuadTree(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTree(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::dvec2 initLowestCorner, glm::dvec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -102,9 +102,9 @@ public:
 			std::vector<int> LH;
 			std::vector<int> LL;
 
-			float l = (highestCorner.x - lowestCorner.x) / 2.0f;
-			float middleX = lowestCorner.x + l;
-			float middleY = lowestCorner.y + l;
+			double l = (highestCorner.x - lowestCorner.x) / 2.0;
+			double middleX = lowestCorner.x + l;
+			double middleY = lowestCorner.y + l;
 
 			for (int i = 0; i < occupants.size(); i++)
 			{
@@ -132,18 +132,18 @@ public:
 				}
 			}
 
-			if (HH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HH, glm::vec2(middleX, middleY),               glm::vec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y),        glm::vec2(highestCorner.x, middleY))); }
-			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY),        glm::vec2(middleX, highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
+			if (HH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HH, glm::dvec2(middleX, middleY),               glm::dvec2(highestCorner.x, highestCorner.y))); }
+			if (HL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HL, glm::dvec2(middleX, lowestCorner.y),        glm::dvec2(highestCorner.x, middleY))); }
+			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::dvec2(lowestCorner.x, middleY),        glm::dvec2(middleX, highestCorner.y))); }
+			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::dvec2(lowestCorner.x, lowestCorner.y), glm::dvec2(middleX, middleY))); }
 
 			//occupants.clear();
 
-			totalMass = 0.0f;
-			centreOfMass = glm::vec2(0.0f);
+			totalMass = 0.0;
+			centreOfMass = glm::dvec2(0.0);
 			for (QuadTree* quadTree : children)
 			{
-				std::pair<float, glm::vec2> childMassPosition = quadTree->createTree();
+				std::pair<double, glm::dvec2> childMassPosition = quadTree->createTree();
 				totalMass += childMassPosition.first;
 				centreOfMass += childMassPosition.first * childMassPosition.second;
 			}
@@ -154,15 +154,15 @@ public:
 		}
 		else
 		{
-			totalMass = 0.0f;
-			centreOfMass = glm::vec2(0.0f);
+			totalMass = 0.0;
+			centreOfMass = glm::dvec2(0.0);
 			//std::cout << "leaf" << std::endl;
 			for (int i = 0; i < occupants.size(); i++)
 			{
 				//totalMass += allParticles[occupants[i]].mass;
-				totalMass += 1.0f;
+				totalMass += 1.0;
 				//centreOfMass += allParticles[occupants[i]].mass * allParticles[occupants[i]].position;
-				centreOfMass += 1.0f * (*allParticles)[occupants[i]].position;
+				centreOfMass += 1.0 * (*allParticles)[occupants[i]].position;
 			}
 
 			centreOfMass /= totalMass;

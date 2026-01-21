@@ -62,10 +62,10 @@ public:
         std::vector<double> localTotals(numThreads, 0.0);
 
         // Thread-local derivative buffers
-        std::vector<std::vector<glm::vec2>> localDerivatives
+        std::vector<std::vector<glm::dvec2>> localDerivatives
         (
             numThreads,
-            std::vector<glm::vec2>(points.size(), glm::vec2(0.0f))
+            std::vector<glm::dvec2>(points.size(), glm::dvec2(0.0))
         );
 
         for (unsigned t = 0; t < numThreads; ++t)
@@ -113,7 +113,7 @@ public:
     }
 
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override {}
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override {}
 
     std::vector<VertexPos2Col3> getNodesBufferData(int level) override { return std::vector<VertexPos2Col3>(); }
 
@@ -132,11 +132,11 @@ void TSNEtestKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePo
     //sinkPoint.derivative += forceDecay * forceDecay * diff;
     //sourcePoint.derivative += forceDecay * forceDecay * -diff;
 
-    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float dist = glm::length(diff);
+    glm::dvec2 diff = sinkPoint.position - sourcePoint.position;
+    double dist = glm::length(diff);
 
-    float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += static_cast<double>(forceDecay);
+    double forceDecay = 1.0 / (1.0 + (dist * dist));
+    total += forceDecay;
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

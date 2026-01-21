@@ -49,7 +49,7 @@ public:
 
 	TsneTest() {}
 
-	void errorTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, int iteration_amount, float theta, int PM_grid_width, double cell_size, unsigned int seed)
+	void errorTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, double learn_rate, int iteration_amount, double theta, int PM_grid_width, double cell_size, unsigned int seed)
     {
         TSNE_no_buffers tsne;
         tsne.resetTsne(dataset_type, data_size, perplexity_value, -1.0f, theta, cell_size, seed);
@@ -269,7 +269,7 @@ public:
     }
 
 
-    void calculationtimeThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
+    void calculationtimeThetaTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<double> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {
         int theta_diversity_amount = thetas.size();
 
@@ -289,16 +289,16 @@ public:
     
         //std::vector<float> thetaNaive(theta_diversity_amount, 0.0f);
         #ifndef INDEX_TRACKER
-        std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBH(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaPM(theta_diversity_amount, 0.0f);
         #endif
         #ifdef INDEX_TRACKER
-        std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
         #endif
 
 
@@ -319,8 +319,8 @@ public:
     
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = thetas[t];
-            float chosenCellSize = cell_sizes[t];
+            double chosenTheta = thetas[t];
+            double chosenCellSize = cell_sizes[t];
             //std::cout << "chosenTheta: " << chosenTheta << std::endl;
 
             TSNE_no_buffers tsne;
@@ -540,23 +540,23 @@ public:
         #endif
 
         #ifndef INDEX_TRACKER
-        std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBH(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaPM(theta_diversity_amount, 0.0f);
         #endif
         #ifdef INDEX_TRACKER
-        std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
         #endif
 
 
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = thetas[t];
-            float chosenCellSize = cell_sizes[t];
+            double chosenTheta = thetas[t];
+            double chosenCellSize = cell_sizes[t];
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
@@ -745,7 +745,7 @@ public:
     }
 
 
-    void calculationtimeErrorTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed)
+    void calculationtimeErrorTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<double> thetas, std::vector<double> cell_sizes, unsigned int seed)
     {
         int theta_diversity_amount = thetas.size();
         #ifndef INDEX_TRACKER
@@ -775,23 +775,23 @@ public:
         #endif
 
         #ifndef INDEX_TRACKER
-        std::vector<float> thetaBH(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHR(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaBHRMP(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaPM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBH(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHR(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaBHRMP(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaPM(theta_diversity_amount, 0.0f);
         #endif
         #ifdef INDEX_TRACKER
-        std::vector<float> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
-        std::vector<float> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
+        std::vector<double> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
         #endif
 
 
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = thetas[t];
-            float chosenCellSize = cell_sizes[t];
+            double chosenTheta = thetas[t];
+            double chosenCellSize = cell_sizes[t];
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
@@ -1024,7 +1024,7 @@ public:
     }
 
     // set theta and PM stuff manually
-    void costTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, float min_theta, float max_theta, double cell_size, unsigned int seed, std::string method)
+    void costTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, double min_theta, double max_theta, double cell_size, unsigned int seed, std::string method)
     {
         TSNE_no_buffers tsne;
         tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, min_theta, cell_size, seed);
@@ -1090,7 +1090,7 @@ public:
         tsne.cleanup();
     }
 
-    void calculationtimeCostTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<float> thetas, std::vector<double> cell_sizes, unsigned int seed, std::string method)
+    void calculationtimeCostTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<double> thetas, std::vector<double> cell_sizes, unsigned int seed, std::string method)
     {
         int theta_diversity_amount = thetas.size();
         std::vector<double> calculationtime(theta_diversity_amount, 0.0f);
@@ -1102,8 +1102,8 @@ public:
 
         for (int t = 0; t < theta_diversity_amount; t++)
         {
-            float chosenTheta = thetas[t];
-            float chosenCellSize = cell_sizes[t];
+            double chosenTheta = thetas[t];
+            double chosenCellSize = cell_sizes[t];
 
             TSNE_no_buffers tsne;
             tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
@@ -1231,9 +1231,9 @@ private:
                             #endif
 
 
-                            glm::vec2 diff = point_j.position - point_i.position;
-                            float distance_squared = diff.x * diff.x + diff.y * diff.y;
-                            localTotals[t] += static_cast<double>(1.0f / (1.0f + distance_squared));
+                            glm::dvec2 diff = point_j.position - point_i.position;
+                            double distance_squared = diff.x * diff.x + diff.y * diff.y;
+                            localTotals[t] += static_cast<double>(1.0 / (1.0 + distance_squared));
                         }
                     }
                 }
@@ -1261,9 +1261,9 @@ private:
                     const TsnePoint2D& point_row = points[it.row()];
                     #endif
 
-                    glm::vec2 diff = point_col.position - point_row.position;
-                    float distance_squared = diff.x * diff.x + diff.y * diff.y;
-                    double Qij = static_cast<double>(1.0f / (1.0f + distance_squared)) / QijTotal;
+                    glm::dvec2 diff = point_col.position - point_row.position;
+                    double distance_squared = diff.x * diff.x + diff.y * diff.y;
+                    double Qij = static_cast<double>(1.0 / (1.0 + distance_squared)) / QijTotal;
 
                     double Pij = it.value();
 

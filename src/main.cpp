@@ -196,7 +196,7 @@ int main(void)
             //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 1000, 30.0f, 400, std::vector<float>{1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
         //tsne_test.costTimestepTSNE("MNIST_digits", 10000, 30.0f, 1000, 0.75f, 2.0f, 296343u, "FMM_SYM_MORTON");
         //tsne_test.costTimestepTSNE("MNIST_digits", 70000, 30.0f, 1001, 0.75f, 2.0f, 1.0, 296343u, "BH");
-        tsne_test.calculationtimeCostTSNE("MNIST_digits", 70000, 30.0f, 1001, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, 296343u, "PM");
+        //tsne_test.calculationtimeCostTSNE("MNIST_digits", 70000, 30.0f, 1001, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, 296343u, "PM");
 
 
 

@@ -321,13 +321,13 @@ public:
             #ifdef INDEX_TRACKER
             int tracketIndex = indexTracker[i];
 
-            points[tracketIndex].derivative = -glm::vec2
+            points[tracketIndex].derivative = -glm::dvec2
             (
                 C_dC[2 * i + 0],
                 C_dC[2 * i + 1]
             );
             #else
-            points[i].derivative = -glm::vec2
+            points[i].derivative = -glm::dvec2
             (
                 C_dC[2 * i + 0],
                 C_dC[2 * i + 1]
@@ -336,7 +336,7 @@ public:
         }
     }
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
 
     }

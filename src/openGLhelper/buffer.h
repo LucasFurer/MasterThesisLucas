@@ -21,7 +21,9 @@ enum DataType
 	Pos2FloatAcc2FloatLab1Int,
 	Float2Float2Int1,
 	Float2Float2Int1Int1,
-	Float2Float2Int1Int1Int32_t1
+	Float2Float2Int1Int1Int32_t1,
+	Double2Double2Int1,
+	Double2Double2Int1Int1Int32_t1
 };
 
 class Buffer
@@ -299,6 +301,26 @@ public:
 			glVertexAttribIPointer(3, 1, GL_INT, 4 * sizeof(float) + 2 * sizeof(int) + 1 * sizeof(std::uint32_t), (void*)(4 * sizeof(float) + 1 * sizeof(int)));
 			glEnableVertexAttribArray(3);
 			glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, 4 * sizeof(float) + 2 * sizeof(int) + 1 * sizeof(std::uint32_t), (void*)(4 * sizeof(float) + 2 * sizeof(int)));
+			glEnableVertexAttribArray(4);
+			break;
+		case Double2Double2Int1:
+			glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(T), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, sizeof(T), (void*)(2 * sizeof(double)));
+			glEnableVertexAttribArray(1);
+			glVertexAttribIPointer(2, 1, GL_INT, sizeof(T), (void*)(4 * sizeof(double)));
+			glEnableVertexAttribArray(2);
+			break;
+		case Double2Double2Int1Int1Int32_t1:
+			glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(T), (void*)0);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, sizeof(T), (void*)(2 * sizeof(double)));
+			glEnableVertexAttribArray(1);
+			glVertexAttribIPointer(2, 1, GL_INT, sizeof(T), (void*)(4 * sizeof(double)));
+			glEnableVertexAttribArray(2);
+			glVertexAttribIPointer(3, 1, GL_INT, sizeof(T), (void*)(4 * sizeof(double) + 1 * sizeof(int)));
+			glEnableVertexAttribArray(3);
+			glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(T), (void*)(4 * sizeof(double) + 2 * sizeof(int)));
 			glEnableVertexAttribArray(4);
 			break;
 		default:

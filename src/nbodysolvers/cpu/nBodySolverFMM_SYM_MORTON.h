@@ -54,7 +54,7 @@ public:
         std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         unsigned int initTreeDepth,
-        float initTheta
+        double initTheta
     )
     {
         kernelNN = initKernelNN;
@@ -74,19 +74,19 @@ public:
     {
         traverse_SYM_NN(total, points, nodes[0], nodes[0], this->theta);
         
-        float one_over_M0 = 1.0f / nodes[0].M0;
+        double one_over_M0 = 1.0 / nodes[0].M0;
         nodes[0].C2 *= one_over_M0;
         nodes[0].C3 *= one_over_M0;
         applyForces(points, nodes[0]);
     }
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
         NodeFMM_MORTON_2D emptyNode;
         std::fill(nodes.begin(), nodes.end(), emptyNode);
 
-        glm::vec2 negMinPos = -minPos;
-        float largestAxis = glm::compMax(maxPos + negMinPos);
+        glm::dvec2 negMinPos = -minPos;
+        double largestAxis = glm::compMax(maxPos + negMinPos);
 
         #ifdef INDEX_TRACKER
         createMortonCode(points, negMinPos, largestAxis);
@@ -120,20 +120,13 @@ public:
     }
 
 private:
-    void traverse_SYM_NN(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& node_A, NodeFMM_MORTON_2D& node_B, float theta)
+    void traverse_SYM_NN(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& node_A, NodeFMM_MORTON_2D& node_B, double theta)
     {
-        //interaction_NN_stack.clear();
-        //interaction_NN_stack.push_back(std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>{node_A, node_B});
-
-        //while (interaction_NN_stack.size() != 0)
-        //{
-        //    std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D> cur_pair = interaction_NN_stack.back();
-        //    interaction_NN_stack.pop_back();
         std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&> cur_pair = std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&>{ node_A, node_B };
             
 
-        glm::vec2 diff = cur_pair.first.centreOfMass - cur_pair.second.centreOfMass;
-        float dist = glm::length(diff);
+        glm::dvec2 diff = cur_pair.first.centreOfMass - cur_pair.second.centreOfMass;
+        double dist = glm::length(diff);
 
         if ((cur_pair.first.BBlength + cur_pair.second.BBlength) / dist < theta) // sym node node
         {
@@ -230,22 +223,14 @@ private:
         //}
     }
 
-    void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, NodeFMM_MORTON_2D& secondNode, float theta)
+    void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, NodeFMM_MORTON_2D& secondNode, double theta)
     {
-        //interaction_PN_stack.clear();
-        //interaction_PN_stack.push_back(std::pair<T, NodeFMM_MORTON_2D>{firstPoint, secondNode});
-
-        //while (interaction_PN_stack.size() != 0)
-        //{
-        //    std::pair<T, NodeFMM_MORTON_2D> cur_pair = interaction_PN_stack.back();
-        //    interaction_PN_stack.pop_back();
-
         std::pair<T&, NodeFMM_MORTON_2D&> cur_pair = std::pair<T&, NodeFMM_MORTON_2D&>{ firstPoint, secondNode };
 
-        glm::vec2 diff = cur_pair.first.position - cur_pair.second.centreOfMass;
-        float dist = glm::length(diff);
+        glm::dvec2 diff = cur_pair.first.position - cur_pair.second.centreOfMass;
+        double dist = glm::length(diff);
 
-        if (cur_pair.second.BBlength / dist < theta * 0.5f) // sym point node
+        if (cur_pair.second.BBlength / dist < theta * 0.5) // sym point node
         {
 
             kernelPN(total, cur_pair.first, cur_pair.second);
@@ -280,7 +265,7 @@ private:
     {
         for (int i = 0; i < nodes.size(); i++)
         {
-            if (nodes[i].M0 != 0.0f)
+            if (nodes[i].M0 != 0.0)
             {
                 //nodes[i].C1 /= nodes[i].M0;
                 nodes[i].C2 /= nodes[i].M0;
@@ -325,16 +310,16 @@ private:
         //leafGridSize = std::pow(2, treeDepth);
     }
 
-    void createLeafNodes(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos)
+    void createLeafNodes(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos)
     {
-        glm::vec2 negMinPos = -minPos;
-        float largestAxis = glm::compMax(maxPos + negMinPos);
+        glm::dvec2 negMinPos = -minPos;
+        double largestAxis = glm::compMax(maxPos + negMinPos);
 
-        float leafNodeSize = largestAxis / static_cast<float>(levelGridWidth[treeDepth]);
+        double leafNodeSize = largestAxis / static_cast<double>(levelGridWidth[treeDepth]);
 
         for (int i = 0; i < points.size(); i++)
         {
-            glm::vec2 gridPos = static_cast<float>(levelGridWidth[treeDepth]) * (points[i].position + negMinPos) / (largestAxis);
+            glm::dvec2 gridPos = static_cast<double>(levelGridWidth[treeDepth]) * (points[i].position + negMinPos) / (largestAxis);
 
             glm::vec<2, uint32_t> gridCoord = glm::min(glm::max(glm::vec<2, uint32_t>(gridPos), glm::vec<2, uint32_t>(0u)), glm::vec<2, uint32_t>(levelGridWidth[treeDepth] - 1u));
 
@@ -342,7 +327,7 @@ private:
 
             if (nodes[leafLevelIndex].particleIndexAmount == 0u)
             {
-                nodes[leafLevelIndex].BBcentre = minPos + leafNodeSize * glm::vec2(gridCoord) + 0.5f * glm::vec2(leafNodeSize);
+                nodes[leafLevelIndex].BBcentre = minPos + leafNodeSize * glm::dvec2(gridCoord) + 0.5 * glm::dvec2(leafNodeSize);
                 nodes[leafLevelIndex].BBlength = leafNodeSize;
 
                 nodes[leafLevelIndex].firstParticleIndex = i;
@@ -350,20 +335,20 @@ private:
 
             nodes[leafLevelIndex].particleIndexAmount += 1u;
             nodes[leafLevelIndex].centreOfMass += points[i].position;
-            nodes[leafLevelIndex].M0 += 1.0f;
+            nodes[leafLevelIndex].M0 += 1.0;
         }
 
         for (int n = levelIndex[treeDepth]; n < levelIndex[treeDepth] + levelSize[treeDepth]; n++)
         {
-            if (nodes[n].M0 != 0.0f)
+            if (nodes[n].M0 != 0.0)
             {
                 nodes[n].centreOfMass /= nodes[n].M0;
 
                 for (int pointIndex = nodes[n].firstParticleIndex; pointIndex < nodes[n].firstParticleIndex + nodes[n].particleIndexAmount; pointIndex++)
                 {
-                    glm::vec2 relativeCoord = points[pointIndex].position - nodes[n].centreOfMass;
+                    glm::dvec2 relativeCoord = points[pointIndex].position - nodes[n].centreOfMass;
 
-                    Fastor::Tensor<float, 2, 2> outer_product;
+                    Fastor::Tensor<double, 2, 2> outer_product;
                     outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
                     outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
                     outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
@@ -378,12 +363,12 @@ private:
 
     void bottomUpNodeConstruction()
     {
-        std::array<glm::vec2, 4> BBcentreOffset
+        std::array<glm::dvec2, 4> BBcentreOffset
         {
-            glm::vec2(0.5f, 0.5f),
-            glm::vec2(-0.5f, 0.5f),
-            glm::vec2(0.5f, -0.5f),
-            glm::vec2(-0.5f, -0.5f)
+            glm::dvec2(0.5, 0.5),
+            glm::dvec2(-0.5, 0.5),
+            glm::dvec2(0.5, -0.5),
+            glm::dvec2(-0.5, -0.5)
         };
 
         for (int l = treeDepth - 1; l >= 0; l--)
@@ -401,7 +386,7 @@ private:
                         nodes[nodeIndex].firstChildIndex = potentialFirstChildIndex;
 
                         nodes[nodeIndex].BBcentre = BBcentreOffset[j] * nodes[childIndex].BBlength + nodes[childIndex].BBcentre;
-                        nodes[nodeIndex].BBlength = 2.0f * nodes[childIndex].BBlength;
+                        nodes[nodeIndex].BBlength = 2.0 * nodes[childIndex].BBlength;
 
                         nodes[nodeIndex].firstParticleIndex = nodes[childIndex].firstParticleIndex;
                         nodes[nodeIndex].particleIndexAmount += nodes[childIndex].particleIndexAmount;
@@ -418,11 +403,11 @@ private:
 
                     for (int nodeChildIndex = nodes[nodeIndex].firstChildIndex; nodeChildIndex < nodes[nodeIndex].firstChildIndex + 4; nodeChildIndex++)
                     {
-                        if (nodes[nodeChildIndex].M0 != 0.0f)
+                        if (nodes[nodeChildIndex].M0 != 0.0)
                         {
-                            glm::vec2 relativeCoord = nodes[nodeChildIndex].centreOfMass - nodes[nodeIndex].centreOfMass;
+                            glm::dvec2 relativeCoord = nodes[nodeChildIndex].centreOfMass - nodes[nodeIndex].centreOfMass;
 
-                            Fastor::Tensor<float, 2, 2> outer_product;
+                            Fastor::Tensor<double, 2, 2> outer_product;
                             outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
                             outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
                             outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
@@ -445,26 +430,26 @@ private:
             {
                 if (nodes[nodeIndex].particleIndexAmount != 0)
                 {
-                    float one_over_M0 = 1.0f / nodes[nodeIndex].M0;
+                    double one_over_M0 = 1.0 / nodes[nodeIndex].M0;
                     nodes[nodeIndex].C2 *= one_over_M0;
                     nodes[nodeIndex].C3 *= one_over_M0;
 
 
 
-                    glm::vec2 oldZ = nodes[nodeIndex].centreOfMass;
-                    glm::vec2 newZ = node.centreOfMass;
-                    Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
+                    glm::dvec2 oldZ = nodes[nodeIndex].centreOfMass;
+                    glm::dvec2 newZ = node.centreOfMass;
+                    Fastor::Tensor<double, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
                     //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
                     //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-                    Fastor::Tensor<float, 2> newC1 = node.C1 +
+                    Fastor::Tensor<double, 2> newC1 = node.C1 +
                         Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
-                        (1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
+                        0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
 
-                    Fastor::Tensor<float, 2, 2> newC2 = node.C2 +
+                    Fastor::Tensor<double, 2, 2> newC2 = node.C2 +
                         Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3);
 
-                    Fastor::Tensor<float, 2, 2, 2> newC3 = node.C3;
+                    Fastor::Tensor<double, 2, 2, 2> newC3 = node.C3;
 
                     nodes[nodeIndex].C1 += newC1;
                     nodes[nodeIndex].C2 += newC2;
@@ -478,31 +463,31 @@ private:
         {
             for (int pointIndex = node.firstParticleIndex; pointIndex < node.firstParticleIndex + node.particleIndexAmount; pointIndex++)
             {
-                glm::vec2 x = points[pointIndex].position;
-                glm::vec2 Z0 = node.centreOfMass;
-                Fastor::Tensor<float, 2> diff1 = { x.x - Z0.x, x.y - Z0.y };
+                glm::dvec2 x = points[pointIndex].position;
+                glm::dvec2 Z0 = node.centreOfMass;
+                Fastor::Tensor<double, 2> diff1 = { x.x - Z0.x, x.y - Z0.y };
                 //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
                 //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-                Fastor::Tensor<float, 2> newC1 = node.C1 +
+                Fastor::Tensor<double, 2> newC1 = node.C1 +
                     Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
-                    (1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
+                    0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
 
-                points[pointIndex].derivative += glm::vec2(newC1(0), newC1(1));
+                points[pointIndex].derivative += glm::dvec2(newC1(0), newC1(1));
             }
         }
     }
 
-    void createMortonCode(std::vector<TsnePoint2D>& points, glm::vec2 negMinPos, float largestAxis)
+    void createMortonCode(std::vector<TsnePoint2D>& points, glm::dvec2 negMinPos, double largestAxis)
     {
-        glm::vec2 position{ 0.0f };
+        glm::dvec2 position{ 0.0 };
         for (int i = 0; i < points.size(); i++)
         {
             position = points[i].position;
 
             position = (position + negMinPos) / (largestAxis); // rescale such that range is between [0-1]
 
-            position = glm::min(glm::max(position * 65536.0f, glm::vec2(0.0f)), glm::vec2(65535.0f)); // rescale such that range is between [0-65535] which is the max number for 16 bits
+            position = glm::min(glm::max(position * 65536.0, glm::dvec2(0.0)), glm::dvec2(65535.0)); // rescale such that range is between [0-65535] which is the max number for 16 bits
             #ifdef INDEX_TRACKER
             points[i].morton_code = (spread16((uint32_t)position.y) << 1) | spread16((uint32_t)position.x);
             #endif
@@ -576,32 +561,32 @@ private:
 
 void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
 {
-    glm::vec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
 
-    float MA0 = sinkNode.M0;
-    float MB0 = sourceNode.M0;
-    Fastor::Tensor<float, 2, 2> MB2 = sourceNode.M2;
-    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+    double MA0 = sinkNode.M0;
+    double MB0 = sourceNode.M0;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode.M2;
+    Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
     // calculate the C^m
-    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+    double MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    double MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    double MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    double MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 = Fastor::Tensor<float, 2>
+    Fastor::Tensor<double, 2> C1 = Fastor::Tensor<double, 2>
     {
-        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
+    Fastor::Tensor<double, 2, 2> C2 = MA0 * Fastor::Tensor<double, 2, 2>
     {
         {
             MB0 * (D1 + R.x * R.x * D2),
@@ -613,7 +598,7 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
+    Fastor::Tensor<double, 2, 2, 2> C3 = MA0 * Fastor::Tensor<double, 2, 2, 2>
     {
         {
             {
@@ -649,7 +634,7 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     MA0 = sourceNode.M0;
     MB0 = sinkNode.M0;
     MB2 = sinkNode.M2;
-    MB2Tilde = (1.0f / MB0) * MB2;
+    MB2Tilde = (1.0 / MB0) * MB2;
 
     // calculate the C^m
     MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
@@ -657,10 +642,10 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
     MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    C1 = Fastor::Tensor<float, 2>
+    C1 = Fastor::Tensor<double, 2>
     {
-        MB0 * (R.x* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y* (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x* (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y* (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
     sourceNode.C1 += C1;
@@ -669,53 +654,53 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
 
     // add totals for both interactions
 
-    total += static_cast<double>(2.0f * (sinkNode.M0 * sourceNode.M0) / rS);
+    total += 2.0 * (sinkNode.M0 * sourceNode.M0) / rS;
 }
 
 
 void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
 {
-    glm::vec2 R = sinkPoint.position - sourceNode.centreOfMass;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkPoint.position - sourceNode.centreOfMass;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
 
-    float MA0 = 1.0f;
-    float MB0 = sourceNode.M0;
-    Fastor::Tensor<float, 2, 2> MB2 = sourceNode.M2;
-    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+    double MA0 = 1.0;
+    double MB0 = sourceNode.M0;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode.M2;
+    Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
 
-    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+    double MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    double MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    double MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    double MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 = Fastor::Tensor<float, 2>
+    Fastor::Tensor<double, 2> C1 = Fastor::Tensor<double, 2>
     {
-        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    sinkPoint.derivative += glm::vec2(C1(0), C1(1));
+    sinkPoint.derivative += glm::dvec2(C1(0), C1(1));
 
     // second interaction
 
     R = -R;
 
     MA0 = sourceNode.M0;
-    MB0 = 1.0f;
+    MB0 = 1.0;
 
-    C1 = Fastor::Tensor<float, 2>
+    C1 = Fastor::Tensor<double, 2>
     {
         (R.x * D1),
         (R.y * D1)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 = MA0 * Fastor::Tensor<float, 2, 2>
+    Fastor::Tensor<double, 2, 2> C2 = MA0 * Fastor::Tensor<double, 2, 2>
     {
         {
             (D1 + R.x * R.x * D2),
@@ -727,7 +712,7 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 = MA0 * Fastor::Tensor<float, 2, 2, 2>
+    Fastor::Tensor<double, 2, 2, 2> C3 = MA0 * Fastor::Tensor<double, 2, 2, 2>
     {
         {
             {
@@ -757,16 +742,16 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
 
     // add totals for both interactions
 
-    total += static_cast<double>((1.0f + sourceNode.M0) / rS);
+    total += (1.0 + sourceNode.M0) / rS;
 }
 
 
 void TSNE_FMM_SYM_MORTON_PP_Kernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 R = sinkPoint.position - sourcePoint.position;
-    float sq_dist = R.x * R.x + R.y * R.y;
+    glm::dvec2 R = sinkPoint.position - sourcePoint.position;
+    double sq_dist = R.x * R.x + R.y * R.y;
 
-    float forceDecay = 1.0f / (1.0f + sq_dist);
+    double forceDecay = 1.0 / (1.0 + sq_dist);
 
     sinkPoint.derivative += forceDecay * forceDecay * R;
 
@@ -778,7 +763,7 @@ void TSNE_FMM_SYM_MORTON_PP_Kernel(double& total, TsnePoint2D& sinkPoint, TsnePo
 
     // add totals for both interactions
 
-    total += static_cast<double>(2.0f * forceDecay);
+    total += 2.0 * forceDecay;
 }
 
 /*

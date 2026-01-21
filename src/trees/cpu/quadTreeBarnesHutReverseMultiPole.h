@@ -14,16 +14,16 @@ public:
 	int maxChildren;
 	std::vector<T>* allParticles;
 
-	float totalMass;
-	glm::vec2 centreOfMass;
+	double totalMass;
+	glm::dvec2 centreOfMass;
 
-	//glm::vec2 acceleration = glm::vec2(0.0f);
-	Fastor::Tensor<float, 2> C1{};
-	Fastor::Tensor<float, 2, 2> C2{};
-	Fastor::Tensor<float, 2, 2, 2> C3{};
+	//glm::vec2 acceleration = glm::vec2(0.0);
+	Fastor::Tensor<double, 2> C1{};
+	Fastor::Tensor<double, 2, 2> C2{};
+	Fastor::Tensor<double, 2, 2, 2> C3{};
 
-	glm::vec2 lowestCorner;
-	glm::vec2 highestCorner;
+	glm::dvec2 lowestCorner;
+	glm::dvec2 highestCorner;
 
 	std::vector<int> occupants;
 
@@ -36,8 +36,8 @@ public:
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
 
-		glm::vec2 setLowestCorner(std::numeric_limits<float>::infinity());
-		glm::vec2 setHighestCorner(-std::numeric_limits<float>::infinity());
+		glm::dvec2 setLowestCorner(std::numeric_limits<double>::infinity());
+		glm::dvec2 setHighestCorner(-std::numeric_limits<double>::infinity());
 
 		for (int i = 0; i < allParticles->size(); i++)
 		{
@@ -47,17 +47,17 @@ public:
 			setHighestCorner = glm::max(setHighestCorner, (*allParticles)[i].position);
 		}
 
-		float largestDifference = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
-		setHighestCorner.x = setLowestCorner.x + largestDifference + 0.0001f;
-		setHighestCorner.y = setLowestCorner.y + largestDifference + 0.0001f;
+		double largestDifference = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
+		setHighestCorner.x = setLowestCorner.x + largestDifference + 0.0001;
+		setHighestCorner.y = setLowestCorner.y + largestDifference + 0.0001;
 
 		lowestCorner = setLowestCorner;
 		highestCorner = setHighestCorner;
 
-		std::pair<float, glm::vec2> childMassPosition = createTree();
+		std::pair<double, glm::dvec2> childMassPosition = createTree();
 	}
 
-	QuadTreeBarnesHutReverseMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner)
+	QuadTreeBarnesHutReverseMultiPole(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::dvec2 initLowestCorner, glm::dvec2 initHighestCorner)
 	{
 		maxChildren = initMaxChildren;
 		allParticles = initAllParticles;
@@ -98,7 +98,7 @@ public:
 		}
 	}
 
-	std::pair<float, glm::vec2> createTree()
+	std::pair<double, glm::dvec2> createTree()
 	{
 		if (occupants.size() > maxChildren)
 		{
@@ -107,9 +107,9 @@ public:
 			std::vector<int> LH;
 			std::vector<int> LL;
 
-			float l = (highestCorner.x - lowestCorner.x) / 2.0f;
-			float middleX = lowestCorner.x + l;
-			float middleY = lowestCorner.y + l;
+			double l = (highestCorner.x - lowestCorner.x) / 2.0;
+			double middleX = lowestCorner.x + l;
+			double middleY = lowestCorner.y + l;
 
 			for (int i = 0; i < occupants.size(); i++)
 			{
@@ -137,16 +137,16 @@ public:
 				}
 			}
 
-			if (HH.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, HH, glm::vec2(middleX, middleY), glm::vec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, HL, glm::vec2(middleX, lowestCorner.y), glm::vec2(highestCorner.x, middleY))); }
-			if (LH.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, LH, glm::vec2(lowestCorner.x, middleY), glm::vec2(middleX, highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX, middleY))); }
+			if (HH.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, HH, glm::dvec2(middleX, middleY), glm::dvec2(highestCorner.x, highestCorner.y))); }
+			if (HL.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, HL, glm::dvec2(middleX, lowestCorner.y), glm::dvec2(highestCorner.x, middleY))); }
+			if (LH.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, LH, glm::dvec2(lowestCorner.x, middleY), glm::dvec2(middleX, highestCorner.y))); }
+			if (LL.size() != 0) { children.push_back(new QuadTreeBarnesHutReverseMultiPole(maxChildren, allParticles, LL, glm::dvec2(lowestCorner.x, lowestCorner.y), glm::dvec2(middleX, middleY))); }
 
-			totalMass = 0.0f;
-			centreOfMass = glm::vec2(0.0f);
+			totalMass = 0.0;
+			centreOfMass = glm::dvec2(0.0);
 			for (QuadTreeBarnesHutReverseMultiPole* quadTreeBarnesHutReverse : children)
 			{
-				std::pair<float, glm::vec2> childMassPosition = quadTreeBarnesHutReverse->createTree();
+				std::pair<double, glm::dvec2> childMassPosition = quadTreeBarnesHutReverse->createTree();
 				totalMass += childMassPosition.first;
 				centreOfMass += childMassPosition.first * childMassPosition.second;
 			}
@@ -157,15 +157,15 @@ public:
 		}
 		else
 		{
-			totalMass = 0.0f;
-			centreOfMass = glm::vec2(0.0f);
+			totalMass = 0.0;
+			centreOfMass = glm::dvec2(0.0);
 			//std::cout << "leaf" << std::endl;
 			for (int i = 0; i < occupants.size(); i++)
 			{
 				//totalMass += allParticles[occupants[i]].mass;
-				totalMass += 1.0f;
+				totalMass += 1.0;
 				//centreOfMass += allParticles[occupants[i]].mass * allParticles[occupants[i]].position;
-				centreOfMass += 1.0f * (*allParticles)[occupants[i]].position;
+				centreOfMass += 1.0 * (*allParticles)[occupants[i]].position;
 			}
 
 			centreOfMass /= totalMass;
@@ -181,27 +181,27 @@ public:
 			for (QuadTreeBarnesHutReverseMultiPole* child : children)
 			{
 				// prework
-				glm::vec2 oldZ = child->centreOfMass;
-				glm::vec2 newZ = centreOfMass;
-				Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y }; // dhenen
-				//Fastor::Tensor<float, 2> diff1 = { newZ.x - oldZ.x, newZ.y - oldZ.y }; // gadget4
-				Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-				Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+				glm::dvec2 oldZ = child->centreOfMass;
+				glm::dvec2 newZ = centreOfMass;
+				Fastor::Tensor<double, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y }; // dhenen
+				//Fastor::Tensor<double, 2> diff1 = { newZ.x - oldZ.x, newZ.y - oldZ.y }; // gadget4
+				Fastor::Tensor<double, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+				Fastor::Tensor<double, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
 				// translate C^n to new center of child
 
-				//Fastor::Tensor<float, 2> newC1 = C1 +
+				//Fastor::Tensor<double, 2> newC1 = C1 +
 				//	einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
-				//	(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
+				//	(1.0 / 2.0) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
 
-				Fastor::Tensor<float, 2> newC1 = C1 +
+				Fastor::Tensor<double, 2> newC1 = C1 +
 					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
-					(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					(1.0 / 2.0) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 
-				Fastor::Tensor<float, 2, 2> newC2 = C2 +
+				Fastor::Tensor<double, 2, 2> newC2 = C2 +
 					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
 
-				Fastor::Tensor<float, 2, 2, 2> newC3 = C3;
+				Fastor::Tensor<double, 2, 2, 2> newC3 = C3;
 
 				// add translated C^n to child C^n
 				child->C1 += newC1;
@@ -218,20 +218,20 @@ public:
 			for (int i : occupants)
 			{
 				// prework
-				glm::vec2 x = (*allParticles)[i].position;
-				glm::vec2 Z0 = centreOfMass;
-				Fastor::Tensor<float, 2> diff1 = { x.x - Z0.x, x.y - Z0.y }; // dhenen
-				//Fastor::Tensor<float, 2> diff1 = { Z0.x - x.x, Z0.y - x.y }; // gadget4
-				Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-				Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+				glm::dvec2 x = (*allParticles)[i].position;
+				glm::dvec2 Z0 = centreOfMass;
+				Fastor::Tensor<double, 2> diff1 = { x.x - Z0.x, x.y - Z0.y }; // dhenen
+				//Fastor::Tensor<double, 2> diff1 = { Z0.x - x.x, Z0.y - x.y }; // gadget4
+				Fastor::Tensor<double, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+				Fastor::Tensor<double, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
 				// evaluate C^n at occupants position then add to occupant acceleration // might be wrong!!!!!!!!!!!
-				Fastor::Tensor<float, 2> acceleration = C1 +
+				Fastor::Tensor<double, 2> acceleration = C1 +
 					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
-					//(1.0f / 2.0f) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
-					(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					//(1.0 / 2.0) * einsum<Fastor::Index<0, 1>, Fastor::Index<0, 1, 2>>(diff2, C3);
+					(1.0 / 2.0) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 
-				points[i].derivative += glm::vec2(acceleration(0), acceleration(1));
+				points[i].derivative += glm::dvec2(acceleration(0), acceleration(1));
 			}
 		}
 	}

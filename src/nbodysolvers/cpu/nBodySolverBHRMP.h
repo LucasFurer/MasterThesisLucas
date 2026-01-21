@@ -24,7 +24,7 @@ public:
 
     NBodySolverBHRMP() {}
 
-    NBodySolverBHRMP(std::function<void(double&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
+    NBodySolverBHRMP(std::function<void(double&, QuadTreeBarnesHutReverseMultiPole<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, double initTheta)
     {
         kernelNP = initKernelNP;
         kernelPP = initKernelPP;
@@ -38,7 +38,7 @@ public:
     void solveNbody(double& total, std::vector<T>& points) override
 	#endif
     {
-        total = 0.0f;
+        total = 0.0;
 
         for (int i = 0; i < points.size(); i++)
         {
@@ -48,7 +48,7 @@ public:
         root.applyForces(points);
     }
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
         root = std::move(QuadTreeBarnesHutReverseMultiPole<T>(this->maxChildren, &points));
     }
@@ -61,10 +61,10 @@ public:
     }
     
 private:
-    void traverseBHRMP(double& total, QuadTreeBarnesHutReverseMultiPole<T>* node, T& point, float theta)
+    void traverseBHRMP(double& total, QuadTreeBarnesHutReverseMultiPole<T>* node, T& point, double theta)
     {
-        float l = node->highestCorner.x - node->lowestCorner.x;
-        glm::vec2 diff = point.position - node->centreOfMass;
+        double l = node->highestCorner.x - node->lowestCorner.x;
+        glm::dvec2 diff = point.position - node->centreOfMass;
 
 
         if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
@@ -102,22 +102,22 @@ private:
 
 void TSNEBHRMPNPKernel(double& total, QuadTreeBarnesHutReverseMultiPole<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 R = sinkNode->centreOfMass - sourcePoint.position;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkNode->centreOfMass - sourcePoint.position;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
-    total += static_cast<double>(sinkNode->totalMass / rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
+    total += sinkNode->totalMass / rS;
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<double, 2> C1 =
     {
         (R.x * D1),
         (R.y * D1)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<double, 2, 2> C2 =
     {
         {
             (D1 + R.x * R.x * D2),
@@ -129,7 +129,7 @@ void TSNEBHRMPNPKernel(double& total, QuadTreeBarnesHutReverseMultiPole<TsnePoin
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<double, 2, 2, 2> C3 =
     {
         {
             {
@@ -160,11 +160,11 @@ void TSNEBHRMPNPKernel(double& total, QuadTreeBarnesHutReverseMultiPole<TsnePoin
 
 void TSNEBHRMPPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float sq_dist = diff.x * diff.x + diff.y * diff.y;
+    glm::dvec2 diff = sinkPoint.position - sourcePoint.position;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + sq_dist);
-    total += static_cast<double>(forceDecay);
+    double forceDecay = 1.0 / (1.0 + sq_dist);
+    total += forceDecay;
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

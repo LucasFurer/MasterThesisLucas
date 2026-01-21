@@ -35,7 +35,7 @@ public:
         std::function<void(double&, QuadTreeFMM<T>*, T&)> initKernelNP,
         std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
-        float initTheta
+        double initTheta
     )
     {
         kernelNN = initKernelNN;
@@ -57,7 +57,7 @@ public:
         root.applyForces(points);
     }
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
         root = std::move(QuadTreeFMM<T>(this->maxChildren, &points));
     }
@@ -70,13 +70,13 @@ public:
     }
 
 private:
-    void traverseFMM(double& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, float theta)
+    void traverseFMM(double& total, std::vector<T>& points, QuadTreeFMM<T>* sinkNode, QuadTreeFMM<T>* sourceNode, double theta)
     {
-        float Lsink = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
-        float Lsource = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
+        double Lsink = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
+        double Lsource = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
 
-        glm::vec2 diff = sinkNode->centreOfMass - sourceNode->centreOfMass;
-        float dist = glm::length(diff);
+        glm::dvec2 diff = sinkNode->centreOfMass - sourceNode->centreOfMass;
+        double dist = glm::length(diff);
 
 
         if ((Lsink + Lsource) / dist < theta)
@@ -118,10 +118,10 @@ private:
 
     }
 
-    void traverseBHMP(double& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, float theta)
+    void traverseBHMP(double& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, double theta)
     {
-        float l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
-        glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
+        double l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
+        glm::dvec2 diff = sinkPoint.position - sourceNode->centreOfMass;
 
         if (l / glm::length(diff) < theta)
         {
@@ -150,10 +150,10 @@ private:
         }
     }
 
-    void traverseBHRMP(double& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, float theta)
+    void traverseBHRMP(double& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, double theta)
     {
-        float l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
-        glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
+        double l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
+        glm::dvec2 diff = sinkNode->centreOfMass - sourcePoint.position;
 
         if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
@@ -195,33 +195,33 @@ private:
 
 void TSNEFMMNNKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
-    glm::vec2 R = sinkNode->centreOfMass - sourceNode->centreOfMass;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkNode->centreOfMass - sourceNode->centreOfMass;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
-    total += static_cast<double>((sinkNode->totalMass * sourceNode->totalMass) / rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
+    total += (sinkNode->totalMass * sourceNode->totalMass) / rS;
 
-    float MA0 = sinkNode->totalMass;
-    float MB0 = sourceNode->totalMass;
-    Fastor::Tensor<float, 2, 2> MB2 = sourceNode->quadrupole;
-    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+    double MA0 = sinkNode->totalMass;
+    double MB0 = sourceNode->totalMass;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode->quadrupole;
+    Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
     // calculate the C^m
-    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+    double MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    double MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    double MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    double MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<double, 2> C1 =
     {
-        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<double, 2, 2> C2 =
     {
         {
             MB0 * (D1 + R.x * R.x * D2),
@@ -233,7 +233,7 @@ void TSNEFMMNNKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTree
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<double, 2, 2, 2> C3 =
     {
         {
             {
@@ -266,54 +266,54 @@ void TSNEFMMNNKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, QuadTree
 
 void TSNEFMMPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTreeFMM<TsnePoint2D>* sourceNode)
 {
-    glm::vec2 R = sinkPoint.position - sourceNode->centreOfMass;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkPoint.position - sourceNode->centreOfMass;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
-    total += static_cast<double>(sourceNode->totalMass / rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
+    total += sourceNode->totalMass / rS;
 
-    float MB0 = sourceNode->totalMass;
-    Fastor::Tensor<float, 2, 2> MB2 = sourceNode->quadrupole;
-    Fastor::Tensor<float, 2, 2> MB2Tilde = (1.0f / MB0) * MB2;
+    double MB0 = sourceNode->totalMass;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode->quadrupole;
+    Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
 
-    float MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
-    float MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
-    float MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
-    float MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
+    double MB2TildeSum1 = MB2Tilde(0, 0) + MB2Tilde(1, 1);
+    double MB2TildeSum2 = (R.x * R.x * MB2Tilde(0, 0)) + (R.x * R.y * MB2Tilde(0, 1)) + (R.y * R.x * MB2Tilde(1, 0)) + (R.y * R.y * MB2Tilde(1, 1));
+    double MB2TildeSum3i0 = R.x * MB2Tilde(0, 0) + R.y * MB2Tilde(0, 1);
+    double MB2TildeSum3i1 = R.x * MB2Tilde(1, 0) + R.y * MB2Tilde(1, 1);
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<double, 2> C1 =
     {
-        MB0 * (R.x * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y * (D1 + 0.5f * (MB2TildeSum1)*D2 + 0.5f * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    sinkPoint.derivative += glm::vec2(C1(0), C1(1));
+    sinkPoint.derivative += glm::dvec2(C1(0), C1(1));
 }
 
 
 void TSNEFMMNPKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 R = sinkNode->centreOfMass - sourcePoint.position;
-    float sq_r = R.x * R.x + R.y * R.y;
-    float rS = 1.0f + sq_r;
+    glm::dvec2 R = sinkNode->centreOfMass - sourcePoint.position;
+    double sq_r = R.x * R.x + R.y * R.y;
+    double rS = 1.0 + sq_r;
 
-    float D1 = 1.0f / (rS * rS);
-    float D2 = -4.0f / (rS * rS * rS);
-    float D3 = 24.0f / (rS * rS * rS * rS);
-    total += static_cast<double>(sinkNode->totalMass / rS);
+    double D1 = 1.0 / (rS * rS);
+    double D2 = -4.0 / (rS * rS * rS);
+    double D3 = 24.0 / (rS * rS * rS * rS);
+    total += sinkNode->totalMass / rS;
 
 
-    Fastor::Tensor<float, 2> C1 =
+    Fastor::Tensor<double, 2> C1 =
     {
         (R.x * D1),
         (R.y * D1)
     };
 
-    Fastor::Tensor<float, 2, 2> C2 =
+    Fastor::Tensor<double, 2, 2> C2 =
     {
         {
             (D1 + R.x * R.x * D2),
@@ -325,7 +325,7 @@ void TSNEFMMNPKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoin
         }
     };
 
-    Fastor::Tensor<float, 2, 2, 2> C3 =
+    Fastor::Tensor<double, 2, 2, 2> C3 =
     {
         {
             {
@@ -357,11 +357,11 @@ void TSNEFMMNPKernel(double& total, QuadTreeFMM<TsnePoint2D>* sinkNode, TsnePoin
 
 void TSNEFMMPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float sq_dist = diff.x * diff.x + diff.y * diff.y;
+    glm::dvec2 diff = sinkPoint.position - sourcePoint.position;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + sq_dist);
-    total += static_cast<double>(forceDecay);
+    double forceDecay = 1.0 / (1.0 + sq_dist);
+    total += forceDecay;
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

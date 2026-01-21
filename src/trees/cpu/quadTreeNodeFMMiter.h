@@ -13,18 +13,18 @@ class QuadTreeNodeFMMiter
 public:
 	int id = -1;
 
-	glm::vec2 centreOfMass = glm::vec2(0.0f);
+	glm::dvec2 centreOfMass = glm::dvec2(0.0);
 
-	float totalMass = 0.0f;
-	glm::vec2 dipole = glm::vec2(0.0f);
-	Fastor::Tensor<float, 2, 2> quadrupole{};
+	double totalMass = 0.0;
+	glm::dvec2 dipole = glm::dvec2(0.0);
+	Fastor::Tensor<double, 2, 2> quadrupole{};
 
-	Fastor::Tensor<float, 2> C1{};
-	Fastor::Tensor<float, 2, 2> C2{};
-	Fastor::Tensor<float, 2, 2, 2> C3{};
+	Fastor::Tensor<double, 2> C1{};
+	Fastor::Tensor<double, 2, 2> C2{};
+	Fastor::Tensor<double, 2, 2, 2> C3{};
 
-	glm::vec2 lowestCorner = glm::vec2(std::numeric_limits<float>::infinity());
-	glm::vec2 highestCorner = glm::vec2(-std::numeric_limits<float>::infinity());
+	glm::dvec2 lowestCorner = glm::dvec2(std::numeric_limits<double>::infinity());
+	glm::dvec2 highestCorner = glm::dvec2(-std::numeric_limits<double>::infinity());
 
 	std::vector<QuadTreeNodeFMMiter*> children;
 
@@ -41,26 +41,26 @@ public:
 			highestCorner = glm::max(highestCorner, allParticles[i].position);
 		}
 
-		float errorRoom = 0.0001f;
-		float longestSide = std::max(highestCorner.x - lowestCorner.x, highestCorner.y - lowestCorner.y);
+		double errorRoom = 0.0001;
+		double longestSide = std::max(highestCorner.x - lowestCorner.x, highestCorner.y - lowestCorner.y);
 		highestCorner = lowestCorner + longestSide + errorRoom;
-		lowestCorner -= 0.0f; //errorRoom;
+		lowestCorner -= 0.0; //errorRoom;
 
 		//std::cout << "call teh create tree fdunc" << std::endl;
-		std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = createTree(maxChildren);
+		std::tuple<glm::dvec2, double, glm::dvec2, Fastor::Tensor<double, 2, 2>> childPositionMassDiQuad = createTree(maxChildren);
 	}
 	
-	QuadTreeNodeFMMiter(int initId, glm::vec2 initCentreOfMass) // child point constructor
+	QuadTreeNodeFMMiter(int initId, glm::dvec2 initCentreOfMass) // child point constructor
 	{
 		id = initId;
 		centreOfMass = initCentreOfMass;
-		totalMass = 1.0f;
+		totalMass = 1.0;
 
-		lowestCorner = glm::vec2(initCentreOfMass);
-		highestCorner = glm::vec2(initCentreOfMass);
+		lowestCorner = glm::dvec2(initCentreOfMass);
+		highestCorner = glm::dvec2(initCentreOfMass);
 	}
 
-	QuadTreeNodeFMMiter(std::vector<QuadTreeNodeFMMiter*>& initChildren, glm::vec2 initLowestCorner, glm::vec2 initHighestCorner) // child node constructor
+	QuadTreeNodeFMMiter(std::vector<QuadTreeNodeFMMiter*>& initChildren, glm::dvec2 initLowestCorner, glm::dvec2 initHighestCorner) // child node constructor
 	{
 		lowestCorner = initLowestCorner;
 		highestCorner = initHighestCorner;
@@ -165,7 +165,7 @@ public:
 		}
 	}
 
-	std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> createTree(int maxChildren)
+	std::tuple<glm::dvec2, double, glm::dvec2, Fastor::Tensor<double, 2, 2>> createTree(int maxChildren)
 	{
 		if (children.size() > maxChildren)
 		{
@@ -174,9 +174,9 @@ public:
 			std::vector<QuadTreeNodeFMMiter*> LH;
 			std::vector<QuadTreeNodeFMMiter*> LL;
 
-			float l = (highestCorner.x - lowestCorner.x) / 2.0f;
-			float middleX = lowestCorner.x + l;
-			float middleY = lowestCorner.y + l;
+			double l = (highestCorner.x - lowestCorner.x) / 2.0;
+			double middleX = lowestCorner.x + l;
+			double middleY = lowestCorner.y + l;
 
 			for (int i = 0; i < children.size(); i++)
 			{
@@ -204,14 +204,14 @@ public:
 
 			std::vector<QuadTreeNodeFMMiter*>().swap(children); // empty the children array
 
-			if (HH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HH, glm::vec2(middleX,        middleY)       , glm::vec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HL, glm::vec2(middleX,        lowestCorner.y), glm::vec2(highestCorner.x, middleY))        ); }
-			if (LH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LH, glm::vec2(lowestCorner.x, middleY)       , glm::vec2(middleX,         highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LL, glm::vec2(lowestCorner.x, lowestCorner.y), glm::vec2(middleX,         middleY))        ); }
+			if (HH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HH, glm::dvec2(middleX,        middleY)       , glm::dvec2(highestCorner.x, highestCorner.y))); }
+			if (HL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(HL, glm::dvec2(middleX,        lowestCorner.y), glm::dvec2(highestCorner.x, middleY))        ); }
+			if (LH.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LH, glm::dvec2(lowestCorner.x, middleY)       , glm::dvec2(middleX,         highestCorner.y))); }
+			if (LL.size() != 0) { children.push_back(new QuadTreeNodeFMMiter(LL, glm::dvec2(lowestCorner.x, lowestCorner.y), glm::dvec2(middleX,         middleY))        ); }
 
 			for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children)
 			{
-				std::tuple<glm::vec2, float, glm::vec2, Fastor::Tensor<float, 2, 2>> childPositionMassDiQuad = quadTreeNodeFMMiter->createTree(maxChildren);
+				std::tuple<glm::dvec2, double, glm::dvec2, Fastor::Tensor<double, 2, 2>> childPositionMassDiQuad = quadTreeNodeFMMiter->createTree(maxChildren);
 				totalMass += std::get<1>(childPositionMassDiQuad);
 				centreOfMass += std::get<1>(childPositionMassDiQuad) * std::get<0>(childPositionMassDiQuad);
 			}
@@ -221,11 +221,11 @@ public:
 			for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children)
 			{
 				// calculate moment as though the child node was a point
-				glm::vec2 relativeCoord = quadTreeNodeFMMiter->centreOfMass - centreOfMass;
-				//glm::vec2 relativeCoord = centreOfMass - octTree->centreOfMass;
+				glm::dvec2 relativeCoord = quadTreeNodeFMMiter->centreOfMass - centreOfMass;
+				//glm::dvec2 relativeCoord = centreOfMass - octTree->centreOfMass;
 				dipole += quadTreeNodeFMMiter->totalMass * relativeCoord;
 
-				Fastor::Tensor<float, 2, 2> outer_product;
+				Fastor::Tensor<double, 2, 2> outer_product;
 				outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
 				outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
 				outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
@@ -244,7 +244,7 @@ public:
 		{
 			for (int i = 0; i < children.size(); i++)
 			{
-				totalMass += 1.0f;
+				totalMass += 1.0;
 				centreOfMass += children[i]->centreOfMass; // children[i]->totalMass * children[i]->position
 			}
 
@@ -252,11 +252,11 @@ public:
 
 			for (int i = 0; i < children.size(); i++)
 			{
-				glm::vec2 relativeCoord = children[i]->centreOfMass - centreOfMass;
-				//glm::vec2 relativeCoord = centreOfMass - (*allParticles)[occupants[i]].position;
+				glm::dvec2 relativeCoord = children[i]->centreOfMass - centreOfMass;
+				//glm::dvec2 relativeCoord = centreOfMass - (*allParticles)[occupants[i]].position;
 				dipole += relativeCoord; // * mass which is always 1
 
-				Fastor::Tensor<float, 2, 2> outer_product;
+				Fastor::Tensor<double, 2, 2> outer_product;
 				outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
 				outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
 				outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
@@ -269,32 +269,32 @@ public:
 		}
 	}
 
-	void applyForces(std::vector<glm::vec2>* forces)
+	void applyForces(std::vector<glm::dvec2>* forces)
 	{
 		if (children.size() != 0)
 		{
 			for (QuadTreeNodeFMMiter* quadTreeNodeFMMiter : children)
 			{
 				// prework
-				glm::vec2 oldZ = quadTreeNodeFMMiter->centreOfMass;
-				glm::vec2 newZ = centreOfMass;
+				glm::dvec2 oldZ = quadTreeNodeFMMiter->centreOfMass;
+				glm::dvec2 newZ = centreOfMass;
 
-				Fastor::Tensor<float, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
-				//Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-				//Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+				Fastor::Tensor<double, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
+				//Fastor::Tensor<double, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+				//Fastor::Tensor<double, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-				Fastor::Tensor<float, 2> newC1 =
+				Fastor::Tensor<double, 2> newC1 =
 					C1 +
 					Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, C2) +
-					(1.0f / 2.0f) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
+					(1.0 / 2.0) * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3));
 
 				if (quadTreeNodeFMMiter->id == -1)
 				{
-					Fastor::Tensor<float, 2, 2> newC2 =
+					Fastor::Tensor<double, 2, 2> newC2 =
 						C2 +
 						Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, C3);
 
-					Fastor::Tensor<float, 2, 2, 2> newC3 =
+					Fastor::Tensor<double, 2, 2, 2> newC3 =
 						C3;
 
 					// add translated C^n to child C^n
@@ -310,7 +310,7 @@ public:
 					// add translated C^n to child C^n
 					quadTreeNodeFMMiter->C1 += newC1;
 
-					(*forces)[quadTreeNodeFMMiter->id] += glm::vec2(quadTreeNodeFMMiter->C1(0), quadTreeNodeFMMiter->C1(1));
+					(*forces)[quadTreeNodeFMMiter->id] += glm::dvec2(quadTreeNodeFMMiter->C1(0), quadTreeNodeFMMiter->C1(1));
 				}
 			}
 		}

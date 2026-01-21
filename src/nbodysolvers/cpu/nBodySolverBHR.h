@@ -24,7 +24,7 @@ public:
 
     NBodySolverBHR() {}
 
-    NBodySolverBHR(std::function<void(double&, QuadTreeBarnesHutReverse<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
+    NBodySolverBHR(std::function<void(double&, QuadTreeBarnesHutReverse<T>*, T&)> initKernelNP, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, double initTheta)
     {
         kernelNP = initKernelNP;
         kernelPP = initKernelPP;
@@ -38,17 +38,17 @@ public:
     void solveNbody(double& total, std::vector<T>& points) override
 	#endif
     {
-        total = 0.0f;
+        total = 0.0;
 
         for (int i = 0; i < points.size(); i++)
         {
             traverseBHR(total, &root, points[i], this->theta);
         }
 
-        cascadeValues(points, &root, glm::vec2(0.0f));
+        cascadeValues(points, &root, glm::dvec2(0.0));
     }
 
-    void updateTree(std::vector<T>& points, glm::vec2 minPos, glm::vec2 maxPos) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
         root = std::move(QuadTreeBarnesHutReverse<T>(this->maxChildren, &points));
     }
@@ -61,10 +61,10 @@ public:
     }
 
 private:
-    void traverseBHR(double& total, QuadTreeBarnesHutReverse<T>* node, T point, float theta)
+    void traverseBHR(double& total, QuadTreeBarnesHutReverse<T>* node, T point, double theta)
     {
-        float l = node->highestCorner.x - node->lowestCorner.x;
-        glm::vec2 diff = point.position - node->centreOfMass;
+        double l = node->highestCorner.x - node->lowestCorner.x;
+        glm::dvec2 diff = point.position - node->centreOfMass;
 
         
         if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
@@ -98,9 +98,9 @@ private:
     }
 
 
-    void cascadeValues(std::vector<T>& points, QuadTreeBarnesHutReverse<T>* node, glm::vec2 accumulatedVal)
+    void cascadeValues(std::vector<T>& points, QuadTreeBarnesHutReverse<T>* node, glm::dvec2 accumulatedVal)
     {
-        glm::vec2 newAccumulatedVal = accumulatedVal + node->acceleration;
+        glm::dvec2 newAccumulatedVal = accumulatedVal + node->acceleration;
 
         if (node->children.size() <= 1)
         {
@@ -127,22 +127,22 @@ private:
 
 void TSNEBHRNPKernel(double& total, QuadTreeBarnesHutReverse<TsnePoint2D>* sinkNode, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
-    float sq_dist = diff.x * diff.x + diff.y * diff.y;
+    glm::dvec2 diff = sinkNode->centreOfMass - sourcePoint.position;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + sq_dist);
-    total += static_cast<double>(sinkNode->totalMass * forceDecay);
+    double forceDecay = 1.0 / (1.0 + sq_dist);
+    total += sinkNode->totalMass * forceDecay;
 
     sinkNode->acceleration += forceDecay * forceDecay * diff;
 }
 
 void TSNEBHRPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float sq_dist = diff.x * diff.x + diff.y * diff.y;
+    glm::dvec2 diff = sinkPoint.position - sourcePoint.position;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + sq_dist);
-    total += static_cast<double>(forceDecay);
+    double forceDecay = 1.0 / (1.0 + sq_dist);
+    total += forceDecay;
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }

@@ -3,15 +3,15 @@
 struct SparseEntryCSC2D
 {
     int row;
-    float val;
+    double val;
 
     SparseEntryCSC2D()
     {
         row = 0;
-        val = 0.0f;
+        val = 0.0;
     }
 
-    SparseEntryCSC2D(int initRow, float initVal)
+    SparseEntryCSC2D(int initRow, double initVal)
     {
         row = initRow;
         val = initVal;
@@ -22,16 +22,16 @@ struct SparseEntryCOO2D
 {
     int col;
     int row;
-    float val;
+    double val;
 
     SparseEntryCOO2D()
     {
         col = 0;
         row = 0;
-        val = 0.0f;
+        val = 0.0;
     }
 
-    SparseEntryCOO2D(int initCol, int initRow, float initVal)
+    SparseEntryCOO2D(int initCol, int initRow, double initVal)
     {
         col = initCol;
         row = initRow;

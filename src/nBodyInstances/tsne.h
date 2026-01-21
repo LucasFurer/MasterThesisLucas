@@ -54,8 +54,8 @@ public:
     #endif
 
     int follow = 1;
-    glm::vec2 minPos;
-    glm::vec2 maxPos;
+    glm::dvec2 minPos;
+    glm::dvec2 maxPos;
 
     int nodeLevelToShow = 0;
     Buffer* nodeBuffer;
@@ -66,8 +66,8 @@ public:
     std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolvers;
     std::string nBodySelect = "naive"; // default selector
 
-    float learnRate;
-    float accelerationRate; // kinda irrelevant since this is based on iteration_counter
+    double learnRate;
+    double accelerationRate; // kinda irrelevant since this is based on iteration_counter
 
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
@@ -76,19 +76,19 @@ public:
     std::vector<double> val_P;
 
     float desired_iteration_per_second; // limits the speed of tsne
-    float time_since_last_iteration;
+    double time_since_last_iteration;
 
     int iteration_counter = 0; // keeps track of which iteration we are on
 
     Timer thousand_iteration_timer; 
     bool reached_thousand_iterations = false;
 
-    //float min_theta = 0.5f;
-    float min_theta = 0.5f;
-    //float max_theta = 2.0f;
-    float max_theta = 0.5f;
+    //double min_theta = 0.5;
+    double min_theta = 0.5;
+    //double max_theta = 2.0;
+    double max_theta = 0.5;
 
-    float cell_size = 0.5f;
+    double cell_size = 1.0;
     
 	TSNE()
 	{
@@ -96,11 +96,11 @@ public:
         float perplexity = 30.0f;
         std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
 
-        learnRate = static_cast<float>(dataAmount) / 15.0f;
+        learnRate = static_cast<double>(dataAmount) / 15.0;
 
-        desired_iteration_per_second = 0.0f;
+        desired_iteration_per_second = 0.0;
 
-        time_since_last_iteration = 0.0f;
+        time_since_last_iteration = 0.0;
 
         #ifdef _WIN32
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
@@ -127,35 +127,35 @@ public:
         
         //srand(time(NULL));
         srand(296343u);
-        float sizeParam = 2.0f;
+        double sizeParam = 2.0;
         for (int i = 0; i < dataAmount; i++)
         {
-            float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
 
             
-            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
             {
-                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+                randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
             }
             
 
-            glm::vec2 pos = glm::vec2(
-                powf(sizeParam * randX, 1.0f),
-                powf(sizeParam * randY, 1.0f)
+            glm::dvec2 pos = glm::dvec2(
+                pow(sizeParam * randX, 1.0),
+                pow(sizeParam * randY, 1.0)
             );
 
             int lab = labels[i];
             
             #ifdef INDEX_TRACKER
-            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
             #else
-            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
             #endif 
 
             #ifdef INDEX_TRACKER
@@ -171,8 +171,8 @@ public:
         updateMinMaxPos();
 
 
-        float set_theta = 1.0f;
-        float set_cell_size = cell_size;
+        double set_theta = 1.0;
+        double set_cell_size = cell_size;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
         nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
@@ -188,16 +188,16 @@ public:
         nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, set_cell_size, 4);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         #ifdef INDEX_TRACKER
-        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
+        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, dataAmount), set_theta);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7f, dataAmount), set_theta);
+        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, dataAmount), set_theta);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         #endif
 
         #ifdef INDEX_TRACKER
-        embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
         #else
-        embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1, GL_DYNAMIC_DRAW);
         #endif
 
         std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
@@ -228,11 +228,11 @@ public:
         forceBuffer->cleanup();
     }
 
-    void resetTsne(std::string dataset_type, int data_size, float perplexity_value, float learn_rate, float theta, float cell_size, unsigned int seed)
+    void resetTsne(std::string dataset_type, int data_size, float perplexity_value, double learn_rate, double theta, double cell_size, unsigned int seed)
     {
-        learnRate = static_cast<float>(data_size) / 15.0f;
-        desired_iteration_per_second = 0.0f;
-        time_since_last_iteration = 0.0f;
+        learnRate = static_cast<double>(data_size) / 15.0;
+        desired_iteration_per_second = 0.0;
+        time_since_last_iteration = 0.0;
 
         #ifdef _WIN32
         std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataset_type + "/" + std::to_string(data_size) + "/label_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".bin");
@@ -259,35 +259,35 @@ public:
         
         //srand(time(NULL));
         srand(seed);
-        float sizeParam = 2.0f;
+        double sizeParam = 2.0;
         for (int i = 0; i < data_size; i++)
         {
-            float randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-            float randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
 
             
-            while (powf(randX, 2.0f) + powf(randY, 2.0f) > 1.0f)
+            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
             {
-                randX = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
-                randY = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
+                randX = 2.0f * ((double)rand() / RAND_MAX) - 1.0;
+                randY = 2.0f * ((double)rand() / RAND_MAX) - 1.0;
             }
             
 
-            glm::vec2 pos = glm::vec2(
-                powf(sizeParam * randX, 1.0f),
-                powf(sizeParam * randY, 1.0f)
+            glm::dvec2 pos = glm::dvec2(
+                pow(sizeParam * randX, 1.0),
+                pow(sizeParam * randY, 1.0)
             );
 
             int lab = labels[i];
             
             #ifdef INDEX_TRACKER
-            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab, i, 0.0);
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
             #else
-            embeddedPoints[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::vec2(0.0f), lab);
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
             #endif      
 
             #ifdef INDEX_TRACKER
@@ -317,9 +317,9 @@ public:
 
 
         #ifdef INDEX_TRACKER
-        embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
         #else
-        embeddedBuffer = new Buffer(embeddedPoints, Float2Float2Int1, GL_DYNAMIC_DRAW);
+        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1, GL_DYNAMIC_DRAW);
         #endif
 
         std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
@@ -337,7 +337,7 @@ public:
         if (iteration_counter == 1000 && !reached_thousand_iterations)
         {
             reached_thousand_iterations = true;
-            desired_iteration_per_second = 0.0f;
+            desired_iteration_per_second = 0.0;
             thousand_iteration_timer.endTimer("A thousand iterations");
 
             #ifdef INDEX_TRACKER
@@ -348,7 +348,7 @@ public:
         }
         
 
-        if (glfwGetTime() - time_since_last_iteration >= 1.0f / desired_iteration_per_second)
+        if (glfwGetTime() - time_since_last_iteration >= 1.0 / static_cast<double>(desired_iteration_per_second))
         {
             std::cout << "------------------------------------\n";
             Timer time_step_timer;
@@ -364,9 +364,9 @@ public:
             update_timer.endTimer("__updatePoints");
 
             #ifdef INDEX_TRACKER
-            embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1Int1Int32_t1);
+            embeddedBuffer->updateBuffer(embeddedPoints, Double2Double2Int1Int1Int32_t1);
             #else
-            embeddedBuffer->updateBuffer(embeddedPoints, Float2Float2Int1);
+            embeddedBuffer->updateBuffer(embeddedPoints, Double2Double2Int1);
             #endif
 
 
@@ -398,10 +398,10 @@ public:
 
         thetaFunction();
 
-        accelerationRate = 0.8f;
+        accelerationRate = 0.8;
         if (iteration_counter < 250)
         {
-            accelerationRate = 0.5f;
+            accelerationRate = 0.5;
         }
 
 
@@ -446,18 +446,18 @@ public:
         //    std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
         //    min_theta;
 
-        float sharpness = 1.0f;
-        float extra_theta_ratio = 0.5f + 0.5f * std::cos
+        double sharpness = 1.0;
+        double extra_theta_ratio = 0.5 + 0.5 * std::cos
         (
-            std::numbers::pi_v<float> *
+            std::numbers::pi *
             std::min
             (
-                std::pow(static_cast<float>(iteration_counter) / 999.0f, sharpness),
-                1.0f
+                std::pow(static_cast<double>(iteration_counter) / 999.0, sharpness),
+                1.0
             )
         );
-        float theta_diff = max_theta - min_theta;
-        float theta_result = min_theta + extra_theta_ratio * theta_diff;
+        double theta_diff = max_theta - min_theta;
+        double theta_result = min_theta + extra_theta_ratio * theta_diff;
 
         std::cout << "set theta to: " << theta_result << std::endl;
         std::cout << "set cell size to: " << cell_size << std::endl;
@@ -467,13 +467,13 @@ public:
         timer.endTimer("____calculating theta");
     }
 
-    void setMinMaxTheta(float set_min_theta, float set_max_theta)
+    void setMinMaxTheta(double set_min_theta, double set_max_theta)
     {
         min_theta = set_min_theta;
         max_theta = set_max_theta;
     }
 
-    void setThetaForAll(float new_theta, float new_cell_size)
+    void setThetaForAll(double new_theta, double new_cell_size)
     {
         for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolverPointer : nBodySolvers)
         {
@@ -494,8 +494,8 @@ public:
 
     void updateMinMaxPos()
     {
-        minPos = glm::vec2(std::numeric_limits<float>::max());
-        maxPos = glm::vec2(std::numeric_limits<float>::lowest());
+        minPos = glm::dvec2(std::numeric_limits<double>::max());
+        maxPos = glm::dvec2(std::numeric_limits<double>::lowest());
 
         for (TsnePoint2D& point : embeddedPoints)
         {
@@ -536,12 +536,12 @@ public:
     void resetDeriv()
     {
         for (TsnePoint2D& embeddedPoint : embeddedPoints)
-            embeddedPoint.derivative = glm::vec2(0.0f);
+            embeddedPoint.derivative = glm::dvec2(0.0);
     }
 
     void updateRepulsive()
     {
-        double QijTotal = 0.0f;
+        double QijTotal = 0.0;
 
         #ifdef INDEX_TRACKER
         nBodySolvers[nBodySelect]->solveNbody(QijTotal, embeddedPoints, indexTracker);
@@ -585,7 +585,7 @@ public:
 
     void updateAttractive()
     {
-        float exageration = iteration_counter < 250 ? 16.0f : 4.0f;
+        double exageration = iteration_counter < 250 ? 16.0 : 4.0;
 
         for (int n = 0; n < embeddedPoints.size(); n++)
         {
@@ -595,7 +595,7 @@ public:
             TsnePoint2D& pointR = embeddedPoints[n];
             #endif
 
-            glm::vec2 dim{ 0.0f };
+            glm::dvec2 dim{ 0.0 };
 
             for (unsigned int i = row_P[n]; i < row_P[n + 1]; i++)
             {
@@ -606,11 +606,11 @@ public:
                 TsnePoint2D& pointC = embeddedPoints[col];
                 #endif
 
-                glm::vec2 diff = pointC.position - pointR.position;
-                float d_ij = diff.x * diff.x + diff.y * diff.y;
-                float q_ij = 1.0f / (1.0f + d_ij);
+                glm::dvec2 diff = pointC.position - pointR.position;
+                double d_ij = diff.x * diff.x + diff.y * diff.y;
+                double q_ij = 1.0 / (1.0 + d_ij);
 
-                dim += exageration * static_cast<float>(val_P[i]) * q_ij * diff;
+                dim += exageration * val_P[i] * q_ij * diff;
             }
 
             pointR.derivative += dim;
@@ -657,9 +657,9 @@ public:
                             #endif
 
 
-                            glm::vec2 diff = point_j.position - point_i.position;
-                            float distance_squared = diff.x * diff.x + diff.y * diff.y;
-                            localTotals[t] += static_cast<double>(1.0f / (1.0f + distance_squared));
+                            glm::dvec2 diff = point_j.position - point_i.position;
+                            double distance_squared = diff.x * diff.x + diff.y * diff.y;
+                            localTotals[t] += 1.0 / (1.0 + distance_squared);
                         }
                     }
                 }
@@ -687,9 +687,9 @@ public:
                     const TsnePoint2D& point_row = points[it.row()];
                     #endif
 
-                    glm::vec2 diff = point_col.position - point_row.position;
-                    float distance_squared = diff.x * diff.x + diff.y * diff.y;
-                    double Qij = static_cast<double>(1.0f / (1.0f + distance_squared)) / QijTotal;
+                    glm::dvec2 diff = point_col.position - point_row.position;
+                    double distance_squared = diff.x * diff.x + diff.y * diff.y;
+                    double Qij = (1.0 / (1.0 + distance_squared)) / QijTotal;
 
                     double Pij = it.value();
 
@@ -717,7 +717,7 @@ public:
 
         row_P = std::vector<unsigned int>(N + 1, 0u);
         col_P = std::vector<unsigned int>(Pmatrix.nonZeros(), 0u);
-        val_P = std::vector<double>(Pmatrix.nonZeros(), 0u);
+        val_P = std::vector<double>(Pmatrix.nonZeros(), 0.0);
 
         int PmatrixCounter = 0;
 
