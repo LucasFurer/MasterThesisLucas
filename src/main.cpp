@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-//#define INDEX_TRACKER
+#define INDEX_TRACKER
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -189,7 +189,7 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         TsneTest tsne_test;
-        //tsne_test.errorTimestepTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 10, 1.0f, -1, 1.0f, 296343u);
+        //tsne_test.errorTimestepTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 500, 1.0f, -1, 1.0f, 296343u);
         //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, 296343u);
         //tsne_test.errorThetaTSNE("MNIST_digits", 10000, 30.0f, 5, std::vector<float>{0.5f, 0.7f, 0.9f}, std::vector<double>{1.0, 1.1, 1.2}, 296343u);
             //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5}, 296343u);

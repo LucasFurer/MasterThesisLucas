@@ -93,11 +93,11 @@ public:
         std::vector<int> fastSolutionIndexTracker(data_size);
 
 
-        //std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
-        //if (!std::filesystem::exists(pre_computed_path))
-        //{
-        //    std::filesystem::create_directories(pre_computed_path);
-        //}
+        std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+        if (!std::filesystem::exists(pre_computed_path))
+        {
+            std::filesystem::create_directories(pre_computed_path);
+        }
         
         // find error at every time step
         for (int t = 0; t < iteration_amount; t++)
@@ -107,12 +107,16 @@ public:
             tsne.updateMinMaxPos();
 
             // correct solution up to machine precision
-            //if (std::filesystem::exists(pre_computed_path / std::to_string(t)))
-            //{
-            //    loadPrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(t));
-            //}
-            //else
-            //{
+            if (std::filesystem::exists(pre_computed_path / std::to_string(t)))
+            {
+                #ifndef INDEX_TRACKER
+                std::vector<int> naiveSolutionIndexTracker;
+                #endif
+
+                loadPrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(t));
+            }
+            else
+            {
                 tsne.resetDeriv();
                 tsne.iteration_counter = t;
                 tsne.nBodySelect = "naive";
@@ -120,9 +124,11 @@ public:
                 naiveSolution = tsne.embeddedPoints;
                 #ifdef INDEX_TRACKER
                 naiveSolutionIndexTracker = tsne.indexTracker;
-                //storePrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(t));
+                #else
+                naiveSolutionIndexTracker = std::vector<int>();
                 #endif
-            //}
+                storePrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(t));
+            }
 
             #ifndef INDEX_TRACKER
             // calculate the result of every approximation technique and find the error by comparing to naive
@@ -1164,6 +1170,7 @@ public:
     }
 
 private:
+    //mean relative error or maximum relative error
     #ifdef INDEX_TRACKER
     double getNMAE(const std::vector<TsnePoint2D>& points_naive, const std::vector<int>& points_naive_indices, const std::vector<TsnePoint2D>& points_approx, const std::vector<int>& points_approx_indices)
     #else
@@ -1183,11 +1190,18 @@ private:
             TsnePoint2D pointApprox = points_approx[i];
             #endif
 
-            MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative));
-            norm += static_cast<double>(glm::length(pointNaive.derivative));
+            //MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative));
+            //norm += static_cast<double>(glm::length(pointNaive.derivative));
+
+            //MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative));
+            MAE = std::max(MAE, static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative)));
         }
     
-        double NMAE = MAE / norm;
+        //double NMAE = MAE / norm;
+        //return NMAE;
+
+        //double NMAE = MAE / points_naive.size();
+        double NMAE = MAE;
         return NMAE;
     }
 

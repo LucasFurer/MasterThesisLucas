@@ -84,11 +84,11 @@ public:
     bool reached_thousand_iterations = false;
 
     //double min_theta = 0.5;
-    double min_theta = 0.5;
+    double min_theta = 0.75;
     //double max_theta = 2.0;
-    double max_theta = 0.5;
+    double max_theta = 0.75;
 
-    double cell_size = 1.0;
+    double cell_size = 0.5;
     
 	TSNE()
 	{
