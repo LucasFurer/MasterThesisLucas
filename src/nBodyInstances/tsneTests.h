@@ -40,7 +40,6 @@
 #include "../Timer.h"
 #include "../particleMesh.h"
 #include "tsne.h"
-#include "tsne_no_buffers.h"
 
 class TsneTest
 {
@@ -49,14 +48,18 @@ public:
 
 	TsneTest() {}
 
-	void errorTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, double learn_rate, int iteration_amount, double theta, int PM_grid_width, double cell_size, unsigned int seed)
+	void errorTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, double theta, double cell_size, unsigned int seed)
     {
-        TSNE_no_buffers tsne;
-        tsne.resetTsne(dataset_type, data_size, perplexity_value, -1.0f, theta, cell_size, seed);
-        tsne.setMinMaxTheta(theta, theta);
-        NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-        PM->cell_size = cell_size;
-        tsne.cell_size = cell_size;
+        TSNE tsne
+        (
+            theta,
+            theta,
+            cell_size,
+            dataset_type,
+            data_size,
+            perplexity_value,
+            seed
+        );
 
         // set graph size
         #ifndef INDEX_TRACKER
@@ -71,7 +74,6 @@ public:
         std::vector<double> errorFMM_MORTON(iteration_amount, 0.0f);
         std::vector<double> errorFMM_SYM_MORTON(iteration_amount, 0.0f);
         #endif
-        //std::vector<float> errorTest(iteration_amount, 0.0f);
         #ifndef INDEX_TRACKER
         std::vector<int> timeBH(iteration_amount, 0);
         std::vector<int> timeBHMP(iteration_amount, 0);
@@ -84,7 +86,6 @@ public:
         std::vector<int> timeFMM_MORTON(iteration_amount, 0);
         std::vector<int> timeFMM_SYM_MORTON(iteration_amount, 0);
         #endif
-        //std::vector<int> timeTest(iteration_amount, 0);
 
 
         std::vector<TsnePoint2D> naiveSolution(data_size);
@@ -92,8 +93,12 @@ public:
         std::vector<int> naiveSolutionIndexTracker(data_size);
         std::vector<int> fastSolutionIndexTracker(data_size);
 
-
-        std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+        #ifdef INDEX_TRACKER
+        std::string indexCheck = "index";
+        #else
+        std::string indexCheck = "noindex";
+        #endif
+        std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
         if (!std::filesystem::exists(pre_computed_path))
         {
             std::filesystem::create_directories(pre_computed_path);
@@ -219,18 +224,6 @@ public:
             tsne.indexTracker = naiveSolutionIndexTracker;
             #endif
 
-            //tsne.resetDeriv();
-            //tsne.iteration_counter = t;
-            //tsne.nBodySelect = "test";
-            //tsne.nBodySolvers["test"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-            //tsne.updateDerivative();
-            //fastSolution = tsne.embeddedPoints;
-            //fastSolutionIndexTracker = tsne.indexTracker;
-            //errorTest[t] = getNMAE(naiveSolution, naiveSolutionIndexTracker, fastSolution, fastSolutionIndexTracker);
-            //timeTest[t] = t;
-            //tsne.embeddedPoints = naiveSolution;
-            //tsne.indexTracker = naiveSolutionIndexTracker;
-
 
             // update points with naive solution
             tsne.resetDeriv();
@@ -267,11 +260,6 @@ public:
         methodPath = projectFolder / ("tsneErrorTimestep" + std::string("FMM_SYM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + fltToStr(theta) + "_dataset" + dataset_type + ".csv");
         writeToFile(timeFMM_SYM_MORTON, errorFMM_SYM_MORTON, methodPath);
         #endif
-        //methodPath = projectFolder / ("tsneErrorTimestep" + std::string("test") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_theta" + fltToStr(theta) + "_dataset" + dataset_type + ".csv");
-        //writeToFile(timeTest, errorTest, methodPath);
-
-        
-        tsne.cleanup();
     }
 
 
@@ -306,21 +294,6 @@ public:
         std::vector<double> thetaFMM_MORTON(theta_diversity_amount, 0.0f);
         std::vector<double> thetaFMM_SYM_MORTON(theta_diversity_amount, 0.0f);
         #endif
-
-
-        //std::vector<std::vector<TsnePoint2D>> naiveSolutions(1000);
-        //std::vector<std::vector<int>> naiveSolutionIndexTrackers(1000);
-        //std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
-        //for (int i = 0; i < 1000; i++)
-        //{
-        //    if (std::filesystem::exists(pre_computed_path / std::to_string(i)))
-        //    {
-        //        naiveSolutions[i] = std::vector<TsnePoint2D>(data_size);
-        //        naiveSolutionIndexTrackers[i] = std::vector<int>(data_size);
-
-        //        loadPrecomputed(naiveSolutions[i], naiveSolutionIndexTrackers[i], pre_computed_path / std::to_string(i));
-        //    }
-        //}
     
     
         for (int t = 0; t < theta_diversity_amount; t++)
@@ -329,16 +302,17 @@ public:
             double chosenCellSize = cell_sizes[t];
             //std::cout << "chosenTheta: " << chosenTheta << std::endl;
 
-            TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
-            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
-            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            //PM->C_min_num_intervals = PM_grid_width;
-            PM->cell_size = chosenCellSize;
+            TSNE tsne
+            (
+                chosenTheta,
+                chosenTheta,
+                chosenCellSize,
+                dataset_type,
+                data_size,
+                perplexity_value,
+                seed
+            );
 
-
-
-            //thetaNaive[t] = chosenTheta;
             #ifndef INDEX_TRACKER
             thetaBH[t] = chosenTheta;
             thetaBHMP[t] = chosenTheta;
@@ -356,8 +330,12 @@ public:
             std::vector<int> naiveSolutionIndexTracker(data_size);
 
 
-
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+            #ifdef INDEX_TRACKER
+            std::string indexCheck = "index";
+            #else
+            std::string indexCheck = "noindex";
+            #endif
+            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
             if (!std::filesystem::exists(pre_computed_path))
             {
                 std::filesystem::create_directories(pre_computed_path);
@@ -392,14 +370,6 @@ public:
                     storePrecomputed(naiveSolution, naiveSolutionIndexTracker, pre_computed_path / std::to_string(j));
                     #endif
                 }
-
-                // delete naive for performance
-                //tsne.resetDeriv();
-                //tsne.iteration_counter = j;
-                //tsne.nBodySelect = "naive";
-                //timeBefore = glfwGetTime();
-                //tsne.updateDerivative();
-                //calculationtimeNaive[t] += glfwGetTime() - timeBefore;
 
                 #ifndef INDEX_TRACKER
                 tsne.resetDeriv();
@@ -455,7 +425,6 @@ public:
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "FMM_MORTON";
-                //tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
@@ -464,7 +433,6 @@ public:
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "FMM_SYM_MORTON";
-                //tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 timeBefore = glfwGetTime();
                 tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
                 tsne.updateDerivative();
@@ -496,8 +464,6 @@ public:
             calculationtimeFMM_MORTON[t]     /= static_cast<double>(iteration_amount);
             calculationtimeFMM_SYM_MORTON[t] /= static_cast<double>(iteration_amount);
             #endif
-
-            tsne.cleanup();
         }
     
         // write results to csv files
@@ -505,8 +471,6 @@ public:
 
         std::filesystem::path methodPath;
         #ifndef INDEX_TRACKER
-        //methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("Naive") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        //writeToFile(thetaNaive, calculationtimeNaive, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile(thetaBH, calculationtimeBH, methodPath);
         methodPath = projectFolder / ("tsneCalculationtimeTheta" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
@@ -564,12 +528,17 @@ public:
             double chosenTheta = thetas[t];
             double chosenCellSize = cell_sizes[t];
 
-            TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
-            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
-            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            //PM->C_min_num_intervals = 1;
-            PM->cell_size = chosenCellSize;
+            TSNE tsne
+            (
+                chosenTheta,
+                chosenTheta,
+                chosenCellSize,
+                dataset_type,
+                data_size,
+                perplexity_value,
+                seed
+            );
+
 
             #ifndef INDEX_TRACKER
             thetaBH[t] = chosenTheta;
@@ -589,7 +558,12 @@ public:
             std::vector<TsnePoint2D> fastSolution(data_size);
             std::vector<int> fastSolutionIndexTracker(data_size);
 
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+            #ifdef INDEX_TRACKER
+            std::string indexCheck = "index";
+            #else
+            std::string indexCheck = "noindex";
+            #endif
+            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
             if (!std::filesystem::exists(pre_computed_path))
             {
                 std::filesystem::create_directories(pre_computed_path);
@@ -720,8 +694,6 @@ public:
             errorFMM_MORTON[t] /= static_cast<double>(iteration_amount);
             errorFMM_SYM_MORTON[t] /= static_cast<double>(iteration_amount);
             #endif
-
-            tsne.cleanup();
         }
 
         // write results to csv files
@@ -799,15 +771,16 @@ public:
             double chosenTheta = thetas[t];
             double chosenCellSize = cell_sizes[t];
 
-            TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
-            //tsne.setMinMaxTheta(chosenTheta, 2.0f);
-            tsne.setMinMaxTheta(chosenTheta, chosenTheta);
-            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            PM->cell_size = chosenCellSize;
-            tsne.cell_size = chosenCellSize;
-            std::cout << "PM->cell_size: " << PM->cell_size << std::endl;
-            //PM->C_intervals_per_integer = chosenCellSize;
+            TSNE tsne
+            (
+                chosenTheta,
+                chosenTheta,
+                chosenCellSize,
+                dataset_type,
+                data_size,
+                perplexity_value,
+                seed
+            );
 
 
             std::vector<TsnePoint2D> naiveSolution(data_size);
@@ -816,7 +789,12 @@ public:
             std::vector<int> fastSolutionIndexTracker(data_size);
 
 
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed);
+            #ifdef INDEX_TRACKER
+            std::string indexCheck = "index";
+            #else
+            std::string indexCheck = "noindex";
+            #endif
+            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
             if (!std::filesystem::exists(pre_computed_path))
             {
                 std::filesystem::create_directories(pre_computed_path);
@@ -997,9 +975,6 @@ public:
             thetaFMM_MORTON[t] = chosenTheta;
             thetaFMM_SYM_MORTON[t] = chosenTheta;
             #endif
-
-
-            tsne.cleanup();
         }
 
 
@@ -1029,18 +1004,20 @@ public:
         #endif
     }
 
+
     // set theta and PM stuff manually
     void costTimestepTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, double min_theta, double max_theta, double cell_size, unsigned int seed, std::string method)
     {
-        TSNE_no_buffers tsne;
-        tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, min_theta, cell_size, seed);
-        tsne.setMinMaxTheta(min_theta, max_theta);
-        //if (method == "PM")
-        //{
-        //    NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-        //    //PM->C_min_num_intervals = PM_grid_width;
-        //    PM->cell_size = cell_size;
-        //}
+        TSNE tsne
+        (
+            min_theta,
+            max_theta,
+            cell_size,
+            dataset_type,
+            data_size,
+            perplexity_value,
+            seed
+        );
 
         // set graph size
         std::vector<double> costs(iteration_amount, 0.0);
@@ -1092,8 +1069,6 @@ public:
         std::filesystem::path methodPath;
         methodPath = projectFolder / ("costTimestep" + std::string(method) + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_minTheta" + fltToStr(min_theta) + "_maxTheta" + fltToStr(max_theta) + "_dataset" + dataset_type + ".csv");
         writeToFile(times, costs, methodPath);
-
-        tsne.cleanup();
     }
 
     void calculationtimeCostTSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<double> thetas, std::vector<double> cell_sizes, unsigned int seed, std::string method)
@@ -1111,17 +1086,16 @@ public:
             double chosenTheta = thetas[t];
             double chosenCellSize = cell_sizes[t];
 
-            TSNE_no_buffers tsne;
-            tsne.resetTsne(dataset_type, data_size, perplexity_value, -1, chosenTheta, chosenCellSize, seed);
-            tsne.setMinMaxTheta(chosenTheta, 2.0f);
-            NBodySolverPM<TsnePoint2D>* PM = dynamic_cast<NBodySolverPM<TsnePoint2D>*>(tsne.nBodySolvers["PM"]);
-            PM->cell_size = chosenCellSize;
-            tsne.cell_size = chosenCellSize;
-
-
-
-
-
+            TSNE tsne
+            (
+                chosenTheta,
+                2.0,
+                chosenCellSize,
+                dataset_type,
+                data_size,
+                perplexity_value,
+                seed
+            );
 
 
             double timeBefore = 0.0f;
@@ -1155,9 +1129,6 @@ public:
 
 
             calculationtime[t] /= iteration_amount;
-
-
-            tsne.cleanup();
         }
 
 
@@ -1193,15 +1164,17 @@ private:
             //MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative));
             //norm += static_cast<double>(glm::length(pointNaive.derivative));
 
-            //MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative));
-            MAE = std::max(MAE, static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative)));
+            MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative));
+
+            //MAE = std::max(MAE, static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative)));
         }
     
         //double NMAE = MAE / norm;
         //return NMAE;
 
-        //double NMAE = MAE / points_naive.size();
-        double NMAE = MAE;
+        double NMAE = MAE / points_naive.size();
+
+        //double NMAE = MAE;
         return NMAE;
     }
 

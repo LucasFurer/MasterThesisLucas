@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#define INDEX_TRACKER
+//#define INDEX_TRACKER
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -23,7 +23,7 @@
 #include "cameras/camera.h"
 #include "cameras/normalCamera.h"
 #include "cameras/tsneCamera.h"
-#include "nBodyInstances/tsne.h"
+#include "nBodyInstances/tsne_buffers.h"
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
 #include "nBodyInstances/nBodyScenarios.h"
@@ -135,8 +135,17 @@ int main(void)
 
         // t-SNE --------------------------------------------------------------------------------------------------------------------------
         
-
-        TSNE tsne;
+        
+        TSNE_buffers tsne
+        (
+            0.75, // min_theta
+            2.0, // max_theta
+            1.0, // cell_size
+            "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
+            70000, // data_size
+            30.0f, // perplexity
+            296343u // seed
+        );
         
         glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
         
@@ -188,91 +197,84 @@ int main(void)
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
+        // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
         TsneTest tsne_test;
-        //tsne_test.errorTimestepTSNE("MNIST_digits", 70000, 30.0f, -1.0f, 500, 1.0f, -1, 1.0f, 296343u);
-        //tsne_test.calculationtimeThetaTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, 296343u);
-        //tsne_test.errorThetaTSNE("MNIST_digits", 10000, 30.0f, 5, std::vector<float>{0.5f, 0.7f, 0.9f}, std::vector<double>{1.0, 1.1, 1.2}, 296343u);
-            //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 70000, 30.0f, 1000, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5}, 296343u);
-            //tsne_test.calculationtimeErrorTSNE("MNIST_digits", 1000, 30.0f, 400, std::vector<float>{1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{1.4, 1.6, 1.8, 2.0, 2.2}, 296343u);
-        //tsne_test.costTimestepTSNE("MNIST_digits", 10000, 30.0f, 1000, 0.75f, 2.0f, 296343u, "FMM_SYM_MORTON");
-        //tsne_test.costTimestepTSNE("MNIST_digits", 70000, 30.0f, 1001, 0.75f, 2.0f, 1.0, 296343u, "BH");
-        //tsne_test.calculationtimeCostTSNE("MNIST_digits", 70000, 30.0f, 1001, std::vector<float>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, 296343u, "PM");
 
+        tsne_test.errorTimestepTSNE
+        (
+            "MNIST_digits", // data_set
+            70000,  // data_size
+            30.0f, // perplexity
+            5, // iteration_amount
+            1.0f, // theta
+            1.0f, // cell_size
+            296343u // seed
+        );
 
-
-        //std::vector<float> thetas = std::vector<float>{ 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
-        //std::vector<double> cellSizes = std::vector<double>{ 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2 };
-
-        //std::thread t1(
-        //    &TsneTest::calculationtimeThetaTSNE,
-        //    &tsne_test,
-        //    "MNIST_digits", 70000, 30.0f, 5, thetas, cellSizes, 296343u
+        //tsne_test.calculationtimeThetaTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    5, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // cell_sizes
+        //    296343u // seed
         //);
 
-        //std::thread t2(
-        //    &TsneTest::calculationtimeErrorTSNE,
-        //    &tsne_test,
-        //    "MNIST_digits", 70000, 30.0f, 5, thetas, cellSizes, 296343u
+        //tsne_test.errorThetaTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    10000, // data_size
+        //    30.0f, // perplexity
+        //    5, // iteration_amount
+        //    std::vector<float>{0.5f, 0.7f, 0.9f}, // thetas
+        //    std::vector<double>{1.0, 1.1, 1.2}, // cell_sizes
+        //    296343u // seed
         //);
 
-        //t1.join();
-        //t2.join();
+        //tsne_test.calculationtimeErrorTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
+        //    std::vector<double>{0.5,  1.0, 1.5,  2.0, 2.5,  3.0, 3.5}, // cell_sizes
+        //    296343u // seed
+        //);
+
+        //tsne_test.costTimestepTSNE // comparing FMM to BH with high theta and looking at the cost
+        //(
+        //    "MNIST_digits", // data_set
+        //    10000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    0.75, // min_theta
+        //    2.0, // max_theta
+        //    1.0, // cell_size
+        //    296343u, // seed
+        //    "FMM_SYM_MORTON" // method
+        //);
+
+
+        //tsne_test.calculationtimeCostTSNE // looking at the final cost 
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, // cell_sizes
+        //    296343u, // seed
+        //    "PM" // method
+        //);
 
 
 
 
+        std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
 
-
-
-
-
-
-
-
-        //NBodyScenarios nBodyScenarios;
-        //nBodyScenarios.errorTimestepTSNE("MNIST_digits", 1000, 500, 1.0f, 30.0f);
-        //std::cout << "starting tests--------------------------" << std::endl;
-
-        //std::vector<float> perpValues{};
-        //for (float val : perpValues)
-        //{
-        //    float perp = val;
-        //    std::string dataSet = "MNIST_digits";
-        //    int dataSize = 1000;
-
-        //    std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
-        //    std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
-        //    std::chrono::duration<double> elapsed = end - start;
-        //    std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
-        //    /*
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "calculationtimeThetaTSNE test done in: " << elapsed.count() << std::endl;
-
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.errorThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 825 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "errorThetaTSNE test done in: " << elapsed.count() << std::endl;
-
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.calculationtimeErrorTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 885 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
-        //    */
-        //}
-        //std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
-
-
-        //nBodyScenarios.errorTimestepGRAVITY();
-        //nBodyScenarios.errorTimestepGRAVITYFMMtest();
-        //nBodyScenarios.calculationtimeThetaGRAVITY();
-        //nBodyScenarios.errorThetaGRAVITY();
-        //nBodyScenarios.calculationtimeErrorGRAVITY();
 
         //nBodyScenarios.testNodeNode();
 

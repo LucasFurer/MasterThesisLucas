@@ -24,6 +24,7 @@
 #include "../openGLhelper/buffer.h"
 #include "../dataLoaders/loader.h"
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
+#include "../nbodysolvers/cpu/nBodySolverTest.h"
 #include "../nbodysolvers/cpu/nBodySolverBH.h"
 #include "../nbodysolvers/cpu/nBodySolverBHR.h"
 #include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
@@ -37,37 +38,25 @@
 #include "../Timer.h"
 #include "../particleMesh.h"
 
-//#define TIME_ALGORITHM
-
-
 class TSNE
 {
 public:
     std::vector<TsnePoint2D> embeddedPoints;
     std::vector<TsnePoint2D> embeddedPointsPrev;
     std::vector<TsnePoint2D> embeddedPointsPrevPrev;
-    Buffer* embeddedBuffer;
 
     #ifdef INDEX_TRACKER
     std::vector<int> indexTracker;
     std::vector<int> indexTrackerPrev;
     #endif
 
-    int follow = 1;
-    glm::dvec2 minPos;
-    glm::dvec2 maxPos;
-
-    int nodeLevelToShow = 0;
-    Buffer* nodeBuffer;
-
-    float forceSize = 1.0f;
-    Buffer* forceBuffer;
+    glm::dvec2 minPos{ std::numeric_limits<double>::max() };
+    glm::dvec2 maxPos{ std::numeric_limits<double>::lowest() };
 
     std::map<std::string, NBodySolver<TsnePoint2D>*> nBodySolvers;
-    std::string nBodySelect = "naive"; // default selector
+    std::string nBodySelect{ "naive" }; // default selector
 
-    double learnRate;
-    double accelerationRate; // kinda irrelevant since this is based on iteration_counter
+    double learnRate{ 0.0 };
 
     std::vector<uint8_t> labels;
     Eigen::SparseMatrix<double> Pmatrix;
@@ -75,235 +64,110 @@ public:
     std::vector<unsigned int> col_P;
     std::vector<double> val_P;
 
-    float desired_iteration_per_second; // limits the speed of tsne
-    double time_since_last_iteration;
+    int iteration_counter{ 0 }; // keeps track of which iteration we are on
 
-    int iteration_counter = 0; // keeps track of which iteration we are on
+    Timer thousand_iteration_timer;
+    bool reached_thousand_iterations{ false };
 
-    Timer thousand_iteration_timer; 
-    bool reached_thousand_iterations = false;
+    double min_theta{ 0.0 };
+    double max_theta{ 0.0 };
 
-    //double min_theta = 0.5;
-    double min_theta = 0.75;
-    //double max_theta = 2.0;
-    double max_theta = 0.75;
+    double cell_size{ 1.0 };
 
-    double cell_size = 0.5;
-    
-	TSNE()
-	{
-        int dataAmount = 70000;
-        float perplexity = 30.0f;
-        std::string dataSet = "MNIST_digits"; // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
+    TSNE() = default;
 
-        learnRate = static_cast<double>(dataAmount) / 15.0;
+    TSNE
+    (
+        double init_min_theta,
+        double init_max_theta,
+        double init_cell_size,
+        std::string dataSet,
+        int data_amount,
+        float perplexity,
+        unsigned int seed
+    )
+    {
+        min_theta = init_min_theta;
+        max_theta = init_max_theta;
+        cell_size = init_cell_size;
 
-        desired_iteration_per_second = 0.0;
+        learnRate = static_cast<double>(data_amount) / 15.0;
 
-        time_since_last_iteration = 0.0;
-
-        #ifdef _WIN32
-        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(dataAmount) + "/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-        #endif
-        #ifdef linux
-        std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(dataAmount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
-        #endif
+        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(data_amount) + "/label_amount" + std::to_string(data_amount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(data_amount) + "/P_matrix_amount" + std::to_string(data_amount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         labels = Loader::loadLabels(labelsPath.string());
         Pmatrix = Loader::loadPmatrix(fileName.string());
 
-        embeddedPoints.resize(dataAmount);
-        embeddedPointsPrev.resize(dataAmount);
-        embeddedPointsPrevPrev.resize(dataAmount);
-        
-        #ifdef INDEX_TRACKER
-        indexTracker.resize(dataAmount);
-        indexTrackerPrev.resize(dataAmount);
-        #endif
 
-
-
-        
-        //srand(time(NULL));
-        srand(296343u);
-        double sizeParam = 2.0;
-        for (int i = 0; i < dataAmount; i++)
-        {
-            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-
-            
-            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
-            {
-                randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-                randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-            }
-            
-
-            glm::dvec2 pos = glm::dvec2(
-                pow(sizeParam * randX, 1.0),
-                pow(sizeParam * randY, 1.0)
-            );
-
-            int lab = labels[i];
-            
-            #ifdef INDEX_TRACKER
-            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            #else
-            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            #endif 
-
-            #ifdef INDEX_TRACKER
-            indexTracker[i] = i;
-            indexTrackerPrev[i] = i;
-            #endif
-        }
-
+        generateInitialPoints(data_amount, seed, false, 2.0);
 
         setupEfficientPmatrix();
 
-
         updateMinMaxPos();
 
-
-        double set_theta = 1.0;
-        double set_cell_size = cell_size;
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
-        nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, set_theta);
+        nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D>(&TSNEBHPNKernel, &TSNEBHPPKernel, max_children_per_node, max_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, max_children_per_node, set_theta);
+        nBodySolvers["BHR"] = new NBodySolverBHR<TsnePoint2D>(&TSNEBHRNPKernel, &TSNEBHRPPKernel, max_children_per_node, max_theta);
         nBodySolvers["BHR"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHMP"] = new NBodySolverBHMP<TsnePoint2D>(&TSNEBHMPPNKernel, &TSNEBHMPPPKernel, max_children_per_node, set_theta);
+        nBodySolvers["BHMP"] = new NBodySolverBHMP<TsnePoint2D>(&TSNEBHMPPNKernel, &TSNEBHMPPPKernel, max_children_per_node, max_theta);
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, max_children_per_node, set_theta);
+        nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, max_children_per_node, max_theta);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, set_theta);
+        nBodySolvers["FMM"] = new NBodySolverFMM<TsnePoint2D>(&TSNEFMMNNKernel, &TSNEFMMPNKernel, &TSNEFMMNPKernel, &TSNEFMMPPKernel, max_children_per_node, max_theta);
         nBodySolvers["FMM"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, set_cell_size, 4);
+        nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, cell_size, 4);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         #ifdef INDEX_TRACKER
-        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, dataAmount), set_theta);
+        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, data_amount), max_theta);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, dataAmount), set_theta);
+        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, data_amount), max_theta);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         #endif
+    }
 
-        #ifdef INDEX_TRACKER
-        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
-        #else
-        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1, GL_DYNAMIC_DRAW);
-        #endif
-
-        std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-        nodeBuffer = new Buffer(nodesBufferData, pos2DCol3D, GL_DYNAMIC_DRAW);
-        
-        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, forceSize);
-        forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
-	}
-	
-	~TSNE()
-	{
-        delete embeddedBuffer;
-        delete nodeBuffer;
-        delete forceBuffer;
-
+    virtual ~TSNE()
+    {
         for (std::pair<const std::string, NBodySolver<TsnePoint2D>*> nBodySolverPointer : nBodySolvers)
         {
             delete nBodySolverPointer.second;
         }
 
         nBodySolvers.clear();
-	}
-
-    void cleanup()
-    {
-        embeddedBuffer->cleanup();
-        nodeBuffer->cleanup();
-        forceBuffer->cleanup();
     }
 
-    void resetTsne(std::string dataset_type, int data_size, float perplexity_value, double learn_rate, double theta, double cell_size, unsigned int seed)
+    void resetTsne
+    (
+        double init_min_theta,
+        double init_max_theta,
+        double init_cell_size,
+        std::string dataSet,
+        int data_amount,
+        float perplexity,
+        unsigned int seed
+    )
     {
-        learnRate = static_cast<double>(data_size) / 15.0;
-        desired_iteration_per_second = 0.0;
-        time_since_last_iteration = 0.0;
+        iteration_counter = 0;
 
-        #ifdef _WIN32
-        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataset_type + "/" + std::to_string(data_size) + "/label_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataset_type + "/" + std::to_string(data_size) + "/P_matrix_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".mtx");
-        #endif
-        #ifdef linux
-        std::filesystem::path labelsPath = std::filesystem::current_path().parent_path() / ("data/label_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".bin");
-        std::filesystem::path fileName = std::filesystem::current_path().parent_path() / ("data/P_matrix_amount" + std::to_string(data_size) + "_perp" + std::to_string((int)perplexity_value) + ".mtx");
-        #endif
+        min_theta = init_min_theta;
+        max_theta = init_max_theta;
+        cell_size = init_cell_size;
 
+        learnRate = static_cast<double>(data_amount) / 15.0;
+
+        std::filesystem::path labelsPath = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(data_amount) + "/label_amount" + std::to_string(data_amount) + "_perp" + std::to_string((int)perplexity) + ".bin");
+        std::filesystem::path fileName = std::filesystem::current_path() / ("data/" + dataSet + "/" + std::to_string(data_amount) + "/P_matrix_amount" + std::to_string(data_amount) + "_perp" + std::to_string((int)perplexity) + ".mtx");
         labels = Loader::loadLabels(labelsPath.string());
         Pmatrix = Loader::loadPmatrix(fileName.string());
 
-        embeddedPoints.resize(data_size);
-        embeddedPointsPrev.resize(data_size);
-        embeddedPointsPrevPrev.resize(data_size);
-        
-        #ifdef INDEX_TRACKER
-        indexTracker.resize(data_size);
-        indexTrackerPrev.resize(data_size);
-        #endif
-
-
-        
-        //srand(time(NULL));
-        srand(seed);
-        double sizeParam = 2.0;
-        for (int i = 0; i < data_size; i++)
-        {
-            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-
-            
-            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
-            {
-                randX = 2.0f * ((double)rand() / RAND_MAX) - 1.0;
-                randY = 2.0f * ((double)rand() / RAND_MAX) - 1.0;
-            }
-            
-
-            glm::dvec2 pos = glm::dvec2(
-                pow(sizeParam * randX, 1.0),
-                pow(sizeParam * randY, 1.0)
-            );
-
-            int lab = labels[i];
-            
-            #ifdef INDEX_TRACKER
-            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
-            #else
-            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
-            #endif      
-
-            #ifdef INDEX_TRACKER
-            indexTracker[i] = i;
-            indexTrackerPrev[i] = i;
-            #endif
-        }
-
+        generateInitialPoints(data_amount, seed, false, 2.0);
 
         setupEfficientPmatrix();
 
-
         updateMinMaxPos();
 
-
-        setThetaForAll(theta, cell_size);
+        setThetaForAll(min_theta, cell_size);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHR"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
@@ -314,96 +178,16 @@ public:
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         #endif
-
-
-        #ifdef INDEX_TRACKER
-        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1Int1Int32_t1, GL_DYNAMIC_DRAW);
-        #else
-        embeddedBuffer = new Buffer(embeddedPoints, Double2Double2Int1, GL_DYNAMIC_DRAW);
-        #endif
-
-        std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-        nodeBuffer = new Buffer(nodesBufferData, pos2DCol3D, GL_DYNAMIC_DRAW);
-        
-        std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, forceSize);
-        forceBuffer = new Buffer(forceLines, pos2DCol3D, GL_DYNAMIC_DRAW);
-    }
-    
-    void timeStep()
-    {
-        if (iteration_counter == 0)
-            thousand_iteration_timer.startTimer();
-
-        if (iteration_counter == 1000 && !reached_thousand_iterations)
-        {
-            reached_thousand_iterations = true;
-            desired_iteration_per_second = 0.0;
-            thousand_iteration_timer.endTimer("A thousand iterations");
-
-            #ifdef INDEX_TRACKER
-            costFunction(embeddedPoints, indexTracker, Pmatrix);
-            #else
-            costFunction(embeddedPoints, Pmatrix);
-            #endif
-        }
-        
-
-        if (glfwGetTime() - time_since_last_iteration >= 1.0 / static_cast<double>(desired_iteration_per_second))
-        {
-            std::cout << "------------------------------------\n";
-            Timer time_step_timer;
-
-            time_since_last_iteration = glfwGetTime();
-
-            Timer derivative_timer;
-            updateDerivative();
-            derivative_timer.endTimer("__updateDerivative");
-
-            Timer update_timer;
-            updatePoints();
-            update_timer.endTimer("__updatePoints");
-
-            #ifdef INDEX_TRACKER
-            embeddedBuffer->updateBuffer(embeddedPoints, Double2Double2Int1Int1Int32_t1);
-            #else
-            embeddedBuffer->updateBuffer(embeddedPoints, Double2Double2Int1);
-            #endif
-
-
-            Timer time_update_tree;
-            nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
-            time_update_tree.endTimer("__update tree");
-            std::vector<VertexPos2Col3> nodesBufferData = nBodySolvers[nBodySelect]->getNodesBufferData(nodeLevelToShow);
-            nodeBuffer->updateBuffer(nodesBufferData, pos2DCol3D);
-
-
-
-            std::vector<VertexPos2Col3> forceLines = VertexPos2Col3::particlesAccelerationsToVertexPos2Col3(embeddedPoints, forceSize);
-            forceBuffer->updateBuffer(forceLines, pos2DCol3D);
-            
-
-            time_step_timer.endTimer("timeStep");
-        }
     }
 
     void updatePoints()
     {
-        //Timer timer;
-
-        //if (iteration_counter == 999)
-        //    costFunction(embeddedPoints, indexTracker, Pmatrix);
-
         embeddedPointsPrev.swap(embeddedPointsPrevPrev);
         embeddedPoints.swap(embeddedPointsPrev);
 
         thetaFunction();
 
-        accelerationRate = 0.8;
-        if (iteration_counter < 250)
-        {
-            accelerationRate = 0.5;
-        }
-
+        double accelerationRate = iteration_counter < 250 ? 0.5 : 0.8;
 
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
@@ -432,16 +216,12 @@ public:
 
 
         iteration_counter++;
-
-        //timer.endTimer("update step");
     }
 
     void thetaFunction()
     {
-        Timer timer;
-
         //float falloff_strength = 5.0f;
-        //float theta_result = 
+        //float theta_result =
         //    (max_theta - min_theta) *
         //    std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
         //    min_theta;
@@ -463,8 +243,6 @@ public:
         std::cout << "set cell size to: " << cell_size << std::endl;
 
         setThetaForAll(theta_result, cell_size);
-
-        timer.endTimer("____calculating theta");
     }
 
     void setMinMaxTheta(double set_min_theta, double set_max_theta)
@@ -507,22 +285,14 @@ public:
     void updateDerivative()
     {
         #ifdef INDEX_TRACKER
-        Timer timerIndexTracker;
         updateIndexTracker();
-        timerIndexTracker.endTimer("____updateIndexTracker");
         #endif
 
-        Timer timerResetDeriv;
         resetDeriv();
-        timerResetDeriv.endTimer("____resetDeriv");
 
-        Timer timerUpdateRepulsive;
         updateRepulsive();
-        timerUpdateRepulsive.endTimer("____updateRepulsive");
 
-        Timer timerUpdateAttractive;
         updateAttractive();
-        timerUpdateAttractive.endTimer("____updateAttractive");
     }
 
     #ifdef INDEX_TRACKER
@@ -557,8 +327,6 @@ public:
 
     void updateAttractiveOUTDATED()
     {
-        Timer timer;
-
         float exaggeration = iteration_counter < 250 ? 16.0f : 4.0f;
 
         for (int k = 0; k < Pmatrix.outerSize(); ++k) // https://stackoverflow.com/questions/22421244/eigen-package-iterate-over-row-major-sparse-matrix
@@ -579,13 +347,11 @@ public:
                 pointC.derivative += exaggeration * static_cast<float>(it.value()) * (diff / (1.0f + dist));
             }
         }
-
-        timer.endTimer("attractive");
     }
 
     void updateAttractive()
     {
-        double exageration = iteration_counter < 250 ? 16.0 : 4.0;
+        double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
 
         for (int n = 0; n < embeddedPoints.size(); n++)
         {
@@ -595,7 +361,7 @@ public:
             TsnePoint2D& pointR = embeddedPoints[n];
             #endif
 
-            glm::dvec2 dim{ 0.0 };
+            glm::dvec2 dim{ 0.0f };
 
             for (unsigned int i = row_P[n]; i < row_P[n + 1]; i++)
             {
@@ -758,6 +524,64 @@ public:
             }
 
             row_P[r + 1] = row_P[r] + amount_in_row;
+        }
+    }
+
+    void generateInitialPoints(int data_amount, unsigned int seed, bool random, double starting_range)
+    {
+        embeddedPoints.resize(data_amount);
+        embeddedPointsPrev.resize(data_amount);
+        embeddedPointsPrevPrev.resize(data_amount);
+
+        #ifdef INDEX_TRACKER
+        indexTracker.resize(data_amount);
+        indexTrackerPrev.resize(data_amount);
+        #endif
+
+
+        if (random)
+        {
+            srand(time(NULL));
+        }
+        else
+        {
+            srand(296343u);
+        }
+
+        for (int i = 0; i < data_amount; i++)
+        {
+            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+
+
+            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
+            {
+                randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+                randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+            }
+
+
+            glm::dvec2 pos = glm::dvec2(
+                pow(starting_range * randX, 1.0),
+                pow(starting_range * randY, 1.0)
+            );
+
+            int lab = labels[i];
+
+            #ifdef INDEX_TRACKER
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab, i, 0.0);
+            #else
+            embeddedPoints[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
+            #endif 
+
+            #ifdef INDEX_TRACKER
+            indexTracker[i] = i;
+            indexTrackerPrev[i] = i;
+            #endif
         }
     }
 };
