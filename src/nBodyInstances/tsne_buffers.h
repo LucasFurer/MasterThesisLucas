@@ -41,15 +41,12 @@
 class TSNE_buffers : public TSNE
 {
 public:
-    Buffer* embeddedBuffer;
-
+    Buffer* embeddedBuffer; // todo: add = nullptr here
     Buffer* nodeBuffer;
-
     float forceSize{ 1.0f };
     Buffer* forceBuffer;
 
     int follow{ 1 };
-
     int nodeLevelToShow{ 0 };
 
     float desired_iteration_per_second{ 0.0f }; // limits the speed of tsne

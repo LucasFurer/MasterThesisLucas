@@ -292,7 +292,9 @@ public:
 
         updateRepulsive();
 
+        Timer time_attractive;
         updateAttractive();
+        time_attractive.endTimer("____attractive component");
     }
 
     #ifdef INDEX_TRACKER
@@ -325,7 +327,7 @@ public:
         }
     }
 
-    void updateAttractiveOUTDATED()
+    void updateAttractiveOUTDATED1()
     {
         float exaggeration = iteration_counter < 250 ? 16.0f : 4.0f;
 
@@ -371,6 +373,34 @@ public:
                 #else
                 TsnePoint2D& pointC = embeddedPoints[col];
                 #endif
+
+                glm::dvec2 diff = pointC.position - pointR.position;
+                double d_ij = diff.x * diff.x + diff.y * diff.y;
+                double q_ij = 1.0 / (1.0 + d_ij);
+
+                dim += exageration * val_P[i] * q_ij * diff;
+            }
+
+            pointR.derivative += dim;
+        }
+    }
+
+    void updateAttractiveOUTDATED2()
+    {
+
+
+        double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
+
+        for (int n = 0; n < embeddedPoints.size(); n++)
+        {
+            TsnePoint2D& pointR = embeddedPoints[n];
+
+            glm::dvec2 dim{ 0.0f };
+
+            for (unsigned int i = row_P[n]; i < row_P[n + 1]; i++)
+            {
+                unsigned int col = col_P[i];
+                TsnePoint2D& pointC = embeddedPoints[col];
 
                 glm::dvec2 diff = pointC.position - pointR.position;
                 double d_ij = diff.x * diff.x + diff.y * diff.y;

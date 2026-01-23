@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-//#define INDEX_TRACKER
+#define INDEX_TRACKER
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -200,16 +200,16 @@ int main(void)
         // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
         TsneTest tsne_test;
 
-        tsne_test.errorTimestepTSNE
-        (
-            "MNIST_digits", // data_set
-            70000,  // data_size
-            30.0f, // perplexity
-            5, // iteration_amount
-            1.0f, // theta
-            1.0f, // cell_size
-            296343u // seed
-        );
+        //tsne_test.errorTimestepTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000,  // data_size
+        //    30.0f, // perplexity
+        //    5, // iteration_amount
+        //    1.0f, // theta
+        //    1.0f, // cell_size
+        //    296343u // seed
+        //);
 
         //tsne_test.calculationtimeThetaTSNE
         //(
