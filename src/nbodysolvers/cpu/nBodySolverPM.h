@@ -273,31 +273,15 @@ public:
         delete[] C_dC;
     }
 
-    #ifdef INDEX_TRACKER
-    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
-	#else
     void solveNbody(double& total, std::vector<T>& points) override
-	#endif
     {
-        #ifdef INDEX_TRACKER
-        for (int i = 0; i < points.size(); i++)
-            indexTracker[points[i].ID] = i;
-
-        for (int i = 0; i < points.size(); i++)
-        {
-            int tracketIndex = indexTracker[i];
-            C_Y[2 * i + 0] = points[tracketIndex].position.x;
-            C_Y[2 * i + 1] = points[tracketIndex].position.y;
-        }
-        #else
         for (int i = 0; i < points.size(); i++)
         {
             C_Y[2 * i + 0] = points[i].position.x;
             C_Y[2 * i + 1] = points[i].position.y;
         }
-        #endif  
 
-        std::cout << "running with cell size: " << this->cell_size << "\n";
+        //std::cout << "running with cell size: " << this->cell_size << "\n";
         computeFftGradient
         (
             nullptr,
@@ -318,21 +302,11 @@ public:
 
         for (int i = 0; i < C_N; i++)
         {
-            #ifdef INDEX_TRACKER
-            int tracketIndex = indexTracker[i];
-
-            points[tracketIndex].derivative = -glm::dvec2
-            (
-                C_dC[2 * i + 0],
-                C_dC[2 * i + 1]
-            );
-            #else
             points[i].derivative = -glm::dvec2
             (
                 C_dC[2 * i + 0],
                 C_dC[2 * i + 1]
             );
-            #endif
         }
     }
 

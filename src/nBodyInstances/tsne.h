@@ -45,11 +45,6 @@ public:
     std::vector<TsnePoint2D> embeddedPointsPrev;
     std::vector<TsnePoint2D> embeddedPointsPrevPrev;
 
-    #ifdef INDEX_TRACKER
-    std::vector<int> indexTracker;
-    std::vector<int> indexTrackerPrev;
-    #endif
-
     glm::dvec2 minPos{ std::numeric_limits<double>::max() };
     glm::dvec2 maxPos{ std::numeric_limits<double>::lowest() };
 
@@ -192,25 +187,16 @@ public:
         for (int i = 0; i < embeddedPoints.size(); i++)
         {
             #ifdef INDEX_TRACKER
-            int indexPrev = indexTracker[i];
-            int indexPrevPrev = indexTrackerPrev[i];
-
-            embeddedPoints[indexPrev].derivative = embeddedPointsPrev[indexPrev].derivative;
-            embeddedPoints[indexPrev].label = embeddedPointsPrev[indexPrev].label;
-            embeddedPoints[indexPrev].ID = embeddedPointsPrev[indexPrev].ID;
-            embeddedPoints[indexPrev].position = embeddedPointsPrev[indexPrev].position + learnRate * embeddedPointsPrev[indexPrev].derivative + accelerationRate * (embeddedPointsPrev[indexPrev].position - embeddedPointsPrevPrev[indexPrevPrev].position);
+            embeddedPoints[i].derivative = embeddedPointsPrev[i].derivative;
+            embeddedPoints[i].label = embeddedPointsPrev[i].label;
+            embeddedPoints[i].ID = embeddedPointsPrev[i].ID;
+            embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             #else   
             embeddedPoints[i].derivative = embeddedPointsPrev[i].derivative;
             embeddedPoints[i].label = embeddedPointsPrev[i].label;
             embeddedPoints[i].position = embeddedPointsPrev[i].position + learnRate * embeddedPointsPrev[i].derivative + accelerationRate * (embeddedPointsPrev[i].position - embeddedPointsPrevPrev[i].position);
             #endif
         }
-
-
-        #ifdef INDEX_TRACKER
-        indexTrackerPrev.swap(indexTracker);
-        #endif
-
 
         updateMinMaxPos();
 
@@ -284,26 +270,12 @@ public:
 
     void updateDerivative()
     {
-        #ifdef INDEX_TRACKER
-        updateIndexTracker();
-        #endif
-
         resetDeriv();
 
         updateRepulsive();
 
-        Timer time_attractive;
         updateAttractive();
-        time_attractive.endTimer("____attractive component");
     }
-
-    #ifdef INDEX_TRACKER
-    void updateIndexTracker()
-    {
-        for (int i = 0; i < embeddedPoints.size(); i++)
-            indexTracker[embeddedPoints[i].ID] = i;
-    }
-    #endif
 
     void resetDeriv()
     {
@@ -314,17 +286,17 @@ public:
     void updateRepulsive()
     {
         double QijTotal = 0.0;
-
-        #ifdef INDEX_TRACKER
-        nBodySolvers[nBodySelect]->solveNbody(QijTotal, embeddedPoints, indexTracker);
-        #else
         nBodySolvers[nBodySelect]->solveNbody(QijTotal, embeddedPoints);
-        #endif
+        QijTotal = 4.0 / QijTotal;
 
         for (int i = 0; i < embeddedPoints.size(); i++)
-        {
-            embeddedPoints[i].derivative *= (4.0 / QijTotal);
-        }
+            embeddedPoints[i].derivative *= QijTotal;
+
+        #ifdef INDEX_TRACKER
+        for (size_t i = 0; i < embeddedPointsPrevPrev.size(); i++)
+            embeddedPointsPrevPrev[embeddedPoints[i].ID] = embeddedPoints[i];
+        embeddedPointsPrevPrev.swap(embeddedPoints);
+        #endif
     }
 
     void updateAttractiveOUTDATED1()
@@ -335,13 +307,8 @@ public:
         { 
             for (Eigen::SparseMatrix<double>::InnerIterator it(Pmatrix, k); it; ++it) 
             {
-                #ifdef INDEX_TRACKER
-                TsnePoint2D& pointR = embeddedPoints[indexTracker[it.row()]];
-                TsnePoint2D& pointC = embeddedPoints[indexTracker[it.col()]];
-                #else
                 TsnePoint2D& pointR = embeddedPoints[it.row()];
                 TsnePoint2D& pointC = embeddedPoints[it.col()];
-                #endif
 
                 glm::vec2 diff = pointR.position - pointC.position;
                 float dist = diff.x * diff.x + diff.y * diff.y;
@@ -351,48 +318,46 @@ public:
         }
     }
 
+    void updateAttractiveOUTDATED2()
+    {
+        double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
+
+        for (int n = 0; n < embeddedPoints.size(); n++)
+        {
+            //#ifdef INDEX_TRACKER
+            //TsnePoint2D& pointR = embeddedPoints[indexTracker[n]];
+            //#else
+            TsnePoint2D& pointR = embeddedPoints[n];
+            //#endif
+
+            glm::dvec2 dim{ 0.0f };
+
+            for (unsigned int i = row_P[n]; i < row_P[n + 1]; i++)
+            {
+                unsigned int col = col_P[i];
+                //#ifdef INDEX_TRACKER
+                //TsnePoint2D& pointC = embeddedPoints[indexTracker[col]];
+                //#else
+                TsnePoint2D& pointC = embeddedPoints[col];
+                //#endif
+
+                glm::dvec2 diff = pointC.position - pointR.position;
+                double d_ij = diff.x * diff.x + diff.y * diff.y;
+                double q_ij = 1.0 / (1.0 + d_ij);
+
+                dim += exageration * val_P[i] * q_ij * diff;
+            }
+
+            pointR.derivative += dim;
+        }
+    }
+
     void updateAttractive()
     {
         double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
 
         for (int n = 0; n < embeddedPoints.size(); n++)
         {
-            #ifdef INDEX_TRACKER
-            TsnePoint2D& pointR = embeddedPoints[indexTracker[n]];
-            #else
-            TsnePoint2D& pointR = embeddedPoints[n];
-            #endif
-
-            glm::dvec2 dim{ 0.0f };
-
-            for (unsigned int i = row_P[n]; i < row_P[n + 1]; i++)
-            {
-                unsigned int col = col_P[i];
-                #ifdef INDEX_TRACKER
-                TsnePoint2D& pointC = embeddedPoints[indexTracker[col]];
-                #else
-                TsnePoint2D& pointC = embeddedPoints[col];
-                #endif
-
-                glm::dvec2 diff = pointC.position - pointR.position;
-                double d_ij = diff.x * diff.x + diff.y * diff.y;
-                double q_ij = 1.0 / (1.0 + d_ij);
-
-                dim += exageration * val_P[i] * q_ij * diff;
-            }
-
-            pointR.derivative += dim;
-        }
-    }
-
-    void updateAttractiveOUTDATED2()
-    {
-
-
-        double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
-
-        for (int n = 0; n < embeddedPoints.size(); n++)
-        {
             TsnePoint2D& pointR = embeddedPoints[n];
 
             glm::dvec2 dim{ 0.0f };
@@ -413,12 +378,14 @@ public:
         }
     }
 
-    #ifdef INDEX_TRACKER
-    void costFunction(const std::vector<TsnePoint2D>& points, const std::vector<int>& points_indices, Eigen::SparseMatrix<double>& Pmatrix)
-    #else
     void costFunction(const std::vector<TsnePoint2D>& points, Eigen::SparseMatrix<double>& Pmatrix)
-    #endif
     {
+        #ifdef INDEX_TRACKER
+        for (size_t i = 0; i < embeddedPointsPrevPrev.size(); i++)
+            embeddedPointsPrevPrev[embeddedPoints[i].ID] = embeddedPoints[i];
+        embeddedPointsPrevPrev.swap(embeddedPoints);
+        #endif
+
         double QijTotal = 0.0;
 
         const unsigned numThreads = std::thread::hardware_concurrency();
@@ -444,14 +411,8 @@ public:
                         {
                             if (i == j) continue;
 
-                            #ifdef INDEX_TRACKER
-                            const TsnePoint2D& point_i = points[points_indices[i]];
-                            const TsnePoint2D& point_j = points[points_indices[j]];
-                            #else
                             const TsnePoint2D& point_i = points[i];
                             const TsnePoint2D& point_j = points[j];
-                            #endif
-
 
                             glm::dvec2 diff = point_j.position - point_i.position;
                             double distance_squared = diff.x * diff.x + diff.y * diff.y;
@@ -475,13 +436,8 @@ public:
             {
                 if (it.col() != it.row())
                 {
-                    #ifdef INDEX_TRACKER
-                    const TsnePoint2D& point_col = points[points_indices[it.col()]];
-                    const TsnePoint2D& point_row = points[points_indices[it.row()]];
-                    #else
                     const TsnePoint2D& point_col = points[it.col()];
                     const TsnePoint2D& point_row = points[it.row()];
-                    #endif
 
                     glm::dvec2 diff = point_col.position - point_row.position;
                     double distance_squared = diff.x * diff.x + diff.y * diff.y;
@@ -495,6 +451,10 @@ public:
         }
 
         std::cout << "totalCost: " << totalCost << std::endl;
+
+        #ifdef INDEX_TRACKER
+        nBodySolvers[nBodySelect]->updateTree(embeddedPoints, minPos, maxPos);
+        #endif
     }
 
     void setupEfficientPmatrix()
@@ -563,19 +523,13 @@ public:
         embeddedPointsPrev.resize(data_amount);
         embeddedPointsPrevPrev.resize(data_amount);
 
-        #ifdef INDEX_TRACKER
-        indexTracker.resize(data_amount);
-        indexTrackerPrev.resize(data_amount);
-        #endif
-
-
         if (random)
         {
             srand(time(NULL));
         }
         else
         {
-            srand(296343u);
+            srand(seed);
         }
 
         for (int i = 0; i < data_amount; i++)
@@ -607,11 +561,6 @@ public:
             embeddedPointsPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
             embeddedPointsPrevPrev[i] = TsnePoint2D(pos, glm::dvec2(0.0), lab);
             #endif 
-
-            #ifdef INDEX_TRACKER
-            indexTracker[i] = i;
-            indexTrackerPrev[i] = i;
-            #endif
         }
     }
 };

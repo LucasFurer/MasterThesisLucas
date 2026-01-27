@@ -33,11 +33,7 @@ public:
         this->theta = initTheta;
     }
 
-    #ifdef INDEX_TRACKER
-    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
-	#else
     void solveNbody(double& total, std::vector<T>& points) override
-	#endif
     {
         total = 0.0;
 

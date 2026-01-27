@@ -66,11 +66,7 @@ public:
         this->theta = initTheta;
     }
 
-    #ifdef INDEX_TRACKER
-    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
-	#else
     void solveNbody(double& total, std::vector<T>& points) override
-	#endif
     {
         traverse_SYM_NN(total, points, nodes[0], nodes[0], this->theta);
         
@@ -627,7 +623,7 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     sinkNode.C2 += C2;
     sinkNode.C3 += C3;
 
-    // second interaction
+    // second interaction ---------------------------------------------------------------------------------------
 
     R = -R;
     
@@ -652,8 +648,8 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     sourceNode.C2 += C2;
     sourceNode.C3 += -C3;
 
-    // add totals for both interactions
 
+    // add totals for both interactions
     total += 2.0 * (sinkNode.M0 * sourceNode.M0) / rS;
 }
 
@@ -687,7 +683,8 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
 
     sinkPoint.derivative += glm::dvec2(C1(0), C1(1));
 
-    // second interaction
+
+    // second interaction ---------------------------------------------------------------------------------------
 
     R = -R;
 
@@ -739,8 +736,6 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     sourceNode.C1 += C1;
     sourceNode.C2 += C2;
     sourceNode.C3 += C3;
-
-    // add totals for both interactions
 
     total += (1.0 + sourceNode.M0) / rS;
 }

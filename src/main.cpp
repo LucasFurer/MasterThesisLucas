@@ -205,7 +205,7 @@ int main(void)
         //    "MNIST_digits", // data_set
         //    70000,  // data_size
         //    30.0f, // perplexity
-        //    5, // iteration_amount
+        //    300, // iteration_amount
         //    1.0f, // theta
         //    1.0f, // cell_size
         //    296343u // seed
@@ -238,7 +238,7 @@ int main(void)
         //    "MNIST_digits", // data_set
         //    70000, // data_size
         //    30.0f, // perplexity
-        //    1001, // iteration_amount
+        //    3, // iteration_amount
         //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
         //    std::vector<double>{0.5,  1.0, 1.5,  2.0, 2.5,  3.0, 3.5}, // cell_sizes
         //    296343u // seed

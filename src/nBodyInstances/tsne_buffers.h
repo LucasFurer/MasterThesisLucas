@@ -124,8 +124,11 @@ public:
     
     void timeStep()
     {
-        if (iteration_counter == 0)
+        if (iteration_counter == 1)
+        {
+            //costFunction(this->embeddedPoints, this->Pmatrix);
             thousand_iteration_timer.startTimer();
+        }
 
         if (iteration_counter == 1000 && !reached_thousand_iterations)
         {
@@ -133,11 +136,7 @@ public:
             desired_iteration_per_second = 0.0f;
             thousand_iteration_timer.endTimer("A thousand iterations");
 
-            #ifdef INDEX_TRACKER
-            costFunction(embeddedPoints, indexTracker, Pmatrix);
-            #else
-            costFunction(embeddedPoints, Pmatrix);
-            #endif
+            costFunction(this->embeddedPoints, this->Pmatrix);
         }
         
 
