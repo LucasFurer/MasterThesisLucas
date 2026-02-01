@@ -16,6 +16,7 @@
 #include <GLFW/glfw3.h>
 #include <cstddef>
 #include <numbers>
+#include <random>
 
 #include "../particles/embeddedPoint.h"
 #include "../particles/tsnePoint2D.h"
@@ -523,31 +524,26 @@ public:
         embeddedPointsPrev.resize(data_amount);
         embeddedPointsPrevPrev.resize(data_amount);
 
-        if (random)
+        std::mt19937 gen = [random, seed]() -> std::mt19937
         {
-            srand(time(NULL));
-        }
-        else
-        {
-            srand(seed);
-        }
+            if (random)
+            {
+                std::random_device rd;
+                return std::mt19937(rd());
+            }
+            else 
+            {
+                return std::mt19937(seed);
+            }
+        }();
+
+        std::normal_distribution<double> dist(0.0, 0.01);
 
         for (int i = 0; i < data_amount; i++)
         {
-            double randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-            double randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-
-
-            while (pow(randX, 2.0) + pow(randY, 2.0) > 1.0)
-            {
-                randX = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-                randY = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-            }
-
-
             glm::dvec2 pos = glm::dvec2(
-                pow(starting_range * randX, 1.0),
-                pow(starting_range * randY, 1.0)
+                dist(gen),
+                dist(gen)
             );
 
             int lab = labels[i];

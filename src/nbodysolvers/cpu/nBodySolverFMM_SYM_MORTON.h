@@ -91,7 +91,7 @@ public:
 
         createLeafNodes(points, minPos, maxPos);
 
-        bottomUpNodeConstruction();
+        bottomUpNodeConstruction(minPos, maxPos);
     }
 
     std::vector<VertexPos2Col3> getNodesBufferData(int nodeLevelToShow) override
@@ -357,8 +357,10 @@ private:
 
     }
 
-    void bottomUpNodeConstruction()
+    void bottomUpNodeConstruction(glm::dvec2 minPos, glm::dvec2 maxPos)
     {
+        double max_minus_min_pos = maxPos.x - minPos.x;
+
         std::array<glm::dvec2, 4> BBcentreOffset
         {
             glm::dvec2(0.5, 0.5),
@@ -369,20 +371,37 @@ private:
 
         for (int l = treeDepth - 1; l >= 0; l--)
         {
+            //const int cells_per_axis = 1 << l;
+            //const int cells_per_axis_child = 1 << (l+1);
+            //const double BBlength_l = max_minus_min_pos / static_cast<double>(cells_per_axis);
+            //const double BBlength_l_child = max_minus_min_pos / static_cast<double>(cells_per_axis_child);
+
             for (int i = 0; i < levelSize[l]; i++)
             {
                 int nodeIndex = levelIndex[l] + i;
                 unsigned int potentialFirstChildIndex = levelIndex[l + 1] + i * 4;
+
+                //unsigned int children_counter = 0u;
+                //unsigned int only_child_index = 0u;
+
+                //nodes[nodeIndex].BBlength = BBlength_l;
+
+                //uint32_t ix = compact16(i);
+                //uint32_t iy = compact16(i >> 1);
+                //nodes[nodeIndex].BBcentre = minPos + glm::dvec2(ix + 0.5, iy + 0.5) * BBlength_l;
 
                 for (int j = 3; j >= 0; j--) // loop over all children of node i in level l
                 {
                     unsigned int childIndex = potentialFirstChildIndex + j;
                     if (nodes[childIndex].particleIndexAmount != 0u)
                     {
+                        //children_counter++;
+                        //only_child_index = childIndex;
+
                         nodes[nodeIndex].firstChildIndex = potentialFirstChildIndex;
 
-                        nodes[nodeIndex].BBcentre = BBcentreOffset[j] * nodes[childIndex].BBlength + nodes[childIndex].BBcentre;
-                        nodes[nodeIndex].BBlength = 2.0 * nodes[childIndex].BBlength;
+                        nodes[nodeIndex].BBcentre = BBcentreOffset[j] * nodes[childIndex].BBlength + nodes[childIndex].BBcentre; // old way
+                        nodes[nodeIndex].BBlength = 2.0 * nodes[childIndex].BBlength; // old way
 
                         nodes[nodeIndex].firstParticleIndex = nodes[childIndex].firstParticleIndex;
                         nodes[nodeIndex].particleIndexAmount += nodes[childIndex].particleIndexAmount;
@@ -393,7 +412,18 @@ private:
                     }
                 }
 
-                if (nodes[nodeIndex].particleIndexAmount != 0)
+                //if (children_counter == 1u)
+                //{
+                //    nodes[nodeIndex].BBcentre = nodes[only_child_index].BBcentre;
+                //    nodes[nodeIndex].BBlength = nodes[only_child_index].BBlength;
+
+                //    nodes[nodeIndex].centreOfMass = nodes[only_child_index].centreOfMass;
+                //    nodes[nodeIndex].M2 = nodes[only_child_index].M2;
+
+                //    continue;
+                //}
+
+                if (nodes[nodeIndex].particleIndexAmount != 0u)
                 {
                     nodes[nodeIndex].centreOfMass /= nodes[nodeIndex].M0;
 
@@ -416,6 +446,16 @@ private:
                 }
             }
         }
+    }
+
+    inline uint32_t compact16(uint32_t x)
+    {
+        x &= 0x55555555u;
+        x = (x | (x >> 1)) & 0x33333333u;
+        x = (x | (x >> 2)) & 0x0F0F0F0Fu;
+        x = (x | (x >> 4)) & 0x00FF00FFu;
+        x = (x | (x >> 8)) & 0x0000FFFFu;
+        return x;
     }
 
     void applyForces(std::vector<T>& points, NodeFMM_MORTON_2D& node)
@@ -516,6 +556,9 @@ private:
 
             glm::vec3 color = colors[std::min(showLevel + 1, colorsSize - 1)];
 
+            //const int cells_per_axis = 1 << level;
+            //const double BBlength_l = max_minus_min_pos / static_cast<double>(cells_per_axis);
+
             glm::vec2 lowestCorner = node.BBcentre - 0.5f * node.BBlength;
             glm::vec2 highestCorner = node.BBcentre + 0.5f * node.BBlength;
 
@@ -539,7 +582,7 @@ private:
             //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass + glm::vec2(0.0f, crossSize), glm::vec3(1.0f, 0.0f, 0.0f)));
         }
 
-        if (node.firstChildIndex != 0)
+        if (node.firstChildIndex != 0u)
         {
             for (int i = node.firstChildIndex; i < node.firstChildIndex + 4; i++)
             {

@@ -144,7 +144,7 @@ int main(void)
             "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
             70000, // data_size
             30.0f, // perplexity
-            296343u // seed
+            216308u // seed: 4523u, 296343u
         );
         
         glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -205,10 +205,10 @@ int main(void)
         //    "MNIST_digits", // data_set
         //    70000,  // data_size
         //    30.0f, // perplexity
-        //    300, // iteration_amount
+        //    1000, // iteration_amount
         //    1.0f, // theta
         //    1.0f, // cell_size
-        //    296343u // seed
+        //    4523u // seed
         //);
 
         //tsne_test.calculationtimeThetaTSNE
@@ -219,7 +219,7 @@ int main(void)
         //    5, // iteration_amount
         //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
         //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // cell_sizes
-        //    296343u // seed
+        //    4523u // seed
         //);
 
         //tsne_test.errorThetaTSNE
@@ -230,7 +230,7 @@ int main(void)
         //    5, // iteration_amount
         //    std::vector<float>{0.5f, 0.7f, 0.9f}, // thetas
         //    std::vector<double>{1.0, 1.1, 1.2}, // cell_sizes
-        //    296343u // seed
+        //    4523u // seed
         //);
 
         //tsne_test.calculationtimeErrorTSNE
@@ -241,7 +241,7 @@ int main(void)
         //    3, // iteration_amount
         //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
         //    std::vector<double>{0.5,  1.0, 1.5,  2.0, 2.5,  3.0, 3.5}, // cell_sizes
-        //    296343u // seed
+        //    4523u // seed
         //);
 
         //tsne_test.costTimestepTSNE // comparing FMM to BH with high theta and looking at the cost
@@ -253,7 +253,7 @@ int main(void)
         //    0.75, // min_theta
         //    2.0, // max_theta
         //    1.0, // cell_size
-        //    296343u, // seed
+        //    4523u, // seed
         //    "FMM_SYM_MORTON" // method
         //);
 
@@ -266,7 +266,7 @@ int main(void)
         //    1001, // iteration_amount
         //    std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, // thetas
         //    std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, // cell_sizes
-        //    296343u, // seed
+        //    4523u, // seed
         //    "PM" // method
         //);
 

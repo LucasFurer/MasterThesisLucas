@@ -8,7 +8,7 @@
 class Timer
 {
 public:
-	Timer() 
+	Timer()
 	{
 		startTimer();
 	}
@@ -27,8 +27,8 @@ public:
 		std::cout << message << ": " << formatWithDots(elapsed_time.count()) << " microseconds\n";
 	}
 private:
-	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::time_point();
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point();
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::time_point();
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point();
 
 	// helper to format number with dots every 3 digits
 	std::string formatWithDots(long long value)
