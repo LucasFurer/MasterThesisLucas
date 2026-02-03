@@ -19,6 +19,7 @@
 #include "nBodySolver.h"
 #include "../../trees/cpu/quadtreeFMM.h"
 #include "../../trees/cpu/nodeFMM_MORTON_2D.h"
+#include "../../trees/cpu/nodeFMM_SYM_MORTON.h"
 #include "../../particles/embeddedPoint.h"
 #include "../../particles/tsnePoint2D.h"
 #include "../../particles/Particle2D.h"
@@ -31,26 +32,22 @@ class NBodySolverFMM_SYM_MORTON : public NBodySolver<T>
 {
 public:
     unsigned int treeDepth;
-    std::vector<NodeFMM_MORTON_2D> nodes;//leaf_nodes
+    //std::vector<Node_FMM_SYM_MORTON_2D> nodes;//leaf_nodes
+    Node_FMM_SYM_MORTON_2D* root{ nullptr };
     std::vector<unsigned int> levelIndex;
     std::vector<unsigned int> levelSize;
     std::vector<unsigned int> levelGridWidth;
 
-    std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> kernelNN;
-    std::function<void(double&, T&, NodeFMM_MORTON_2D&)> kernelPN;
-    //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> kernelNP;
+    std::function<void(double&, Node_FMM_SYM_MORTON_2D*, Node_FMM_SYM_MORTON_2D*)> kernelNN;
+    std::function<void(double&, T&, Node_FMM_SYM_MORTON_2D*)> kernelPN;
     std::function<void(double&, T&, T&)> kernelPP;
-
-    //std::vector<std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>> interaction_NN_stack;
-    //std::vector<std::pair<T, NodeFMM_MORTON_2D>> interaction_PN_stack;
 
     NBodySolverFMM_SYM_MORTON() {}
 
     NBodySolverFMM_SYM_MORTON
     (
-        std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> initKernelNN,
-        std::function<void(double&, T&, NodeFMM_MORTON_2D&)> initKernelPN,
-        //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
+        std::function<void(double&, Node_FMM_SYM_MORTON_2D*, Node_FMM_SYM_MORTON_2D*)> initKernelNN,
+        std::function<void(double&, T&, Node_FMM_SYM_MORTON_2D*)> initKernelPN,
         std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         unsigned int initTreeDepth,
@@ -59,27 +56,28 @@ public:
     {
         kernelNN = initKernelNN;
         kernelPN = initKernelPN;
-        //kernelNP = initKernelNP;
         kernelPP = initKernelPP;
         this->maxChildren = initMaxChildren;
-        initNodesSize(initTreeDepth);
+        //initNodesSize(initTreeDepth);
         this->theta = initTheta;
     }
 
     void solveNbody(double& total, std::vector<T>& points) override
     {
-        traverse_SYM_NN(total, points, nodes[0], nodes[0], this->theta);
-        
-        double one_over_M0 = 1.0 / nodes[0].M0;
-        nodes[0].C2 *= one_over_M0;
-        nodes[0].C3 *= one_over_M0;
-        applyForces(points, nodes[0]);
+        std::cout << "doing traverse\n";
+        traverse_SYM_NN(total, points, root, root, this->theta);
+
+        std::cout << "doing apply\n";
+        double one_over_M0 = 1.0 / root->M0;
+        root->C2 *= one_over_M0;
+        root->C3 *= one_over_M0;
+        applyForces(points, root);
     }
 
     void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
-        NodeFMM_MORTON_2D emptyNode;
-        std::fill(nodes.begin(), nodes.end(), emptyNode);
+        //Node_FMM_SYM_MORTON_2D emptyNode;
+        //std::fill(nodes.begin(), nodes.end(), emptyNode); // we might not even have to reset
 
         glm::dvec2 negMinPos = -minPos;
         double largestAxis = glm::compMax(maxPos + negMinPos);
@@ -89,16 +87,23 @@ public:
         boost::sort::spreadsort::integer_sort(points.begin(), points.end(), TsnePoint2DRightshift(), TsnePoint2DLessthan());
         #endif
 
-        createLeafNodes(points, minPos, maxPos);
+        int max_level = 16; // this is the precision for 2D with uint32_t
+        glm::dvec2 root_BB_cen = minPos + 0.5 * (maxPos - minPos);
+        double root_BB_len = glm::compMax(maxPos - minPos);
+        delete root;
+        root = nullptr;
+        root = build_tree(points, 0, points.size(), 0, max_level, this->maxChildren, root_BB_cen, root_BB_len);
 
-        bottomUpNodeConstruction(minPos, maxPos);
+        //createLeafNodes(points, minPos, maxPos);
+
+        //bottomUpNodeConstruction(minPos, maxPos);
     }
 
     std::vector<VertexPos2Col3> getNodesBufferData(int nodeLevelToShow) override
     {
         std::vector<VertexPos2Col3> result;
 
-        getNodesBufferData(result, nodes[0], 0, nodeLevelToShow);
+        getNodesBufferData(result, root, 0, nodeLevelToShow);
 
         return result;
     }
@@ -116,337 +121,280 @@ public:
     }
 
 private:
-    void traverse_SYM_NN(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& node_A, NodeFMM_MORTON_2D& node_B, double theta)
+     Node_FMM_SYM_MORTON_2D* build_tree
+    (
+        std::vector<T>& points,
+        size_t lo,
+        size_t hi,
+        unsigned int level,
+        unsigned int maxLevel,
+        unsigned int leafThreshold,
+        glm::dvec2 cur_BB_cen,
+        double cur_BB_len
+    )
     {
-        std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&> cur_pair = std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&>{ node_A, node_B };
-            
+        if (lo >= hi) return nullptr;
 
-        glm::dvec2 diff = cur_pair.first.centreOfMass - cur_pair.second.centreOfMass;
+        Node_FMM_SYM_MORTON_2D* node = new Node_FMM_SYM_MORTON_2D();
+        node->first_PI = lo;
+        node->PI_amount = hi - lo;
+        node->M0 = node->PI_amount;
+        node->BB_cen = cur_BB_cen;
+        node->BB_len = cur_BB_len;
+
+        // Stop if leaf threshold or max depth reached
+        if (level == maxLevel || (hi - lo) <= leafThreshold)
+        {
+            for (size_t i = node->first_PI; i < node->first_PI + node->PI_amount; i++)
+            {
+                node->COM += points[i].position;
+            }
+            node->COM /= node->M0;
+
+            for (size_t i = node->first_PI; i < node->first_PI + node->PI_amount; i++)
+            {
+                glm::dvec2 relativeCoord = points[i].position - node->COM;
+
+                Fastor::Tensor<double, 2, 2> outer_product;
+                outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+                outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+                outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+                outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+                node->M2 += outer_product;
+            }
+
+            return node;
+        }
+
+        // Determine 2-bit quadrant for this level
+        int shift = 2 * (maxLevel - level - 1);
+
+        std::array<glm::dvec2, 4> BB_cen_offset // maybe different?
+        {
+            glm::dvec2(-0.5, -0.5),
+            glm::dvec2(0.5, -0.5),
+            glm::dvec2(-0.5, 0.5),
+            glm::dvec2(0.5, 0.5)
+        };
+
+        size_t start = lo;
+        for (int q = 0; q < 4; ++q)
+        {
+            size_t end = start;
+            while (end < hi && ((points[end].morton_code >> shift) & 0b11) == q)
+            {
+                ++end;
+            }
+            double child_BB_len = cur_BB_len / 2.0;
+            glm::dvec2 child_BB_cen = BB_cen_offset[q] * child_BB_len + cur_BB_cen;
+            Node_FMM_SYM_MORTON_2D* child = build_tree(points, start, end, level + 1, maxLevel, leafThreshold, child_BB_cen, child_BB_len);
+            if (child)
+            {
+                node->sub_nodes[node->sub_nodes_size] = child;
+                node->sub_nodes_size++;
+
+                node->COM += child->M0 * child->COM;
+            }
+            start = end;
+        }
+
+        node->COM /= node->M0;
+
+        for (size_t i = 0; i < node->sub_nodes_size; i++)
+        {
+            glm::dvec2 relativeCoord = node->sub_nodes[i]->COM - node->COM;
+
+            Fastor::Tensor<double, 2, 2> outer_product;
+            outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
+            outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
+            outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
+            outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
+            node->M2 += outer_product;
+
+            node->M2 += node->sub_nodes[i]->M2;
+        }
+
+        return node;
+    }
+
+
+    void traverse_SYM_NN(double& total, std::vector<T>& points, Node_FMM_SYM_MORTON_2D* node_A, Node_FMM_SYM_MORTON_2D* node_B, double theta)
+    {
+        glm::dvec2 diff = node_A->COM - node_B->COM;
         double dist = glm::length(diff);
 
-        if ((cur_pair.first.BBlength + cur_pair.second.BBlength) / dist < theta) // sym node node
+        if ((node_A->BB_len + node_B->BB_len) / dist < theta) // sym node node
         {
-            if (cur_pair.first.particleIndexAmount != 0 && cur_pair.second.particleIndexAmount != 0)
-            {
 
-                kernelNN(total, cur_pair.first, cur_pair.second);
+            kernelNN(total, node_A, node_B);
 
-            }
         }
-        else if (cur_pair.first.firstChildIndex == 0) // traverse for each point in first
+        else if (node_A->sub_nodes_size == 0) // traverse for each point in first
         {
-            for (int firstNodePointIndex = cur_pair.first.firstParticleIndex; firstNodePointIndex < cur_pair.first.firstParticleIndex + cur_pair.first.particleIndexAmount; firstNodePointIndex++)
+            for (size_t p_A = node_A->first_PI; p_A < node_A->first_PI + node_A->PI_amount; p_A++)
             {
 
-                if (cur_pair.second.particleIndexAmount != 0)
+                if (node_A == node_B) // special symetrical case
                 {
-                    if (&cur_pair.first == &cur_pair.second)
+                    for (size_t p_B = p_A; p_B < node_B->first_PI + node_B->PI_amount; p_B++)
                     {
-                        for (int secondNodePointIndex = firstNodePointIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+                        if (points[p_A].ID != points[p_B].ID)
                         {
-                            if (points[firstNodePointIndex].ID != points[secondNodePointIndex].ID)
-                            {
 
-                                kernelPP(total, points[firstNodePointIndex], points[secondNodePointIndex]); // can we exclude the PP self interactions somehow in the for loops?
+                            kernelPP(total, points[p_A], points[p_B]); // can we exclude the PP self interactions somehow in the for loops?
 
-                            }
                         }
                     }
-                    else
-                    {
-                        traverse_SYM_PN(total, points, points[firstNodePointIndex], cur_pair.second, theta);
-                    }
+                }
+                else
+                {
+                    traverse_SYM_PN(total, points, points[p_A], node_B, theta);
                 }
 
             }
         }
-        else if (cur_pair.second.firstChildIndex == 0) // traverse for each point in second
+        else if (node_B->sub_nodes_size == 0) // traverse for each point in second
         {
-            for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+            for (size_t p_B = node_B->first_PI; p_B < node_B->first_PI + node_B->PI_amount; p_B++)
             {
-                    
-                if (cur_pair.first.particleIndexAmount != 0)
+
+                if (node_A == node_B) // special symetrical case
                 {
-                    if (&cur_pair.first == &cur_pair.second)
+                    for (size_t p_A = p_B; p_A < node_A->first_PI + node_A->PI_amount; p_A++)
                     {
-                        for (int firstNodePointIndex = secondNodePointIndex; firstNodePointIndex < cur_pair.first.firstParticleIndex + cur_pair.first.particleIndexAmount; firstNodePointIndex++)
+                        if (points[p_A].ID != points[p_B].ID)
                         {
-                            if (points[firstNodePointIndex].ID != points[secondNodePointIndex].ID)
-                            {
 
-                                kernelPP(total, points[firstNodePointIndex], points[secondNodePointIndex]); // can we exclude the PP self interactions somehow in the for loops?
+                            kernelPP(total, points[p_A], points[p_B]); // can we exclude the PP self interactions somehow in the for loops?
 
-                            }
                         }
                     }
-                    else
-                    {
-                        traverse_SYM_PN(total, points, points[secondNodePointIndex], cur_pair.first, theta);
-                    }
                 }
+                else
+                {
+                    traverse_SYM_PN(total, points, points[p_B], node_A, theta);
+                }
+
             }
         }
         else // traverse for each node in first and second
         {
-            if (&cur_pair.first == &cur_pair.second) // if nodes from interaction pair are the same then dont add duplicates
+            if (node_A == node_B) // if nodes from interaction pair are the same then dont add duplicates
             {
-                for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                for (size_t n_A = 0; n_A < node_A->sub_nodes_size; n_A++)
                 {
-                    for (int secondNodeChildIndex = firstNodeChildIndex; secondNodeChildIndex < cur_pair.first.firstChildIndex + 4; secondNodeChildIndex++)
+                    for (size_t n_B = n_A; n_B < node_B->sub_nodes_size; n_B++)
                     {
 
-                        if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
-                            traverse_SYM_NN(total, points, nodes[firstNodeChildIndex], nodes[secondNodeChildIndex], theta);
+                        traverse_SYM_NN(total, points, node_A->sub_nodes[n_A], node_B->sub_nodes[n_B], theta);
 
                     }
                 }
             }
             else // if nodes from interaction pair are the NOT same then add all combinations
             {
-                for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                for (size_t n_A = 0; n_A < node_A->sub_nodes_size; n_A++)
                 {
-                    for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
+                    for (size_t n_B = 0; n_B < node_B->sub_nodes_size; n_B++)
                     {
 
-                        if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
-                            traverse_SYM_NN(total, points, nodes[firstNodeChildIndex], nodes[secondNodeChildIndex], theta);
+                        traverse_SYM_NN(total, points, node_A->sub_nodes[n_A], node_B->sub_nodes[n_B], theta);
 
                     }
                 }
             }
         }
-
-        //}
     }
 
-    void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, NodeFMM_MORTON_2D& secondNode, double theta)
-    {
-        std::pair<T&, NodeFMM_MORTON_2D&> cur_pair = std::pair<T&, NodeFMM_MORTON_2D&>{ firstPoint, secondNode };
 
-        glm::dvec2 diff = cur_pair.first.position - cur_pair.second.centreOfMass;
+
+    void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, Node_FMM_SYM_MORTON_2D* secondNode, double theta)
+    {
+        glm::dvec2 diff = firstPoint.position - secondNode->COM;
         double dist = glm::length(diff);
 
-        if (cur_pair.second.BBlength / dist < theta * 0.5) // sym point node
+        if (secondNode->BB_len / dist < theta * 0.5) // sym point node
         {
 
-            kernelPN(total, cur_pair.first, cur_pair.second);
+            kernelPN(total, firstPoint, secondNode);
 
         }
-        else if (cur_pair.second.firstChildIndex == 0) // sym point point
+        else if (secondNode->sub_nodes_size == 0) // sym point point
         {
-            for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+            for (size_t p_B = secondNode->first_PI; p_B < secondNode->first_PI + secondNode->PI_amount; p_B++)
             {
-                if (points[secondNodePointIndex].ID != cur_pair.first.ID)
+                if (points[p_B].ID != firstPoint.ID)
                 {
 
-                    kernelPP(total, cur_pair.first, points[secondNodePointIndex]);
+                    kernelPP(total, firstPoint, points[p_B]);
 
                 }
             }
         }
         else // traverse for each node in second
         {
-            for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
+            for (size_t n_B = 0; n_B < secondNode->sub_nodes_size; n_B++)
             {
 
-                if (nodes[secondNodeChildIndex].particleIndexAmount != 0)
-                    traverse_SYM_PN(total, points, cur_pair.first, nodes[secondNodeChildIndex], theta);
+                traverse_SYM_PN(total, points, firstPoint, secondNode->sub_nodes[n_B], theta);
 
-            }
-        }
-        //}
-    }
-
-    void divide_by_mass()
-    {
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            if (nodes[i].M0 != 0.0)
-            {
-                //nodes[i].C1 /= nodes[i].M0;
-                nodes[i].C2 /= nodes[i].M0;
-                nodes[i].C3 /= nodes[i].M0;
             }
         }
     }
 
-    void initNodesSize(unsigned int initTreeDepth)
-    {
-        treeDepth = initTreeDepth;
-        levelIndex.resize(treeDepth + 1);
-        levelSize.resize(treeDepth + 1);
-        levelGridWidth.resize(treeDepth + 1);
-        levelIndex[0] = 0;
-        int nodesSize = 0;
-        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
-        {
-            int currentLevelSize = 1;
-            for (int j = 0; j < i; j++)
-            {
-                currentLevelSize *= 4;
-            }
-            levelSize[i] = currentLevelSize;
-            nodesSize += currentLevelSize;
 
-            int currentDepthStart = 0;
-            for (int j = 0; j <= i; j++)
-            {
-                currentDepthStart += levelSize[j];
-            }
-            if (i + 1 < treeDepth + 1)
-                levelIndex[i + 1] = currentDepthStart;
+    //void divide_by_mass()
+    //{
+    //    for (int i = 0; i < nodes.size(); i++)
+    //    {
+    //        if (nodes[i].M0 != 0.0)
+    //        {
+    //            //nodes[i].C1 /= nodes[i].M0;
+    //            nodes[i].C2 /= nodes[i].M0;
+    //            nodes[i].C3 /= nodes[i].M0;
+    //        }
+    //    }
+    //}
 
+    //void initNodesSize(unsigned int initTreeDepth)
+    //{
+    //    treeDepth = initTreeDepth;
+    //    levelIndex.resize(treeDepth + 1);
+    //    levelSize.resize(treeDepth + 1);
+    //    levelGridWidth.resize(treeDepth + 1);
+    //    levelIndex[0] = 0;
+    //    int nodesSize = 0;
+    //    for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
+    //    {
+    //        int currentLevelSize = 1;
+    //        for (int j = 0; j < i; j++)
+    //        {
+    //            currentLevelSize *= 4;
+    //        }
+    //        levelSize[i] = currentLevelSize;
+    //        nodesSize += currentLevelSize;
 
-        }
-
-        nodes.resize(nodesSize);
-
-        for (int i = 0; i <= treeDepth; i++)
-            levelGridWidth[i] = std::pow(2, i);
-        //leafGridSize = std::pow(2, treeDepth);
-    }
-
-    void createLeafNodes(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos)
-    {
-        glm::dvec2 negMinPos = -minPos;
-        double largestAxis = glm::compMax(maxPos + negMinPos);
-
-        double leafNodeSize = largestAxis / static_cast<double>(levelGridWidth[treeDepth]);
-
-        for (int i = 0; i < points.size(); i++)
-        {
-            glm::dvec2 gridPos = static_cast<double>(levelGridWidth[treeDepth]) * (points[i].position + negMinPos) / (largestAxis);
-
-            glm::vec<2, uint32_t> gridCoord = glm::min(glm::max(glm::vec<2, uint32_t>(gridPos), glm::vec<2, uint32_t>(0u)), glm::vec<2, uint32_t>(levelGridWidth[treeDepth] - 1u));
-
-            uint32_t leafLevelIndex = (uint32_t)levelIndex[treeDepth] + ((spread16(gridCoord.y) << 1) | spread16(gridCoord.x));
-
-            if (nodes[leafLevelIndex].particleIndexAmount == 0u)
-            {
-                nodes[leafLevelIndex].BBcentre = minPos + leafNodeSize * glm::dvec2(gridCoord) + 0.5 * glm::dvec2(leafNodeSize);
-                nodes[leafLevelIndex].BBlength = leafNodeSize;
-
-                nodes[leafLevelIndex].firstParticleIndex = i;
-            }
-
-            nodes[leafLevelIndex].particleIndexAmount += 1u;
-            nodes[leafLevelIndex].centreOfMass += points[i].position;
-            nodes[leafLevelIndex].M0 += 1.0;
-        }
-
-        for (int n = levelIndex[treeDepth]; n < levelIndex[treeDepth] + levelSize[treeDepth]; n++)
-        {
-            if (nodes[n].M0 != 0.0)
-            {
-                nodes[n].centreOfMass /= nodes[n].M0;
-
-                for (int pointIndex = nodes[n].firstParticleIndex; pointIndex < nodes[n].firstParticleIndex + nodes[n].particleIndexAmount; pointIndex++)
-                {
-                    glm::dvec2 relativeCoord = points[pointIndex].position - nodes[n].centreOfMass;
-
-                    Fastor::Tensor<double, 2, 2> outer_product;
-                    outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
-                    outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
-                    outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
-                    outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
-                    nodes[n].M2 += outer_product;
-                }
-            }
-        }
+    //        int currentDepthStart = 0;
+    //        for (int j = 0; j <= i; j++)
+    //        {
+    //            currentDepthStart += levelSize[j];
+    //        }
+    //        if (i + 1 < treeDepth + 1)
+    //            levelIndex[i + 1] = currentDepthStart;
 
 
-    }
+    //    }
 
-    void bottomUpNodeConstruction(glm::dvec2 minPos, glm::dvec2 maxPos)
-    {
-        double max_minus_min_pos = maxPos.x - minPos.x;
+    //    nodes.resize(nodesSize);
 
-        std::array<glm::dvec2, 4> BBcentreOffset
-        {
-            glm::dvec2(0.5, 0.5),
-            glm::dvec2(-0.5, 0.5),
-            glm::dvec2(0.5, -0.5),
-            glm::dvec2(-0.5, -0.5)
-        };
+    //    for (int i = 0; i <= treeDepth; i++)
+    //        levelGridWidth[i] = std::pow(2, i);
+    //    //leafGridSize = std::pow(2, treeDepth);
+    //}
 
-        for (int l = treeDepth - 1; l >= 0; l--)
-        {
-            //const int cells_per_axis = 1 << l;
-            //const int cells_per_axis_child = 1 << (l+1);
-            //const double BBlength_l = max_minus_min_pos / static_cast<double>(cells_per_axis);
-            //const double BBlength_l_child = max_minus_min_pos / static_cast<double>(cells_per_axis_child);
 
-            for (int i = 0; i < levelSize[l]; i++)
-            {
-                int nodeIndex = levelIndex[l] + i;
-                unsigned int potentialFirstChildIndex = levelIndex[l + 1] + i * 4;
 
-                //unsigned int children_counter = 0u;
-                //unsigned int only_child_index = 0u;
 
-                //nodes[nodeIndex].BBlength = BBlength_l;
-
-                //uint32_t ix = compact16(i);
-                //uint32_t iy = compact16(i >> 1);
-                //nodes[nodeIndex].BBcentre = minPos + glm::dvec2(ix + 0.5, iy + 0.5) * BBlength_l;
-
-                for (int j = 3; j >= 0; j--) // loop over all children of node i in level l
-                {
-                    unsigned int childIndex = potentialFirstChildIndex + j;
-                    if (nodes[childIndex].particleIndexAmount != 0u)
-                    {
-                        //children_counter++;
-                        //only_child_index = childIndex;
-
-                        nodes[nodeIndex].firstChildIndex = potentialFirstChildIndex;
-
-                        nodes[nodeIndex].BBcentre = BBcentreOffset[j] * nodes[childIndex].BBlength + nodes[childIndex].BBcentre; // old way
-                        nodes[nodeIndex].BBlength = 2.0 * nodes[childIndex].BBlength; // old way
-
-                        nodes[nodeIndex].firstParticleIndex = nodes[childIndex].firstParticleIndex;
-                        nodes[nodeIndex].particleIndexAmount += nodes[childIndex].particleIndexAmount;
-
-                        nodes[nodeIndex].centreOfMass += nodes[childIndex].M0 * nodes[childIndex].centreOfMass;
-
-                        nodes[nodeIndex].M0 += nodes[childIndex].M0;
-                    }
-                }
-
-                //if (children_counter == 1u)
-                //{
-                //    nodes[nodeIndex].BBcentre = nodes[only_child_index].BBcentre;
-                //    nodes[nodeIndex].BBlength = nodes[only_child_index].BBlength;
-
-                //    nodes[nodeIndex].centreOfMass = nodes[only_child_index].centreOfMass;
-                //    nodes[nodeIndex].M2 = nodes[only_child_index].M2;
-
-                //    continue;
-                //}
-
-                if (nodes[nodeIndex].particleIndexAmount != 0u)
-                {
-                    nodes[nodeIndex].centreOfMass /= nodes[nodeIndex].M0;
-
-                    for (int nodeChildIndex = nodes[nodeIndex].firstChildIndex; nodeChildIndex < nodes[nodeIndex].firstChildIndex + 4; nodeChildIndex++)
-                    {
-                        if (nodes[nodeChildIndex].M0 != 0.0)
-                        {
-                            glm::dvec2 relativeCoord = nodes[nodeChildIndex].centreOfMass - nodes[nodeIndex].centreOfMass;
-
-                            Fastor::Tensor<double, 2, 2> outer_product;
-                            outer_product(0, 0) = relativeCoord.x * relativeCoord.x;
-                            outer_product(0, 1) = relativeCoord.x * relativeCoord.y;
-                            outer_product(1, 0) = relativeCoord.y * relativeCoord.x;
-                            outer_product(1, 1) = relativeCoord.y * relativeCoord.y;
-                            nodes[nodeIndex].M2 += outer_product;
-
-                            nodes[nodeIndex].M2 += nodes[nodeChildIndex].M2;
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     inline uint32_t compact16(uint32_t x)
     {
@@ -458,58 +406,57 @@ private:
         return x;
     }
 
-    void applyForces(std::vector<T>& points, NodeFMM_MORTON_2D& node)
+    void applyForces(std::vector<T>& points, Node_FMM_SYM_MORTON_2D* node)
     {
-        if (node.firstChildIndex != 0)
+        if (node->sub_nodes_size != 0)
         {
-            for (int nodeIndex = node.firstChildIndex; nodeIndex < node.firstChildIndex + 4; nodeIndex++)
+            for (size_t n = 0; n < node->sub_nodes_size; n++)
             {
-                if (nodes[nodeIndex].particleIndexAmount != 0)
-                {
-                    double one_over_M0 = 1.0 / nodes[nodeIndex].M0;
-                    nodes[nodeIndex].C2 *= one_over_M0;
-                    nodes[nodeIndex].C3 *= one_over_M0;
+                Node_FMM_SYM_MORTON_2D* child_node = node->sub_nodes[n];
+
+                double one_over_M0 = 1.0 / child_node->M0;
+                child_node->C2 *= one_over_M0;
+                child_node->C3 *= one_over_M0;
 
 
 
-                    glm::dvec2 oldZ = nodes[nodeIndex].centreOfMass;
-                    glm::dvec2 newZ = node.centreOfMass;
-                    Fastor::Tensor<double, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
-                    //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
-                    //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
+                glm::dvec2 oldZ = child_node->COM;
+                glm::dvec2 newZ = node->COM;
+                Fastor::Tensor<double, 2> diff1 = { oldZ.x - newZ.x, oldZ.y - newZ.y };
+                //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
+                //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-                    Fastor::Tensor<double, 2> newC1 = node.C1 +
-                        Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
-                        0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
+                Fastor::Tensor<double, 2> newC1 = node->C1 +
+                    Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node->C2) +
+                    0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node->C3));
 
-                    Fastor::Tensor<double, 2, 2> newC2 = node.C2 +
-                        Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3);
+                Fastor::Tensor<double, 2, 2> newC2 = node->C2 +
+                    Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node->C3);
 
-                    Fastor::Tensor<double, 2, 2, 2> newC3 = node.C3;
+                Fastor::Tensor<double, 2, 2, 2> newC3 = node->C3;
 
-                    nodes[nodeIndex].C1 += newC1;
-                    nodes[nodeIndex].C2 += newC2;
-                    nodes[nodeIndex].C3 += newC3;
+                child_node->C1 += newC1;
+                child_node->C2 += newC2;
+                child_node->C3 += newC3;
 
-                    applyForces(points, nodes[nodeIndex]);
-                }
+                applyForces(points, child_node);
             }
         }
         else
         {
-            for (int pointIndex = node.firstParticleIndex; pointIndex < node.firstParticleIndex + node.particleIndexAmount; pointIndex++)
+            for (size_t p = node->first_PI; p < node->first_PI + node->PI_amount; p++)
             {
-                glm::dvec2 x = points[pointIndex].position;
-                glm::dvec2 Z0 = node.centreOfMass;
+                glm::dvec2 x = points[p].position;
+                glm::dvec2 Z0 = node->COM;
                 Fastor::Tensor<double, 2> diff1 = { x.x - Z0.x, x.y - Z0.y };
                 //Fastor::Tensor<float, 2, 2> diff2 = Fastor::outer(diff1, diff1);
                 //Fastor::Tensor<float, 2, 2, 2> diff3 = Fastor::outer(diff2, diff1);
 
-                Fastor::Tensor<double, 2> newC1 = node.C1 +
-                    Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node.C2) +
-                    0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node.C3));
+                Fastor::Tensor<double, 2> newC1 = node->C1 +
+                    Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, node->C2) +
+                    0.5 * Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1>>(diff1, Fastor::einsum<Fastor::Index<0>, Fastor::Index<0, 1, 2>>(diff1, node->C3));
 
-                points[pointIndex].derivative += glm::dvec2(newC1(0), newC1(1));
+                points[p].derivative += glm::dvec2(newC1(0), newC1(1));
             }
         }
     }
@@ -539,9 +486,9 @@ private:
         return x;
     }
 
-    void getNodesBufferData(std::vector<VertexPos2Col3>& nodesBufferData, NodeFMM_MORTON_2D node, int level, int showLevel)
+    void getNodesBufferData(std::vector<VertexPos2Col3>& nodesBufferData, Node_FMM_SYM_MORTON_2D* node, int level, int showLevel)
     {
-        if ((level == showLevel || showLevel == -1) && node.particleIndexAmount != 0)
+        if (level == showLevel || showLevel == -1)
         {
             const int colorsSize = 7;
             std::array<glm::vec3, colorsSize> colors{
@@ -559,8 +506,8 @@ private:
             //const int cells_per_axis = 1 << level;
             //const double BBlength_l = max_minus_min_pos / static_cast<double>(cells_per_axis);
 
-            glm::vec2 lowestCorner = node.BBcentre - 0.5f * node.BBlength;
-            glm::vec2 highestCorner = node.BBcentre + 0.5f * node.BBlength;
+            glm::vec2 lowestCorner = node->BB_cen - 0.5f * node->BB_len;
+            glm::vec2 highestCorner = node->BB_cen + 0.5f * node->BB_len;
 
             nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x, lowestCorner.y), color));
             nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y), color));
@@ -582,13 +529,11 @@ private:
             //nodesBufferData.push_back(VertexPos2Col3(node.centreOfMass + glm::vec2(0.0f, crossSize), glm::vec3(1.0f, 0.0f, 0.0f)));
         }
 
-        if (node.firstChildIndex != 0u)
+        for (size_t i = 0; i < node->sub_nodes_size; i++)
         {
-            for (int i = node.firstChildIndex; i < node.firstChildIndex + 4; i++)
-            {
-                getNodesBufferData(nodesBufferData, nodes[i], level + 1, showLevel);
-            }
+            getNodesBufferData(nodesBufferData, node->sub_nodes[i], level + 1, showLevel);
         }
+
     }
 };
 
@@ -598,9 +543,9 @@ private:
 
 
 
-void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, NodeFMM_MORTON_2D& sourceNode)
+void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, Node_FMM_SYM_MORTON_2D* sinkNode, Node_FMM_SYM_MORTON_2D* sourceNode)
 {
-    glm::dvec2 R = sinkNode.centreOfMass - sourceNode.centreOfMass;
+    glm::dvec2 R = sinkNode->COM - sourceNode->COM;
     double sq_r = R.x * R.x + R.y * R.y;
     double rS = 1.0 + sq_r;
 
@@ -608,9 +553,9 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     double D2 = -4.0 / (rS * rS * rS);
     double D3 = 24.0 / (rS * rS * rS * rS);
 
-    double MA0 = sinkNode.M0;
-    double MB0 = sourceNode.M0;
-    Fastor::Tensor<double, 2, 2> MB2 = sourceNode.M2;
+    double MA0 = sinkNode->M0;
+    double MB0 = sourceNode->M0;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode->M2;
     Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
     // calculate the C^m
@@ -662,17 +607,17 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     };
 
 
-    sinkNode.C1 += C1;
-    sinkNode.C2 += C2;
-    sinkNode.C3 += C3;
+    sinkNode->C1 += C1;
+    sinkNode->C2 += C2;
+    sinkNode->C3 += C3;
 
     // second interaction ---------------------------------------------------------------------------------------
 
     R = -R;
     
-    MA0 = sourceNode.M0;
-    MB0 = sinkNode.M0;
-    MB2 = sinkNode.M2;
+    MA0 = sourceNode->M0;
+    MB0 = sinkNode->M0;
+    MB2 = sinkNode->M2;
     MB2Tilde = (1.0 / MB0) * MB2;
 
     // calculate the C^m
@@ -687,19 +632,19 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
         MB0 * (R.y* (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
-    sourceNode.C1 += C1;
-    sourceNode.C2 += C2;
-    sourceNode.C3 += -C3;
+    sourceNode->C1 += C1;
+    sourceNode->C2 += C2;
+    sourceNode->C3 += -C3;
 
 
     // add totals for both interactions
-    total += 2.0 * (sinkNode.M0 * sourceNode.M0) / rS;
+    total += 2.0 * (sinkNode->M0 * sourceNode->M0) / rS;
 }
 
 
-void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFMM_MORTON_2D& sourceNode)
+void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, Node_FMM_SYM_MORTON_2D* sourceNode)
 {
-    glm::dvec2 R = sinkPoint.position - sourceNode.centreOfMass;
+    glm::dvec2 R = sinkPoint.position - sourceNode->COM;
     double sq_r = R.x * R.x + R.y * R.y;
     double rS = 1.0 + sq_r;
 
@@ -708,8 +653,8 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     double D3 = 24.0 / (rS * rS * rS * rS);
 
     double MA0 = 1.0;
-    double MB0 = sourceNode.M0;
-    Fastor::Tensor<double, 2, 2> MB2 = sourceNode.M2;
+    double MB0 = sourceNode->M0;
+    Fastor::Tensor<double, 2, 2> MB2 = sourceNode->M2;
     Fastor::Tensor<double, 2, 2> MB2Tilde = (1.0 / MB0) * MB2;
 
 
@@ -731,7 +676,7 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
 
     R = -R;
 
-    MA0 = sourceNode.M0;
+    MA0 = sourceNode->M0;
     MB0 = 1.0;
 
     C1 = Fastor::Tensor<double, 2>
@@ -776,11 +721,11 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
         }
     };
 
-    sourceNode.C1 += C1;
-    sourceNode.C2 += C2;
-    sourceNode.C3 += C3;
+    sourceNode->C1 += C1;
+    sourceNode->C2 += C2;
+    sourceNode->C3 += C3;
 
-    total += (1.0 + sourceNode.M0) / rS;
+    total += (1.0 + sourceNode->M0) / rS;
 }
 
 
