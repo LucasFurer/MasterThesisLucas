@@ -139,7 +139,7 @@ int main(void)
         TSNE_buffers tsne
         (
             0.75, // min_theta
-            2.0, // max_theta
+            2.3, // max_theta
             1.0, // cell_size
             "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
             70000, // data_size

@@ -118,31 +118,33 @@ public:
 private:
     void traverse_SYM_NN(double& total, std::vector<T>& points, NodeFMM_MORTON_2D& node_A, NodeFMM_MORTON_2D& node_B, double theta)
     {
-        std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&> cur_pair = std::pair<NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&>{ node_A, node_B };
-            
+        glm::dvec2 diff = node_A.centreOfMass - node_B.centreOfMass;
+        //double dist = glm::length(diff);
+        double dist = glm::dot(diff, diff);
 
-        glm::dvec2 diff = cur_pair.first.centreOfMass - cur_pair.second.centreOfMass;
-        double dist = glm::length(diff);
-
-        if ((cur_pair.first.BBlength + cur_pair.second.BBlength) / dist < theta) // sym node node
+        //if ((node_A.BBlength + node_B.BBlength) / dist < theta) // sym node node
+        double threshold = (node_A.BBlength + node_B.BBlength) / theta;
+        if (dist > threshold * threshold) // sym node node
         {
-            if (cur_pair.first.particleIndexAmount != 0 && cur_pair.second.particleIndexAmount != 0)
+
+            if (node_A.particleIndexAmount != 0 && node_B.particleIndexAmount != 0)
             {
 
-                kernelNN(total, cur_pair.first, cur_pair.second);
+                kernelNN(total, node_A, node_B);
 
             }
-        }
-        else if (cur_pair.first.firstChildIndex == 0) // traverse for each point in first
-        {
-            for (int firstNodePointIndex = cur_pair.first.firstParticleIndex; firstNodePointIndex < cur_pair.first.firstParticleIndex + cur_pair.first.particleIndexAmount; firstNodePointIndex++)
-            {
 
-                if (cur_pair.second.particleIndexAmount != 0)
+        }
+        else if (node_A.firstChildIndex == 0) // traverse for each point in first
+        {
+
+            if (&node_A == &node_B)
+            {
+                for (int firstNodePointIndex = node_A.firstParticleIndex; firstNodePointIndex < node_A.firstParticleIndex + node_A.particleIndexAmount; firstNodePointIndex++)
                 {
-                    if (&cur_pair.first == &cur_pair.second)
+                    if (node_B.particleIndexAmount != 0)
                     {
-                        for (int secondNodePointIndex = firstNodePointIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+                        for (int secondNodePointIndex = firstNodePointIndex; secondNodePointIndex < node_B.firstParticleIndex + node_B.particleIndexAmount; secondNodePointIndex++)
                         {
                             if (points[firstNodePointIndex].ID != points[secondNodePointIndex].ID)
                             {
@@ -152,24 +154,30 @@ private:
                             }
                         }
                     }
-                    else
+                }
+            }
+            else
+            {
+                for (int firstNodePointIndex = node_A.firstParticleIndex; firstNodePointIndex < node_A.firstParticleIndex + node_A.particleIndexAmount; firstNodePointIndex++)
+                {
+                    if (node_B.particleIndexAmount != 0)
                     {
-                        traverse_SYM_PN(total, points, points[firstNodePointIndex], cur_pair.second, theta);
+                        traverse_SYM_PN(total, points, points[firstNodePointIndex], node_B, theta);
                     }
                 }
-
             }
+
         }
-        else if (cur_pair.second.firstChildIndex == 0) // traverse for each point in second
+        else if (node_B.firstChildIndex == 0) // traverse for each point in second
         {
-            for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+
+            if (&node_A == &node_B)
             {
-                    
-                if (cur_pair.first.particleIndexAmount != 0)
+                for (int secondNodePointIndex = node_B.firstParticleIndex; secondNodePointIndex < node_B.firstParticleIndex + node_B.particleIndexAmount; secondNodePointIndex++)
                 {
-                    if (&cur_pair.first == &cur_pair.second)
+                    if (node_A.particleIndexAmount != 0)
                     {
-                        for (int firstNodePointIndex = secondNodePointIndex; firstNodePointIndex < cur_pair.first.firstParticleIndex + cur_pair.first.particleIndexAmount; firstNodePointIndex++)
+                        for (int firstNodePointIndex = secondNodePointIndex; firstNodePointIndex < node_A.firstParticleIndex + node_A.particleIndexAmount; firstNodePointIndex++)
                         {
                             if (points[firstNodePointIndex].ID != points[secondNodePointIndex].ID)
                             {
@@ -179,20 +187,28 @@ private:
                             }
                         }
                     }
-                    else
+                }
+            }
+            else
+            {
+                for (int secondNodePointIndex = node_B.firstParticleIndex; secondNodePointIndex < node_B.firstParticleIndex + node_B.particleIndexAmount; secondNodePointIndex++)
+                {
+                    if (node_A.particleIndexAmount != 0)
                     {
-                        traverse_SYM_PN(total, points, points[secondNodePointIndex], cur_pair.first, theta);
+                        traverse_SYM_PN(total, points, points[secondNodePointIndex], node_A, theta);
                     }
                 }
             }
+
         }
         else // traverse for each node in first and second
         {
-            if (&cur_pair.first == &cur_pair.second) // if nodes from interaction pair are the same then dont add duplicates
+
+            if (&node_A == &node_B) // if nodes from interaction pair are the same then dont add duplicates
             {
-                for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                for (int firstNodeChildIndex = node_A.firstChildIndex; firstNodeChildIndex < node_A.firstChildIndex + 4; firstNodeChildIndex++)
                 {
-                    for (int secondNodeChildIndex = firstNodeChildIndex; secondNodeChildIndex < cur_pair.first.firstChildIndex + 4; secondNodeChildIndex++)
+                    for (int secondNodeChildIndex = firstNodeChildIndex; secondNodeChildIndex < node_A.firstChildIndex + 4; secondNodeChildIndex++)
                     {
 
                         if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
@@ -203,9 +219,9 @@ private:
             }
             else // if nodes from interaction pair are the NOT same then add all combinations
             {
-                for (int firstNodeChildIndex = cur_pair.first.firstChildIndex; firstNodeChildIndex < cur_pair.first.firstChildIndex + 4; firstNodeChildIndex++)
+                for (int firstNodeChildIndex = node_A.firstChildIndex; firstNodeChildIndex < node_A.firstChildIndex + 4; firstNodeChildIndex++)
                 {
-                    for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
+                    for (int secondNodeChildIndex = node_B.firstChildIndex; secondNodeChildIndex < node_B.firstChildIndex + 4; secondNodeChildIndex++)
                     {
 
                         if (nodes[firstNodeChildIndex].particleIndexAmount != 0 && nodes[secondNodeChildIndex].particleIndexAmount != 0)
@@ -214,47 +230,50 @@ private:
                     }
                 }
             }
-        }
 
-        //}
+        }
     }
 
     void traverse_SYM_PN(double& total, std::vector<T>& points, T& firstPoint, NodeFMM_MORTON_2D& secondNode, double theta)
     {
-        std::pair<T&, NodeFMM_MORTON_2D&> cur_pair = std::pair<T&, NodeFMM_MORTON_2D&>{ firstPoint, secondNode };
+        glm::dvec2 diff = firstPoint.position - secondNode.centreOfMass;
+        //double dist = glm::length(diff);
+        double dist = glm::dot(diff, diff);
 
-        glm::dvec2 diff = cur_pair.first.position - cur_pair.second.centreOfMass;
-        double dist = glm::length(diff);
-
-        if (cur_pair.second.BBlength / dist < theta * 0.5) // sym point node
+        //if (secondNode.BBlength / dist < theta * 0.5) // sym point node
+        double threshold = (secondNode.BBlength) / (theta * 0.5);
+        if (dist > threshold * threshold) // sym point node
         {
 
-            kernelPN(total, cur_pair.first, cur_pair.second);
+            kernelPN(total, firstPoint, secondNode);
 
         }
-        else if (cur_pair.second.firstChildIndex == 0) // sym point point
+        else if (secondNode.firstChildIndex == 0) // sym point point
         {
-            for (int secondNodePointIndex = cur_pair.second.firstParticleIndex; secondNodePointIndex < cur_pair.second.firstParticleIndex + cur_pair.second.particleIndexAmount; secondNodePointIndex++)
+
+            for (int secondNodePointIndex = secondNode.firstParticleIndex; secondNodePointIndex < secondNode.firstParticleIndex + secondNode.particleIndexAmount; secondNodePointIndex++)
             {
-                if (points[secondNodePointIndex].ID != cur_pair.first.ID)
+                if (points[secondNodePointIndex].ID != firstPoint.ID)
                 {
 
-                    kernelPP(total, cur_pair.first, points[secondNodePointIndex]);
+                    kernelPP(total, firstPoint, points[secondNodePointIndex]);
 
                 }
             }
+
         }
         else // traverse for each node in second
         {
-            for (int secondNodeChildIndex = cur_pair.second.firstChildIndex; secondNodeChildIndex < cur_pair.second.firstChildIndex + 4; secondNodeChildIndex++)
+
+            for (int secondNodeChildIndex = secondNode.firstChildIndex; secondNodeChildIndex < secondNode.firstChildIndex + 4; secondNodeChildIndex++)
             {
 
                 if (nodes[secondNodeChildIndex].particleIndexAmount != 0)
-                    traverse_SYM_PN(total, points, cur_pair.first, nodes[secondNodeChildIndex], theta);
+                    traverse_SYM_PN(total, points, firstPoint, nodes[secondNodeChildIndex], theta);
 
             }
+
         }
-        //}
     }
 
     void divide_by_mass()
@@ -331,13 +350,15 @@ private:
 
             nodes[leafLevelIndex].particleIndexAmount += 1u;
             nodes[leafLevelIndex].centreOfMass += points[i].position;
-            nodes[leafLevelIndex].M0 += 1.0;
+            //nodes[leafLevelIndex].M0 += 1.0;
         }
 
         for (int n = levelIndex[treeDepth]; n < levelIndex[treeDepth] + levelSize[treeDepth]; n++)
         {
-            if (nodes[n].M0 != 0.0)
+            //if (nodes[n].M0 != 0.0)
+            if (nodes[n].particleIndexAmount != 0u)
             {
+                nodes[n].M0 = nodes[n].particleIndexAmount;
                 nodes[n].centreOfMass /= nodes[n].M0;
 
                 for (int pointIndex = nodes[n].firstParticleIndex; pointIndex < nodes[n].firstParticleIndex + nodes[n].particleIndexAmount; pointIndex++)
@@ -604,9 +625,14 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
     double sq_r = R.x * R.x + R.y * R.y;
     double rS = 1.0 + sq_r;
 
-    double D1 = 1.0 / (rS * rS);
-    double D2 = -4.0 / (rS * rS * rS);
-    double D3 = 24.0 / (rS * rS * rS * rS);
+    double inv_rS = 1.0 / rS;
+    double inv_rS2 = inv_rS * inv_rS;
+    double inv_rS3 = inv_rS2 * inv_rS;
+    double inv_rS4 = inv_rS3 * inv_rS;
+
+    double D1 = inv_rS2;
+    double D2 = -4.0 * inv_rS3;
+    double D3 = 24.0 * inv_rS4;
 
     double MA0 = sinkNode.M0;
     double MB0 = sourceNode.M0;
@@ -683,8 +709,8 @@ void TSNE_FMM_SYM_MORTON_NN_Kernel(double& total, NodeFMM_MORTON_2D& sinkNode, N
 
     C1 = Fastor::Tensor<double, 2>
     {
-        MB0 * (R.x* (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
-        MB0 * (R.y* (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
+        MB0 * (R.x * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i0)*D2),
+        MB0 * (R.y * (D1 + 0.5 * (MB2TildeSum1)*D2 + 0.5 * (MB2TildeSum2)*D3) + (MB2TildeSum3i1)*D2)
     };
 
     sourceNode.C1 += C1;
@@ -703,9 +729,14 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     double sq_r = R.x * R.x + R.y * R.y;
     double rS = 1.0 + sq_r;
 
-    double D1 = 1.0 / (rS * rS);
-    double D2 = -4.0 / (rS * rS * rS);
-    double D3 = 24.0 / (rS * rS * rS * rS);
+    double inv_rS = 1.0 / rS;
+    double inv_rS2 = inv_rS * inv_rS;
+    double inv_rS3 = inv_rS2 * inv_rS;
+    double inv_rS4 = inv_rS3 * inv_rS;
+
+    double D1 = inv_rS2;
+    double D2 = -4.0 * inv_rS3;
+    double D3 = 24.0 * inv_rS4;
 
     double MA0 = 1.0;
     double MB0 = sourceNode.M0;
