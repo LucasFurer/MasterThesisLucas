@@ -143,15 +143,8 @@ private:
 
     void traverseBHMP(double& total, T& sinkPoint, QuadTreeFMM<T>* sourceNode, double theta)
     {
-<<<<<<< HEAD
-        //BHMPiter++;
-
-        float l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
-        glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
-=======
         double l = sourceNode->highestCorner.x - sourceNode->lowestCorner.x;
         glm::dvec2 diff = sinkPoint.position - sourceNode->centreOfMass;
->>>>>>> newFMM
 
         if (l / glm::length(diff) < theta)
         {
@@ -182,15 +175,8 @@ private:
 
     void traverseBHRMP(double& total, QuadTreeFMM<T>* sinkNode, T& sourcePoint, double theta)
     {
-<<<<<<< HEAD
-        //BHRMPiter++;
-
-        float l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
-        glm::vec2 diff = sinkNode->centreOfMass - sourcePoint.position;
-=======
         double l = sinkNode->highestCorner.x - sinkNode->lowestCorner.x;
         glm::dvec2 diff = sinkNode->centreOfMass - sourcePoint.position;
->>>>>>> newFMM
 
         if (l / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
         {
