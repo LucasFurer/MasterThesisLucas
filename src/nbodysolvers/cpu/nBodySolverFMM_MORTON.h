@@ -99,14 +99,49 @@ public:
 
     static unsigned int getDepth(int max_children, int N)
     {
-        unsigned int depth = 0;
-        while (N > max_children)
-        {
-            N /= 4;
-            depth++;
-        }
+        double circle_area = std::numbers::pi / 4.0;
+        double depth_real = 
+            std::log((1.0 / circle_area) * (N / max_children))
+            / std::log(4.0);
+        unsigned int depth = static_cast<unsigned int>(std::ceil(depth_real));
 
         return depth;
+    }
+
+    void initNodesSize(unsigned int initTreeDepth)
+    {
+        treeDepth = initTreeDepth;
+        levelIndex.resize(treeDepth + 1);
+        levelSize.resize(treeDepth + 1);
+        levelGridWidth.resize(treeDepth + 1);
+        levelIndex[0] = 0;
+        int nodesSize = 0;
+        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
+        {
+            int currentLevelSize = 1;
+            for (int j = 0; j < i; j++)
+            {
+                currentLevelSize *= 4;
+            }
+            levelSize[i] = currentLevelSize;
+            nodesSize += currentLevelSize;
+
+            int currentDepthStart = 0;
+            for (int j = 0; j <= i; j++)
+            {
+                currentDepthStart += levelSize[j];
+            }
+            if (i + 1 < treeDepth + 1)
+                levelIndex[i + 1] = currentDepthStart;
+
+
+        }
+
+        nodes.resize(nodesSize);
+
+        for (int i = 0; i <= treeDepth; i++)
+            levelGridWidth[i] = std::pow(2, i);
+        //leafGridSize = std::pow(2, treeDepth);
     }
     
 private:   
@@ -230,42 +265,6 @@ private:
             }
         }
 
-    }
-    
-    void initNodesSize(unsigned int initTreeDepth)
-    {
-        treeDepth = initTreeDepth;
-        levelIndex.resize(treeDepth + 1);
-        levelSize.resize(treeDepth + 1);
-        levelGridWidth.resize(treeDepth + 1);
-        levelIndex[0] = 0;
-        int nodesSize = 0;
-        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
-        {
-            int currentLevelSize = 1;
-            for (int j = 0; j < i; j++)
-            {
-                currentLevelSize *= 4;
-            }
-            levelSize[i] = currentLevelSize;
-            nodesSize += currentLevelSize;
-
-            int currentDepthStart = 0;
-            for (int j = 0; j <= i; j++)
-            {
-                currentDepthStart += levelSize[j];
-            }
-            if (i + 1 < treeDepth + 1)
-                levelIndex[i + 1] = currentDepthStart;
-
-
-        }
-
-        nodes.resize(nodesSize);
-
-        for (int i = 0; i <= treeDepth; i++)
-            levelGridWidth[i] = std::pow(2, i);
-        //leafGridSize = std::pow(2, treeDepth);
     }
 
     void createLeafNodes(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos)

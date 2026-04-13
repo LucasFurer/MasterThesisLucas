@@ -99,11 +99,16 @@ public:
         #else
         std::string indexCheck = "noindex";
         #endif
-        std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
-        if (!std::filesystem::exists(pre_computed_path))
-        {
-            std::filesystem::create_directories(pre_computed_path);
-        }
+        std::string full = "full";
+        std::string compare = "comp";
+        std::filesystem::path pre_computed_path_full_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / full;
+        std::filesystem::path pre_computed_path_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / compare;
+
+        if (!std::filesystem::exists(pre_computed_path_full_naive_solution))
+            std::filesystem::create_directories(pre_computed_path_full_naive_solution);
+
+        if (!std::filesystem::exists(pre_computed_path_naive_solution))
+            std::filesystem::create_directories(pre_computed_path_naive_solution);
         
         // find error at every time step
         for (int t = 0; t < iteration_amount; t++)
@@ -113,9 +118,9 @@ public:
             tsne.updateMinMaxPos();
 
             // correct solution up to machine precision
-            if (std::filesystem::exists(pre_computed_path / std::to_string(t)))
+            if (std::filesystem::exists(pre_computed_path_full_naive_solution / std::to_string(t)))
             {
-                loadPrecomputed(full_naive_solution, pre_computed_path / std::to_string(t));
+                loadPrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(t));
             }
             else
             {
@@ -124,16 +129,27 @@ public:
                 tsne.nBodySelect = "naive";
                 tsne.updateDerivative();
                 full_naive_solution = tsne.embeddedPoints;
-                storePrecomputed(full_naive_solution, pre_computed_path / std::to_string(t));
+                storePrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(t));
             }
 
-            tsne.resetDeriv();
-            tsne.iteration_counter = t;
-            tsne.nBodySelect = "naive";
-            //tsne.updateDerivative();
-            tsne.resetDeriv();
-            tsne.updateRepulsive();
-            naiveSolution = tsne.embeddedPoints;
+
+
+            if (std::filesystem::exists(pre_computed_path_naive_solution / std::to_string(t)))
+            {
+                loadPrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(t));
+            }
+            else
+            {
+                tsne.resetDeriv();
+                tsne.iteration_counter = t;
+                tsne.nBodySelect = "naive";
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
+                naiveSolution = tsne.embeddedPoints;
+                storePrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(t));
+            }
+
+
 
             #ifndef INDEX_TRACKER
             // calculate the result of every approximation technique and find the error by comparing to naive
@@ -342,11 +358,13 @@ public:
             #else
             std::string indexCheck = "noindex";
             #endif
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
-            if (!std::filesystem::exists(pre_computed_path))
-            {
-                std::filesystem::create_directories(pre_computed_path);
-            }
+            std::string full = "full";
+            std::filesystem::path pre_computed_path_full_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / full;
+
+            if (!std::filesystem::exists(pre_computed_path_full_naive_solution))
+                std::filesystem::create_directories(pre_computed_path_full_naive_solution);
+
+
 
     
             double timeBefore = 0.0;
@@ -360,9 +378,9 @@ public:
                 tsne.updateMinMaxPos();
 
                 //correct solution up to machine precision
-                if (std::filesystem::exists(pre_computed_path / std::to_string(j)))
+                if (std::filesystem::exists(pre_computed_path_full_naive_solution / std::to_string(j)))
                 {
-                    loadPrecomputed(naiveSolution, pre_computed_path / std::to_string(j));
+                    loadPrecomputed(naiveSolution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
                 else
                 {
@@ -371,7 +389,7 @@ public:
                     tsne.nBodySelect = "naive";
                     tsne.updateDerivative();
                     naiveSolution = tsne.embeddedPoints;
-                    storePrecomputed(naiveSolution, pre_computed_path / std::to_string(j));
+                    storePrecomputed(naiveSolution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
 
                 #ifndef INDEX_TRACKER
@@ -579,11 +597,16 @@ public:
             #else
             std::string indexCheck = "noindex";
             #endif
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
-            if (!std::filesystem::exists(pre_computed_path))
-            {
-                std::filesystem::create_directories(pre_computed_path);
-            }
+            std::string full = "full";
+            std::string compare = "comp";
+            std::filesystem::path pre_computed_path_full_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / full;
+            std::filesystem::path pre_computed_path_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / compare;
+
+            if (!std::filesystem::exists(pre_computed_path_full_naive_solution))
+                std::filesystem::create_directories(pre_computed_path_full_naive_solution);
+
+            if (!std::filesystem::exists(pre_computed_path_naive_solution))
+                std::filesystem::create_directories(pre_computed_path_naive_solution);
 
             for (int j = 0; j < iteration_amount; j++)
             {
@@ -592,9 +615,9 @@ public:
                 tsne.updateMinMaxPos();
 
                 // correct solution up to machine precision
-                if (std::filesystem::exists(pre_computed_path / std::to_string(j)))
+                if (std::filesystem::exists(pre_computed_path_full_naive_solution / std::to_string(j)))
                 {
-                    loadPrecomputed(naiveSolution, pre_computed_path / std::to_string(j));
+                    loadPrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
                 else
                 {
@@ -603,24 +626,35 @@ public:
                     tsne.nBodySelect = "naive";
                     tsne.updateDerivative();
                     full_naive_solution = tsne.embeddedPoints;
-                    storePrecomputed(full_naive_solution, pre_computed_path / std::to_string(j));
+                    storePrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
 
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "naive";
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                naiveSolution = tsne.embeddedPoints;
+
+                if (std::filesystem::exists(pre_computed_path_naive_solution / std::to_string(j)))
+                {
+                    loadPrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                }
+                else
+                {
+                    tsne.resetDeriv();
+                    tsne.iteration_counter = j;
+                    tsne.nBodySelect = "naive";
+                    tsne.resetDeriv();
+                    tsne.updateRepulsive();
+                    naiveSolution = tsne.embeddedPoints;
+                    storePrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                }
+
+
 
                 #ifndef INDEX_TRACKER
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "BH";
                 tsne.nBodySolvers["BH"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorBH[t] += getNMAE(naiveSolution, fastSolution);
@@ -629,7 +663,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "BHMP";
                 tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorBHMP[t] += getNMAE(naiveSolution, fastSolution);
@@ -638,7 +673,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "BHR";
                 tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorBHR[t] += getNMAE(naiveSolution, fastSolution);
@@ -647,7 +683,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "BHRMP";
                 tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorBHRMP[t] += getNMAE(naiveSolution, fastSolution);
@@ -656,7 +693,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "FMM";
                 tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorFMM[t] += getNMAE(naiveSolution, fastSolution);
@@ -665,7 +703,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "PM";
                 tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorPM[t] += getNMAE(naiveSolution, fastSolution);
@@ -676,7 +715,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "FMM_MORTON";
                 tsne.nBodySolvers["FMM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 errorFMM_MORTON[t] += getNMAE(naiveSolution, fastSolution);
 
@@ -684,7 +724,8 @@ public:
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "FMM_SYM_MORTON";
                 tsne.nBodySolvers["FMM_SYM_MORTON"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                tsne.updateDerivative();
+                tsne.resetDeriv();
+                tsne.updateRepulsive();
                 fastSolution = tsne.embeddedPoints;
                 errorFMM_SYM_MORTON[t] += getNMAE(naiveSolution, fastSolution);
                 #endif
@@ -692,7 +733,7 @@ public:
                 tsne.resetDeriv();
                 tsne.iteration_counter = j;
                 tsne.nBodySelect = "naive";
-                tsne.embeddedPoints = naiveSolution;
+                tsne.embeddedPoints = full_naive_solution;
                 tsne.updatePoints();
             }
 
@@ -788,7 +829,7 @@ public:
             TSNE tsne
             (
                 chosenTheta,
-                chosenTheta,
+                3.0,
                 chosenCellSize,
                 dataset_type,
                 data_size,
@@ -808,11 +849,17 @@ public:
             #else
             std::string indexCheck = "noindex";
             #endif
-            std::filesystem::path pre_computed_path = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck;
-            if (!std::filesystem::exists(pre_computed_path))
-            {
-                std::filesystem::create_directories(pre_computed_path);
-            }
+            std::string full = "full";
+            std::string compare = "comp";
+            std::filesystem::path pre_computed_path_full_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / full;
+            std::filesystem::path pre_computed_path_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / compare;
+
+            if (!std::filesystem::exists(pre_computed_path_full_naive_solution))
+                std::filesystem::create_directories(pre_computed_path_full_naive_solution);
+
+            if (!std::filesystem::exists(pre_computed_path_naive_solution))
+                std::filesystem::create_directories(pre_computed_path_naive_solution);
+
 
 
             double timeBefore = 0.0f;
@@ -823,9 +870,9 @@ public:
                 tsne.updateMinMaxPos();
 
                 // correct solution up to machine precision
-                if (std::filesystem::exists(pre_computed_path / std::to_string(j)))
+                if (std::filesystem::exists(pre_computed_path_full_naive_solution / std::to_string(j)))
                 {
-                    loadPrecomputed(full_naive_solution, pre_computed_path / std::to_string(j));
+                    loadPrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
                 else
                 {
@@ -834,17 +881,25 @@ public:
                     tsne.nBodySelect = "naive";
                     tsne.updateDerivative();
                     full_naive_solution = tsne.embeddedPoints;
-                    storePrecomputed(full_naive_solution, pre_computed_path / std::to_string(j));
+                    storePrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
                 }
 
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "naive";
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                naiveSolution = tsne.embeddedPoints;
+                if (std::filesystem::exists(pre_computed_path_naive_solution / std::to_string(j)))
+                {
+                    loadPrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                }
+                else
+                {
+                    tsne.resetDeriv();
+                    tsne.iteration_counter = j;
+                    tsne.nBodySelect = "naive";
+                    tsne.resetDeriv();
+                    tsne.updateRepulsive();
+                    naiveSolution = tsne.embeddedPoints;
+                    storePrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                }
+
                 
                 #ifndef INDEX_TRACKER
                 tsne.resetDeriv();
@@ -860,71 +915,71 @@ public:
                 //fastSolutionIndexTracker = tsne.indexTracker;
                 errorBH[t] += getNMAE(naiveSolution, fastSolution);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
-                fastSolution = tsne.embeddedPoints;
-                //fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHMP[t] += getNMAE(naiveSolution, fastSolution);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                ////tsne.updateDerivative();
+                //tsne.resetDeriv();
+                //tsne.updateRepulsive();
+                //calculationtimeBHMP[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                ////fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHMP[t] += getNMAE(naiveSolution, fastSolution);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHR";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                calculationtimeBHR[t] += glfwGetTime() - timeBefore;
-                fastSolution = tsne.embeddedPoints;
-                //fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHR[t] += getNMAE(naiveSolution, fastSolution);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHR";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHR"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                ////tsne.updateDerivative();
+                //tsne.resetDeriv();
+                //tsne.updateRepulsive();
+                //calculationtimeBHR[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                ////fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHR[t] += getNMAE(naiveSolution, fastSolution);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "BHRMP";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
-                fastSolution = tsne.embeddedPoints;
-                //fastSolutionIndexTracker = tsne.indexTracker;
-                errorBHRMP[t] += getNMAE(naiveSolution, fastSolution);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "BHRMP";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["BHRMP"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                ////tsne.updateDerivative();
+                //tsne.resetDeriv();
+                //tsne.updateRepulsive();
+                //calculationtimeBHRMP[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                ////fastSolutionIndexTracker = tsne.indexTracker;
+                //errorBHRMP[t] += getNMAE(naiveSolution, fastSolution);
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "FMM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                calculationtimeFMM[t] += glfwGetTime() - timeBefore;
-                fastSolution = tsne.embeddedPoints;
-                //fastSolutionIndexTracker = tsne.indexTracker;
-                errorFMM[t] += getNMAE(naiveSolution, fastSolution);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "FMM";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["FMM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                ////tsne.updateDerivative();
+                //tsne.resetDeriv();
+                //tsne.updateRepulsive();
+                //calculationtimeFMM[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                ////fastSolutionIndexTracker = tsne.indexTracker;
+                //errorFMM[t] += getNMAE(naiveSolution, fastSolution);
 
 
-                tsne.resetDeriv();
-                tsne.iteration_counter = j;
-                tsne.nBodySelect = "PM";
-                timeBefore = glfwGetTime();
-                tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
-                //tsne.updateDerivative();
-                tsne.resetDeriv();
-                tsne.updateRepulsive();
-                calculationtimePM[t] += glfwGetTime() - timeBefore;
-                fastSolution = tsne.embeddedPoints;
-                //fastSolutionIndexTracker = tsne.indexTracker;
-                errorPM[t] += getNMAE(naiveSolution, fastSolution);
+                //tsne.resetDeriv();
+                //tsne.iteration_counter = j;
+                //tsne.nBodySelect = "PM";
+                //timeBefore = glfwGetTime();
+                //tsne.nBodySolvers["PM"]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                ////tsne.updateDerivative();
+                //tsne.resetDeriv();
+                //tsne.updateRepulsive();
+                //calculationtimePM[t] += glfwGetTime() - timeBefore;
+                //fastSolution = tsne.embeddedPoints;
+                ////fastSolutionIndexTracker = tsne.indexTracker;
+                //errorPM[t] += getNMAE(naiveSolution, fastSolution);
                 #endif
 
                 #ifdef INDEX_TRACKER
@@ -1009,16 +1064,16 @@ public:
         #ifndef INDEX_TRACKER
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BH") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
         writeToFile3(errorBH, calculationtimeBH, thetaBH, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHMP, calculationtimeBHMP, thetaBHMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHR, calculationtimeBHR, thetaBHR, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);
-        methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
-        writeToFile3(errorPM, calculationtimePM, thetaPM, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHMP, calculationtimeBHMP, thetaBHMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHR") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHR, calculationtimeBHR, thetaBHR, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("BHRMP") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorBHRMP, calculationtimeBHRMP, thetaBHRMP, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorFMM, calculationtimeFMM, thetaFMM, methodPath);
+        //methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("PM") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+        //writeToFile3(errorPM, calculationtimePM, thetaPM, methodPath);
         #endif
         #ifdef INDEX_TRACKER
         methodPath = projectFolder / ("tsneCalculationtimeError" + std::string("FMM_MORTON") + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
@@ -1109,7 +1164,7 @@ public:
             TSNE tsne
             (
                 chosenTheta,
-                2.0,
+                3.0,
                 chosenCellSize,
                 dataset_type,
                 data_size,
@@ -1153,11 +1208,166 @@ public:
         writeToFile3(finalCost, calculationtime, thetas, methodPath);
     }
 
+
+    void calculationtimeError_MAXpoints_TSNE(std::string dataset_type, int data_size, float perplexity_value, int iteration_amount, std::vector<double> thetas, std::vector<int> max_points, unsigned int seed, std::string method)
+    {
+        for (size_t m = 0; m < max_points.size(); m++)
+        {
+            std::cout << "find calc time and error for max points: " << max_points[m] << std::endl;
+
+            int theta_diversity_amount = thetas.size();
+
+            std::vector<double> calculationtime(theta_diversity_amount, 0.0f);
+
+            std::vector<double> error(theta_diversity_amount, 0.0f);
+
+            std::vector<double> theta_tracker(theta_diversity_amount, 0.0f);
+
+            for (int t = 0; t < theta_diversity_amount; t++)
+            {
+                double chosenTheta = thetas[t];
+
+                TSNE tsne
+                (
+                    chosenTheta,
+                    chosenTheta,
+                    1.0,
+                    dataset_type,
+                    data_size,
+                    perplexity_value,
+                    seed
+                );
+
+                double max_point = max_points[m];
+                tsne.nBodySolvers[method]->maxChildren = max_point;
+
+                #ifdef INDEX_TRACKER
+                if (method == "FMM_SYM_MORTON")
+                {
+                    unsigned int new_depth = NBodySolverFMM_SYM_MORTON<TsnePoint2D>::getDepth(max_point, data_size);
+                    NBodySolverFMM_SYM_MORTON<TsnePoint2D>* solver = dynamic_cast<NBodySolverFMM_SYM_MORTON<TsnePoint2D>*>(tsne.nBodySolvers[method]);
+                    solver->initNodesSize(new_depth);
+                }
+
+                if (method == "FMM_MORTON")
+                {
+                    unsigned int new_depth = NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_point, data_size);
+                    NBodySolverFMM_MORTON<TsnePoint2D>* solver = dynamic_cast<NBodySolverFMM_MORTON<TsnePoint2D>*>(tsne.nBodySolvers[method]);
+                    solver->initNodesSize(new_depth);
+                }
+                #endif
+
+
+                std::vector<TsnePoint2D> naiveSolution(data_size);
+                std::vector<TsnePoint2D> fastSolution(data_size);
+
+                std::vector<TsnePoint2D> full_naive_solution(data_size);
+
+
+                #ifdef INDEX_TRACKER
+                std::string indexCheck = "index";
+                #else
+                std::string indexCheck = "noindex";
+                #endif
+                std::string full = "full";
+                std::string compare = "comp";
+                std::filesystem::path pre_computed_path_full_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / full;
+                std::filesystem::path pre_computed_path_naive_solution = root_folder / std::string("precomputed_states") / dataset_type / std::to_string(data_size) / std::to_string(static_cast<unsigned int>(perplexity_value)) / std::to_string(seed) / indexCheck / compare;
+
+                if (!std::filesystem::exists(pre_computed_path_full_naive_solution))
+                    std::filesystem::create_directories(pre_computed_path_full_naive_solution);
+
+                if (!std::filesystem::exists(pre_computed_path_naive_solution))
+                    std::filesystem::create_directories(pre_computed_path_naive_solution);
+
+
+                int measure_amount = 0;
+                double timeBefore = 0.0f;
+                for (int j = 0; j < iteration_amount; j++)
+                {
+                    std::cout << "find calc time and error at iteration: " << j << ", for theta: " << chosenTheta << std::endl;
+
+                    tsne.updateMinMaxPos();
+
+                    // correct solution up to machine precision
+                    if (std::filesystem::exists(pre_computed_path_full_naive_solution / std::to_string(j)))
+                    {
+                        loadPrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
+                    }
+                    else
+                    {
+                        tsne.resetDeriv();
+                        tsne.iteration_counter = j;
+                        tsne.nBodySelect = "naive";
+                        tsne.updateDerivative();
+                        full_naive_solution = tsne.embeddedPoints;
+                        storePrecomputed(full_naive_solution, pre_computed_path_full_naive_solution / std::to_string(j));
+                    }
+
+                    if (j % 20 == 0)
+                    {
+                        measure_amount++;
+
+                        if (std::filesystem::exists(pre_computed_path_naive_solution / std::to_string(j)))
+                        {
+                            loadPrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                        }
+                        else
+                        {
+                            tsne.resetDeriv();
+                            tsne.iteration_counter = j;
+                            tsne.nBodySelect = "naive";
+                            tsne.resetDeriv();
+                            tsne.updateRepulsive();
+                            naiveSolution = tsne.embeddedPoints;
+                            storePrecomputed(naiveSolution, pre_computed_path_naive_solution / std::to_string(j));
+                        }
+
+                        tsne.resetDeriv();
+                        tsne.iteration_counter = j;
+                        tsne.nBodySelect = method;
+                        timeBefore = glfwGetTime();
+                        tsne.nBodySolvers[method]->updateTree(tsne.embeddedPoints, tsne.minPos, tsne.maxPos);
+                        //tsne.updateDerivative();
+                        tsne.resetDeriv();
+                        tsne.updateRepulsive();
+                        calculationtime[t] += glfwGetTime() - timeBefore;
+                        fastSolution = tsne.embeddedPoints;
+                        error[t] += getNMAE(naiveSolution, fastSolution);
+                    }
+
+
+                    tsne.resetDeriv();
+                    tsne.iteration_counter = j;
+                    tsne.nBodySelect = "naive";
+                    tsne.embeddedPoints = full_naive_solution;
+                    tsne.updatePoints();
+                }
+
+
+                error[t] /= measure_amount;
+
+                calculationtime[t] /= measure_amount;
+
+                theta_tracker[t] = chosenTheta;
+            }
+
+
+            // write results to csv files
+            std::filesystem::path projectFolder = root_folder / "graphCSV" / dataset_type / std::to_string(data_size) / ("perp" + std::to_string(static_cast<int>(perplexity_value)));
+
+            std::filesystem::path methodPath;
+
+            methodPath = projectFolder / ("tsneCalculationtimeErrorMAXPOINTS_" + std::to_string(max_points[m]) + method + "_point" + std::to_string(data_size) + "_perp" + std::to_string(static_cast<int>(perplexity_value)) + "_dataset" + dataset_type + ".csv");
+            writeToFile3(error, calculationtime, theta_tracker, methodPath);
+        }
+    }
+
 private:
     //mean relative error or maximum relative error
     double getNMAE(const std::vector<TsnePoint2D>& points_naive, const std::vector<TsnePoint2D>& points_approx)
     {
-        double MAE = 0.0;
+        double MRE = 0.0;
         double norm = 0.0;
     
         for (int i = 0; i < points_naive.size(); i++)
@@ -1165,21 +1375,14 @@ private:
             TsnePoint2D pointNaive = points_naive[i];
             TsnePoint2D pointApprox = points_approx[i];
 
-            //MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative));
-            //norm += static_cast<double>(glm::length(pointNaive.derivative));
+            MRE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative));
 
-            MAE += static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative));
-
-            //MAE = std::max(MAE, static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative)));
+            //MRE = std::max(MRE, static_cast<double>(glm::length(pointNaive.derivative - pointApprox.derivative)) / static_cast<double>(glm::length(pointNaive.derivative)));
         }
-    
-        //double NMAE = MAE / norm;
-        //return NMAE;
 
-        double NMAE = MAE / points_naive.size();
+        MRE = MRE / points_naive.size();
 
-        //double NMAE = MAE;
-        return NMAE;
+        return MRE;
     }
 
     double costFunction(const std::vector<TsnePoint2D>& points, Eigen::SparseMatrix<double>& Pmatrix)

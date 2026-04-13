@@ -116,9 +116,9 @@ public:
         nBodySolvers["PM"] = new NBodySolverPM<TsnePoint2D>(Pmatrix, embeddedPoints, 4, cell_size, 4);
         nBodySolvers["PM"]->updateTree(embeddedPoints, minPos, maxPos);
         #ifdef INDEX_TRACKER
-        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, data_amount), max_theta);
+        nBodySolvers["FMM_MORTON"] = new NBodySolverFMM_MORTON<TsnePoint2D>(&TSNEFMM_MORTONNNKernel, &TSNEFMM_MORTONPNKernel, &TSNEFMM_MORTONNPKernel, &TSNEFMM_MORTONPPKernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node, data_amount), max_theta);
         nBodySolvers["FMM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_MORTON<TsnePoint2D>::getDepth(max_children_per_node * 0.7, data_amount), max_theta);
+        nBodySolvers["FMM_SYM_MORTON"] = new NBodySolverFMM_SYM_MORTON<TsnePoint2D>(&TSNE_FMM_SYM_MORTON_NN_Kernel, &TSNE_FMM_SYM_MORTON_PN_Kernel, &TSNE_FMM_SYM_MORTON_PP_Kernel, max_children_per_node, NBodySolverFMM_SYM_MORTON<TsnePoint2D>::getDepth(max_children_per_node, data_amount), max_theta);
         nBodySolvers["FMM_SYM_MORTON"]->updateTree(embeddedPoints, minPos, maxPos);
         #endif
     }
@@ -207,10 +207,10 @@ public:
 
     void thetaFunction()
     {
-        //float falloff_strength = 5.0f;
-        //float theta_result =
+        //double falloff_strength = 1.0f;
+        //double theta_result =
         //    (max_theta - min_theta) *
-        //    std::max(1.0f - std::pow(static_cast<float>(iteration_counter) / 1000.0f, falloff_strength), 0.0f) +
+        //    std::max(1.0 - std::pow(static_cast<double>(iteration_counter) / 999.0, falloff_strength), 0.0) +
         //    min_theta;
 
         double sharpness = 1.0;
@@ -356,6 +356,7 @@ public:
     void updateAttractive()
     {
         double exageration = iteration_counter < 250 ? 16.0 : 4.0; // the early exaggeration is 4.0f
+        //double exageration = iteration_counter < 250 ? 4.0 : 4.0; // the early exaggeration is 4.0f
 
         for (int n = 0; n < embeddedPoints.size(); n++)
         {

@@ -105,14 +105,49 @@ public:
 
     static unsigned int getDepth(int max_children, int N)
     {
-        unsigned int depth = 0;
-        while (N > max_children)
-        {
-            N /= 4;
-            depth++;
-        }
+        double circle_area = std::numbers::pi / 4.0;
+        double depth_real =
+            std::log((1.0 / circle_area) * (N / max_children))
+            / std::log(4.0);
+        unsigned int depth = static_cast<unsigned int>(std::ceil(depth_real));
 
         return depth;
+    }
+
+    void initNodesSize(unsigned int initTreeDepth)
+    {
+        treeDepth = initTreeDepth;
+        levelIndex.resize(treeDepth + 1);
+        levelSize.resize(treeDepth + 1);
+        levelGridWidth.resize(treeDepth + 1);
+        levelIndex[0] = 0;
+        int nodesSize = 0;
+        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
+        {
+            int currentLevelSize = 1;
+            for (int j = 0; j < i; j++)
+            {
+                currentLevelSize *= 4;
+            }
+            levelSize[i] = currentLevelSize;
+            nodesSize += currentLevelSize;
+
+            int currentDepthStart = 0;
+            for (int j = 0; j <= i; j++)
+            {
+                currentDepthStart += levelSize[j];
+            }
+            if (i + 1 < treeDepth + 1)
+                levelIndex[i + 1] = currentDepthStart;
+
+
+        }
+
+        nodes.resize(nodesSize);
+
+        for (int i = 0; i <= treeDepth; i++)
+            levelGridWidth[i] = std::pow(2, i);
+        //leafGridSize = std::pow(2, treeDepth);
     }
 
 private:
@@ -122,9 +157,9 @@ private:
         //double dist = glm::length(diff);
         double dist = glm::dot(diff, diff);
 
-        //if ((node_A.BBlength + node_B.BBlength) / dist < theta) // sym node node
         double threshold = (node_A.BBlength + node_B.BBlength) / theta;
         if (dist > threshold * threshold) // sym node node
+        //if ((node_A.BBlength + node_B.BBlength) / dist < theta) // sym node node
         {
 
             if (node_A.particleIndexAmount != 0 && node_B.particleIndexAmount != 0)
@@ -240,9 +275,10 @@ private:
         //double dist = glm::length(diff);
         double dist = glm::dot(diff, diff);
 
-        //if (secondNode.BBlength / dist < theta * 0.5) // sym point node
-        double threshold = (secondNode.BBlength) / (theta * 0.5);
+        //double threshold = (secondNode.BBlength) / (theta * 0.35);
+        double threshold = secondNode.BBlength / theta;
         if (dist > threshold * threshold) // sym point node
+        //if (secondNode.BBlength / dist < theta)
         {
 
             kernelPN(total, firstPoint, secondNode);
@@ -287,42 +323,6 @@ private:
                 nodes[i].C3 /= nodes[i].M0;
             }
         }
-    }
-
-    void initNodesSize(unsigned int initTreeDepth)
-    {
-        treeDepth = initTreeDepth;
-        levelIndex.resize(treeDepth + 1);
-        levelSize.resize(treeDepth + 1);
-        levelGridWidth.resize(treeDepth + 1);
-        levelIndex[0] = 0;
-        int nodesSize = 0;
-        for (int i = 0; i <= treeDepth; i++) // treeDepth = 0 means just the root
-        {
-            int currentLevelSize = 1;
-            for (int j = 0; j < i; j++)
-            {
-                currentLevelSize *= 4;
-            }
-            levelSize[i] = currentLevelSize;
-            nodesSize += currentLevelSize;
-
-            int currentDepthStart = 0;
-            for (int j = 0; j <= i; j++)
-            {
-                currentDepthStart += levelSize[j];
-            }
-            if (i + 1 < treeDepth + 1)
-                levelIndex[i + 1] = currentDepthStart;
-
-
-        }
-
-        nodes.resize(nodesSize);
-
-        for (int i = 0; i <= treeDepth; i++)
-            levelGridWidth[i] = std::pow(2, i);
-        //leafGridSize = std::pow(2, treeDepth);
     }
 
     void createLeafNodes(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos)
@@ -811,7 +811,7 @@ void TSNE_FMM_SYM_MORTON_PN_Kernel(double& total, TsnePoint2D& sinkPoint, NodeFM
     sourceNode.C2 += C2;
     sourceNode.C3 += C3;
 
-    total += (1.0 + sourceNode.M0) / rS;
+    total += 2.0 * sourceNode.M0 / rS;
 }
 
 

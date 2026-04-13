@@ -1,6 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#define INDEX_TRACKER
+//#define INDEX_TRACKER
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -32,6 +32,8 @@
 #include "codeData/data.h"
 #include "visualization/multipoleVis.h"
 #include "Timer.h"
+#include "visualization/multipoleVis.h"
+
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <iostream>
@@ -74,13 +76,34 @@ int main(void)
     // glfw window creation
     // --------------------
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "master thesis", NULL, NULL);
+    //GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    //const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    // Remove borders/title bar
+    //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+
+    // (Optional but good) prevent resizing artifacts
+    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    //GLFWwindow* window = glfwCreateWindow(
+    //    mode->width,
+    //    mode->height,
+    //    "master thesis",
+    //    NULL,//monitor,   // <-- THIS enables fullscreen
+    //    NULL
+    //);
+
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMaximizeWindow(window);
+    //glfwMaximizeWindow(window);
+    //int xpos, ypos;
+    //glfwGetMonitorPos(monitor, &xpos, &ypos);
+    //glfwSetWindowPos(window, xpos, ypos);
+
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSwapInterval(0);//unlimited frames!!!
@@ -138,13 +161,13 @@ int main(void)
         
         TSNE_buffers tsne
         (
-            0.75, // min_theta
-            2.3, // max_theta
+            1.0, // min_theta
+            1.0, // max_theta
             1.0, // cell_size
             "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
             70000, // data_size
             30.0f, // perplexity
-            216308u // seed: 4523u, 296343u
+            216308u // seed: 216308u, 592340823u, 4523u, 296343u
         );
         
         glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
@@ -163,12 +186,15 @@ int main(void)
         //tsne.nBodySelect = "FMM";
         tsne.nBodySelect = "PM";
         //tsne.nBodySelect = "BH";
+        //tsne.nBodySelect = "BHMP";
+        //tsne.nBodySelect = "BHRMP";
         //tsne.nBodySelect = "naive";
         #endif
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
         std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
+        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -198,7 +224,7 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
-        TsneTest tsne_test;
+        //TsneTest tsne_test;
 
         //tsne_test.errorTimestepTSNE
         //(
@@ -206,9 +232,9 @@ int main(void)
         //    70000,  // data_size
         //    30.0f, // perplexity
         //    1000, // iteration_amount
-        //    1.0f, // theta
-        //    1.0f, // cell_size
-        //    4523u // seed
+        //    0.5f, // theta
+        //    0.5f, // cell_size
+        //    216308u // seed
         //);
 
         //tsne_test.calculationtimeThetaTSNE
@@ -216,21 +242,21 @@ int main(void)
         //    "MNIST_digits", // data_set
         //    70000, // data_size
         //    30.0f, // perplexity
-        //    5, // iteration_amount
-        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
-        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // cell_sizes
-        //    4523u // seed
+        //    1000, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u // seed
         //);
 
         //tsne_test.errorThetaTSNE
         //(
         //    "MNIST_digits", // data_set
-        //    10000, // data_size
+        //    70000, // data_size
         //    30.0f, // perplexity
-        //    5, // iteration_amount
-        //    std::vector<float>{0.5f, 0.7f, 0.9f}, // thetas
-        //    std::vector<double>{1.0, 1.1, 1.2}, // cell_sizes
-        //    4523u // seed
+        //    1000, // iteration_amount
+        //    std::vector<float>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u // seed
         //);
 
         //tsne_test.calculationtimeErrorTSNE
@@ -238,25 +264,26 @@ int main(void)
         //    "MNIST_digits", // data_set
         //    70000, // data_size
         //    30.0f, // perplexity
-        //    3, // iteration_amount
-        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0}, // thetas
-        //    std::vector<double>{0.5,  1.0, 1.5,  2.0, 2.5,  3.0, 3.5}, // cell_sizes
-        //    4523u // seed
+        //    1000, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    //std::vector<double>{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    //std::vector<double>{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5}, // cell_sizes
+        //    216308u // seed
         //);
 
         //tsne_test.costTimestepTSNE // comparing FMM to BH with high theta and looking at the cost
         //(
         //    "MNIST_digits", // data_set
-        //    10000, // data_size
+        //    70000, // data_size
         //    30.0f, // perplexity
         //    1001, // iteration_amount
-        //    0.75, // min_theta
-        //    2.0, // max_theta
+        //    0.5, // min_theta
+        //    3.0, // max_theta
         //    1.0, // cell_size
-        //    4523u, // seed
-        //    "FMM_SYM_MORTON" // method
+        //    216308u, // seed
+        //    "BH" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
         //);
-
 
         //tsne_test.calculationtimeCostTSNE // looking at the final cost 
         //(
@@ -264,12 +291,23 @@ int main(void)
         //    70000, // data_size
         //    30.0f, // perplexity
         //    1001, // iteration_amount
-        //    std::vector<double>{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f}, // thetas
-        //    std::vector<double>{0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}, // cell_sizes
-        //    4523u, // seed
-        //    "PM" // method
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u, // seed: 4523u
+        //    "BH" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
         //);
 
+        //tsne_test.calculationtimeError_MAXpoints_TSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<int>{1, 2, 4, 8, 16, 32, 64}, // max number of points in leaf nodes
+        //    216308u, // seed: 4523u
+        //    "FMM_SYM_MORTON" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
+        //);
 
 
 
@@ -279,7 +317,9 @@ int main(void)
         //nBodyScenarios.testNodeNode();
 
         //std::cout << "im done with nBodyScenarios!" << std::endl;
-        //MultipoleVis::initMultipoleVisData();
+        //MultipoleVis::create_vis1();
+        //MultipoleVis::create_vis2();
+        //MultipoleVis::
         //MultipoleVis::testFMMtoBH();
 
 
@@ -291,6 +331,8 @@ int main(void)
 
         float lastTimePressed = 0.0f;
         float lastFrameUpdate = 0.0f;
+        
+
 
         // render loop
         // -----------
@@ -353,7 +395,7 @@ int main(void)
                     scenes[currentSceneName]->camera->perspective = true;
                 else
                     scenes[currentSceneName]->camera->perspective = false;
-
+                
                 std::string frameOutput = "iteration: " + std::to_string(tsne.iteration_counter);
                 ImGui::Text(frameOutput.c_str());
 
@@ -375,7 +417,7 @@ int main(void)
                 ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
                 ImGui::SliderInt("show tree level", &tsne.nodeLevelToShow, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
-
+                
 
                 tsne.timeStep();
 
