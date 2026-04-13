@@ -1,5 +1,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
-//#define E 2.71828182845904523536 // std::numbers::pi_v<double>
+
+//#define INDEX_TRACKER
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,20 +13,8 @@
 #include <iostream>
 #include <map>
 #include <filesystem>
-#include "stb_image.h"
+#include "stb_image.h" // hmmm change this
 #include <chrono>
-
-
-
-#define _CRTDBG_MAP_ALLOC
-#include <iostream>
-#include <crtdbg.h>
-
-#ifdef _DEBUG
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
-
 
 #include "openGLhelper/shader.h"
 #include "openGLhelper/scene.h"
@@ -34,13 +23,26 @@
 #include "cameras/camera.h"
 #include "cameras/normalCamera.h"
 #include "cameras/tsneCamera.h"
-#include "nBodyInstances/tsne.h"
+#include "nBodyInstances/tsne_buffers.h"
 #include "nBodyInstances/tsneGpu.h"
 #include "nBodyInstances/gravitysim.h"
 #include "nBodyInstances/nBodyScenarios.h"
+#include "nBodyInstances/tsneTests.h"
 #include "common.h"
 #include "codeData/data.h"
 #include "visualization/multipoleVis.h"
+#include "Timer.h"
+#include "visualization/multipoleVis.h"
+
+
+//#define _CRTDBG_MAP_ALLOC
+//#include <iostream>
+//#include <crtdbg.h>
+//
+//#ifdef _DEBUG
+//#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+//#define new DEBUG_NEW
+//#endif
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -59,7 +61,7 @@ int per = 0;
 
 int main(void)
 {
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
     // glfw: initialize and configure
     // ------------------------------
@@ -74,13 +76,34 @@ int main(void)
     // glfw window creation
     // --------------------
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "master thesis", NULL, NULL);
+    //GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    //const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    // Remove borders/title bar
+    //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+
+    // (Optional but good) prevent resizing artifacts
+    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    //GLFWwindow* window = glfwCreateWindow(
+    //    mode->width,
+    //    mode->height,
+    //    "master thesis",
+    //    NULL,//monitor,   // <-- THIS enables fullscreen
+    //    NULL
+    //);
+
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMaximizeWindow(window);
+    //glfwMaximizeWindow(window);
+    //int xpos, ypos;
+    //glfwGetMonitorPos(monitor, &xpos, &ypos);
+    //glfwSetWindowPos(window, xpos, ypos);
+
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSwapInterval(0);//unlimited frames!!!
@@ -135,8 +158,17 @@ int main(void)
 
         // t-SNE --------------------------------------------------------------------------------------------------------------------------
         
-
-        TSNE tsne;
+        
+        TSNE_buffers tsne
+        (
+            1.0, // min_theta
+            1.0, // max_theta
+            1.0, // cell_size
+            "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
+            70000, // data_size
+            30.0f, // perplexity
+            216308u // seed: 216308u, 592340823u, 4523u, 296343u
+        );
         
         glm::mat4 tsneModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
         
@@ -147,73 +179,29 @@ int main(void)
         Shader shaderTsne((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
         #endif
         
-        tsne.nBodySelect = "naive";
+        #ifdef INDEX_TRACKER
+        tsne.nBodySelect = "FMM_SYM_MORTON";
+        //tsne.nBodySelect = "FMM_MORTON";
+        #else
+        //tsne.nBodySelect = "FMM";
+        tsne.nBodySelect = "PM";
+        //tsne.nBodySelect = "BH";
+        //tsne.nBodySelect = "BHMP";
+        //tsne.nBodySelect = "BHRMP";
+        //tsne.nBodySelect = "naive";
+        #endif
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
-        //Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
-        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
-        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines };
+        Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
+        std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
+        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
         Scene tsneScene("tsne", &cameraTsne, tsneRenderables);
        
         scenes[tsneScene.sceneName] = &tsneScene;
-        //scenes.push_back(&tsneScene);
 
-        
-        // gravity --------------------------------------------------------------------------------------------------------------------------
-
-        //GravitySim gravitySim(10000); 
-        //
-        //glm::mat4 gravityModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-
-        //#ifdef _WIN32
-        //Shader shaderGravity("shaders/shaderPos2Dvel2Dcol3D.vs", "shaders/shaderPos2Dvel2Dcol3D.fs");
-        //#endif
-        //#ifdef linux
-        //Shader shaderGravity((std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderPos2Dvel2Dcol3D.fs").c_str());
-        //#endif
-
-        //gravitySim.nBodySelect = "FMM";
-        //Renderable gravityRenderablePoints(GL_POINTS, gravityModel, gravitySim.particlesBuffer, &shaderGravity, nullptr);
-        //Renderable gravityRenderableLines(GL_LINES, gravityModel, gravitySim.nBodySolvers[gravitySim.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        //Renderable gravityRenderableForces(GL_LINES, gravityModel, gravitySim.forceBuffer, &shaderLine2D, nullptr);
-        //std::vector<Renderable> gravityRenderables{ gravityRenderablePoints, gravityRenderableLines, gravityRenderableForces };
-
-        //TsneCamera cameraGravity(glm::vec3(0.0f, 0.0f, -200.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 1000.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
-
-        //Scene gravityScene("gravity", &cameraGravity, gravityRenderables);
-
-        //scenes[gravityScene.sceneName] = &gravityScene;
-
-
-        // gpu solver tests ------------------------------------------------------------------------------------------------------------
-
-        TsneGpu tsneGpu;
-
-        //tsneGpu.tests();
-        
-        glm::mat4 tsneGpuModel = glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f));
-        
-        #ifdef _WIN32
-        Shader shaderTsneGpu("shaders/shaderTsne.vs", "shaders/shaderTsne.fs");
-        #endif
-        #ifdef linux
-        Shader shaderTsneGpu((std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.vs").c_str(), (std::filesystem::current_path().parent_path().string() + "/shaders/shaderTsne.fs").c_str());
-        #endif
-        
-        tsneGpu.nBodySelect = "naive";
-        Renderable tsneGpuRenderablePoints(GL_POINTS, tsneGpuModel, tsneGpu.TsneParticlesBuffer, &shaderTsneGpu, nullptr);
-        Renderable tsneGpuRenderableLines(GL_LINES, tsneGpuModel, tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->boxBuffer, &shaderLine2D, nullptr);
-        Renderable tsneGpuRenderableForces(GL_LINES, tsneGpuModel, tsneGpu.forceBuffer, &shaderLine2D, nullptr);
-        std::vector<Renderable> tsneGpuRenderables{ tsneGpuRenderablePoints, tsneGpuRenderableLines, tsneGpuRenderableForces };
-
-        TsneCamera cameraTsneGpu(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
-
-        Scene tsneGpuScene("tsneGpu", &cameraTsneGpu, tsneGpuRenderables);
-       
-        scenes[tsneGpuScene.sceneName] = &tsneGpuScene;
         
         // sceneNames --------------------------------------------------------------------------------------------------------------------------
 
@@ -235,55 +223,103 @@ int main(void)
 
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
-        //NBodyScenarios nBodyScenarios;
-        //std::cout << "starting tests--------------------------" << std::endl;
+        // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
+        //TsneTest tsne_test;
+
+        //tsne_test.errorTimestepTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000,  // data_size
+        //    30.0f, // perplexity
+        //    1000, // iteration_amount
+        //    0.5f, // theta
+        //    0.5f, // cell_size
+        //    216308u // seed
+        //);
+
+        //tsne_test.calculationtimeThetaTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1000, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u // seed
+        //);
+
+        //tsne_test.errorThetaTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1000, // iteration_amount
+        //    std::vector<float>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u // seed
+        //);
+
+        //tsne_test.calculationtimeErrorTSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1000, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    //std::vector<double>{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    //std::vector<double>{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5}, // cell_sizes
+        //    216308u // seed
+        //);
+
+        //tsne_test.costTimestepTSNE // comparing FMM to BH with high theta and looking at the cost
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    0.5, // min_theta
+        //    3.0, // max_theta
+        //    1.0, // cell_size
+        //    216308u, // seed
+        //    "BH" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
+        //);
+
+        //tsne_test.calculationtimeCostTSNE // looking at the final cost 
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // cell_sizes
+        //    216308u, // seed: 4523u
+        //    "BH" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
+        //);
+
+        //tsne_test.calculationtimeError_MAXpoints_TSNE
+        //(
+        //    "MNIST_digits", // data_set
+        //    70000, // data_size
+        //    30.0f, // perplexity
+        //    1001, // iteration_amount
+        //    std::vector<double>{0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0}, // thetas
+        //    std::vector<int>{1, 2, 4, 8, 16, 32, 64}, // max number of points in leaf nodes
+        //    216308u, // seed: 4523u
+        //    "FMM_SYM_MORTON" // method: "FMM_SYM_MORTON", "FMM_MORTON", "FMM", "PM", "BH", "BHRMP", "naive"
+        //);
 
 
-        //std::vector<float> perpValues{};
-        //for (float val : perpValues)
-        //{
-        //    float perp = val;
-        //    std::string dataSet = "MNIST_digits";
-        //    int dataSize = 1000;
 
-        //    std::chrono::steady_clock::time_point start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.errorTimestepTSNE(dataSet, dataSize, 1000, 1.0f, perp); // "MNIST_digits" 10000 1000 1.0f 5.0f => 523 sec
-        //    std::chrono::steady_clock::time_point end = std::chrono::high_resolution_clock::now();
-        //    std::chrono::duration<double> elapsed = end - start;
-        //    std::cout << "errorTimestepTSNE test done in: " << elapsed.count() << std::endl;
-        //    /*
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.calculationtimeThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 882 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "calculationtimeThetaTSNE test done in: " << elapsed.count() << std::endl;
+        std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
 
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.errorThetaTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 825 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "errorThetaTSNE test done in: " << elapsed.count() << std::endl;
-
-        //    start = std::chrono::high_resolution_clock::now();
-        //    nBodyScenarios.calculationtimeErrorTSNE(dataSet, dataSize, 100, perp); // "MNIST_digits" 10000 100 5.0f => 885 sec
-        //    end = std::chrono::high_resolution_clock::now();
-        //    elapsed = end - start;
-        //    std::cout << "calculationtimeErrorTSNE test done in: " << elapsed.count() << std::endl;
-        //    */
-        //}
-        //std::cout << "all test done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------" << std::endl;
-
-
-        //nBodyScenarios.errorTimestepGRAVITY();
-        //nBodyScenarios.errorTimestepGRAVITYFMMtest();
-        //nBodyScenarios.calculationtimeThetaGRAVITY();
-        //nBodyScenarios.errorThetaGRAVITY();
-        //nBodyScenarios.calculationtimeErrorGRAVITY();
 
         //nBodyScenarios.testNodeNode();
 
         //std::cout << "im done with nBodyScenarios!" << std::endl;
-        //MultipoleVis::initMultipoleVisData();
+        //MultipoleVis::create_vis1();
+        //MultipoleVis::create_vis2();
+        //MultipoleVis::
         //MultipoleVis::testFMMtoBH();
 
 
@@ -295,6 +331,8 @@ int main(void)
 
         float lastTimePressed = 0.0f;
         float lastFrameUpdate = 0.0f;
+        
+
 
         // render loop
         // -----------
@@ -357,6 +395,9 @@ int main(void)
                     scenes[currentSceneName]->camera->perspective = true;
                 else
                     scenes[currentSceneName]->camera->perspective = false;
+                
+                std::string frameOutput = "iteration: " + std::to_string(tsne.iteration_counter);
+                ImGui::Text(frameOutput.c_str());
 
                 //std::vector<std::string> solvers = 
                 //ImGui::Combo(
@@ -372,48 +413,25 @@ int main(void)
                 //    static_cast<void*>(&sceneNames),
                 //    static_cast<int>(sceneNames.size())
                 //);
-                ImGui::SliderFloat("sim speed", &tsne.timeStepsPerSec, 0.0f, 1000.0f);
-                //ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
+                ImGui::SliderFloat("sim speed", &tsne.desired_iteration_per_second, 0.0f, 1000.0f);
+                ImGui::SliderFloat("forceSize", &tsne.forceSize, 0.0f, 200.0f);
                 ImGui::SliderInt("show tree level", &tsne.nodeLevelToShow, -1, 10);
                 ImGui::SliderInt("follow embedded points", &tsne.follow, 0, 1);
+                
 
                 tsne.timeStep();
 
+
                 if (tsne.follow == 1)
                 {
-                    auto [left, right, down, up] = tsne.getEdges();
+                    //auto [left, right, down, up] = tsne.getEdges();
+                    float left = tsne.minPos.x;
+                    float down = tsne.minPos.y;
+                    float right = tsne.maxPos.x;
+                    float up = tsne.maxPos.y;
                     scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
                     scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
-                    //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
-                }
-            }
-            //else if (currentSceneName == "gravity")
-            //{
-            //    ImGui::SliderFloat("sim speed", &gravitySim.timeStepsPerSec, 0.0f, 1000.0f);
-            //    ImGui::SliderFloat("forceSize", &gravitySim.forceSize, 0.0f, 200.0f);
-            //    ImGui::SliderInt("show tree level", &gravitySim.nBodySolvers[gravitySim.nBodySelect]->showLevel, -1, 10);
-
-            //    gravitySim.timeStep();
-            //}
-            else if (currentSceneName == "tsneGpu")
-            {
-                if (per == 1)
-                    scenes[currentSceneName]->camera->perspective = true;
-                else
-                    scenes[currentSceneName]->camera->perspective = false;
-
-                ImGui::SliderFloat("sim speed", &tsneGpu.timeStepsPerSec, 0.0f, 1000.0f);
-                ImGui::SliderFloat("forceSize", &tsneGpu.forceSize, 0.0f, 200.0f);
-                //ImGui::SliderInt("show tree level", &tsneGpu.nBodySolvers[tsneGpu.nBodySelect]->showLevel, -1, 10);
-                ImGui::SliderInt("follow embedded points", &tsneGpu.follow, 0, 1);
-
-                tsneGpu.timeStep();
-
-                if (tsneGpu.follow == 1)
-                {
-                    auto [left, right, down, up] = tsneGpu.getEdges();
-                    scenes[currentSceneName]->camera->Position = glm::vec3(left + (right - left) * 0.5f, down + (up - down) * 0.5f, scenes[currentSceneName]->camera->Position.z);
-                    scenes[currentSceneName]->camera->Zoom = 1.2f * std::max((up - down) * 0.5f, (right - left) * 0.5f);
+                    
                     //scenes[currentSceneName]->camera->Zoom = std::max(up - down, (right - left) / ((float)screenWidth / (float)screenHeight));
                 }
             }
@@ -424,18 +442,8 @@ int main(void)
 
 
 
-
-
-
-
-
-
             scenes[currentSceneName]->Render();
             
-
-
-
-
 
 
             ImGui::End();
@@ -459,17 +467,17 @@ int main(void)
 
         //gravitySim.cleanup();
         tsne.cleanup();
-        tsneGpu.cleanup();
+        //tsneGpu.cleanup();
         //nBodyScenarios.cleanup();
 
         shaderTsne.cleanup();
         //shaderGravity.cleanup();
-        shaderTsneGpu.cleanup();
+        //shaderTsneGpu.cleanup();
         shaderLine2D.cleanup();
     }
     
     glfwTerminate();
-    _CrtDumpMemoryLeaks();
+    //_CrtDumpMemoryLeaks();
     return 0;
 }
 

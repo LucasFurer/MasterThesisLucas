@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <utility>
 #include <vector>
+
 #include <thread>
 #include <atomic>
 #include <numeric>
@@ -16,14 +17,14 @@
 #include "../../particles/tsnePoint2D.h"
 
 template <typename T>
-class NBodySolverNaive : public NBodySolver<T>
+class NBodySolverTest : public NBodySolver<T>
 {
 public:
     std::function<void(double&, T&, T&)> kernel;
 
-    NBodySolverNaive() {}
+    NBodySolverTest() {}
 
-    NBodySolverNaive(std::function<void(double&, T&, T&)> initKernel)
+    NBodySolverTest(std::function<void(double&, T&, T&)> initKernel)
     {
         kernel = initKernel;
     }
@@ -36,7 +37,7 @@ public:
     //    {
     //        for (int i = 0; i < points.size(); i++)
     //        {
-    //            for (int j = 0; j < points.size(); j++)
+    //            for (int j = i; j < points.size(); j++)
     //            {
     //                if (i != j)
     //                {
@@ -50,7 +51,7 @@ public:
     //}
 
 
-    void solveNbody(double& total, std::vector<T>& points) override
+    void solveNbody(double& total, std::vector<T>& points, std::vector<int>& indexTracker) override
     {
         total = 0.0;
 
@@ -120,7 +121,7 @@ private:
 
 };
 
-void TSNEnaiveKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEtestKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
     //glm::vec2 diff = sinkPoint.position - sourcePoint.position;
     //float dist = glm::length(diff);

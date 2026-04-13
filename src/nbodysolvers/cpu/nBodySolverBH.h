@@ -17,12 +17,12 @@ class NBodySolverBH : public NBodySolver<T>
 public:
     QuadTree<T> root;
 
-    std::function<void(float&, T&, QuadTree<T>*)> kernelPN;
-    std::function<void(float&, T&, T&)> kernelPP;
+    std::function<void(double&, T&, QuadTree<T>*)> kernelPN;
+    std::function<void(double&, T&, T&)> kernelPP;
 
     NBodySolverBH() {}
 
-    NBodySolverBH(std::function<void(float&, T&, QuadTree<T>*)> initKernelPN, std::function<void(float&, T&, T&)> initKernelPP, int initMaxChildren, float initTheta)
+    NBodySolverBH(std::function<void(double&, T&, QuadTree<T>*)> initKernelPN, std::function<void(double&, T&, T&)> initKernelPP, int initMaxChildren, double initTheta)
     {
         kernelPN = initKernelPN;
         kernelPP = initKernelPP;
@@ -30,9 +30,9 @@ public:
         this->theta = initTheta;
     }
 
-    void solveNbody(float& total, std::vector<T>& points) override
+    void solveNbody(double& total, std::vector<T>& points) override
     {
-        total = 0.0f;
+        total = 0.0;
 
         for (int i = 0; i < points.size(); i++)
         {
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    void updateTree(std::vector<T>& points) override
+    void updateTree(std::vector<T>& points, glm::dvec2 minPos, glm::dvec2 maxPos) override
     {
         root = std::move(QuadTree<T>(this->maxChildren, &points));
     }
@@ -53,13 +53,13 @@ public:
     }
 
 private:
-    void traverseBH(float& total, T& point, QuadTree<T>* node, float theta)
+    void traverseBH(double& total, T& point, QuadTree<T>* node, double theta)
     {
-        float l = node->highestCorner.x - node->lowestCorner.x;
-        glm::vec2 diff = point.position - node->centreOfMass;
+        double l = node->highestCorner.x - node->lowestCorner.x;
+        glm::dvec2 diff = point.position - node->centreOfMass;
 
 
-        if ((node->highestCorner.x - node->lowestCorner.x) / glm::length(diff) < theta) // && (glm::any(glm::lessThan(particle.position, cubeCentre - l)) || glm::any(glm::greaterThan(particle.position, cubeCentre + l))))
+        if (l / glm::length(diff) < theta)// && (glm::any(glm::lessThan(point.position, node->lowestCorner)) || glm::any(glm::greaterThan(point.position, node->highestCorner))))
         {
 
             kernelPN(total, point, node);
@@ -69,7 +69,7 @@ private:
         {
             for (int i : node->occupants)
             {
-                if (!glm::all(glm::equal((*node->allParticles)[i].position, point.position)))
+                if (&(*node->allParticles)[i] != &point) // self intersection test
                 {
 
                     kernelPP(total, point, (*node->allParticles)[i]);
@@ -91,50 +91,26 @@ private:
 };
 
 
-void TSNEBHPNKernel(float& total, TsnePoint2D& sinkPoint, QuadTree<TsnePoint2D>* sourceNode)
+void TSNEBHPNKernel(double& total, TsnePoint2D& sinkPoint, QuadTree<TsnePoint2D>* sourceNode)
 {
-    glm::vec2 diff = sinkPoint.position - sourceNode->centreOfMass;
-    float dist = glm::length(diff);
+    //std::cout << "im doing a PN interaction" << std::endl;
 
-    float forceDecay = (1.0f / (1.0f + (dist * dist)));
+    glm::dvec2 diff = sinkPoint.position - sourceNode->centreOfMass;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
+
+    double forceDecay = 1.0 / (1.0 + sq_dist);
     total += sourceNode->totalMass * forceDecay;
 
     sinkPoint.derivative += sourceNode->totalMass * forceDecay * forceDecay * diff;
 }
 
-void TSNEBHPPKernel(float& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
+void TSNEBHPPKernel(double& total, TsnePoint2D& sinkPoint, TsnePoint2D& sourcePoint)
 {
-    glm::vec2 diff = sinkPoint.position - sourcePoint.position;
-    float dist = glm::length(diff);
+    glm::dvec2 diff = sinkPoint.position - sourcePoint.position;
+    double sq_dist = diff.x * diff.x + diff.y * diff.y;
 
-    float forceDecay = 1.0f / (1.0f + (dist * dist));
-    total += 1.0f * forceDecay;
+    double forceDecay = 1.0 / (1.0 + sq_dist);
+    total += forceDecay;
 
     sinkPoint.derivative += forceDecay * forceDecay * diff;
 }
-
-
-
-//glm::vec2 GRAVITYbarnesHutParticleNodeKernel(float* accumulator, Particle2D i, QuadTree<Particle2D>* j)
-//{
-//    float softening = 0.1f;
-//
-//    glm::vec2 nodeDiff = i.position - j->centreOfMass;
-//    float parCentreDistance = glm::length(nodeDiff);
-//
-//    float oneOverDistance = (1.0f / (softening + parCentreDistance));
-//
-//    return -j->totalMass * oneOverDistance * oneOverDistance * oneOverDistance * nodeDiff;
-//}
-//
-//glm::vec2 GRAVITYbarnesHutParticleParticleKernel(float* accumulator, Particle2D i, Particle2D j)
-//{
-//    float softening = 0.1f;
-//
-//    glm::vec2 diff = i.position - j.position;
-//    float distance = glm::length(diff);
-//
-//    float oneOverDistance = 1.0f / (softening + distance);
-//
-//    return -1.0f * oneOverDistance * oneOverDistance * oneOverDistance * diff;
-//}
