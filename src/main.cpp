@@ -165,7 +165,7 @@ int main(void)
             1.0, // max_theta
             1.0, // cell_size
             "MNIST_digits", // data_set: "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
-            70000, // data_size
+            10000, // data_size
             30.0f, // perplexity
             216308u // seed: 216308u, 592340823u, 4523u, 296343u
         );
@@ -184,17 +184,17 @@ int main(void)
         //tsne.nBodySelect = "FMM_MORTON";
         #else
         //tsne.nBodySelect = "FMM";
-        tsne.nBodySelect = "PM";
+        //tsne.nBodySelect = "PM";
         //tsne.nBodySelect = "BH";
         //tsne.nBodySelect = "BHMP";
-        //tsne.nBodySelect = "BHRMP";
+        //tsne.nBodySelect = "BHR";
+        tsne.nBodySelect = "BHRMP";
         //tsne.nBodySelect = "naive";
         #endif
         Renderable tsneRenderablePoints(GL_POINTS, tsneModel, tsne.embeddedBuffer, &shaderTsne, nullptr);
         Renderable tsneRenderableLines(GL_LINES, tsneModel, tsne.nodeBuffer, &shaderLine2D, nullptr);
         Renderable tsneRenderableForces(GL_LINES, tsneModel, tsne.forceBuffer, &shaderLine2D, nullptr);
         std::vector<Renderable> tsneRenderables{ tsneRenderablePoints, tsneRenderableLines, tsneRenderableForces };
-        //std::vector<Renderable> tsneRenderables{ tsneRenderablePoints };
 
         TsneCamera cameraTsne(glm::vec3(0.0f, 0.0f, -800.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, 0.1f, 200.0f, 0.001f, 1000.0f, false, &screenWidth, &screenHeight);
 
@@ -224,14 +224,14 @@ int main(void)
         // one time graph creation -----------------------------------------------------------------------------------------------------------
 
         // "MNIST_digits", "MNIST_fashion", "mice_brain_cells", "CIFAR10"
-        //TsneTest tsne_test;
+        TsneTest tsne_test;
 
         //tsne_test.errorTimestepTSNE
         //(
         //    "MNIST_digits", // data_set
-        //    70000,  // data_size
+        //    10000,  // data_size
         //    30.0f, // perplexity
-        //    1000, // iteration_amount
+        //    50, // iteration_amount
         //    0.5f, // theta
         //    0.5f, // cell_size
         //    216308u // seed

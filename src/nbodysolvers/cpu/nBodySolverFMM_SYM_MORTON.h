@@ -38,11 +38,7 @@ public:
 
     std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> kernelNN;
     std::function<void(double&, T&, NodeFMM_MORTON_2D&)> kernelPN;
-    //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> kernelNP;
     std::function<void(double&, T&, T&)> kernelPP;
-
-    //std::vector<std::pair<NodeFMM_MORTON_2D, NodeFMM_MORTON_2D>> interaction_NN_stack;
-    //std::vector<std::pair<T, NodeFMM_MORTON_2D>> interaction_PN_stack;
 
     NBodySolverFMM_SYM_MORTON() {}
 
@@ -50,7 +46,6 @@ public:
     (
         std::function<void(double&, NodeFMM_MORTON_2D&, NodeFMM_MORTON_2D&)> initKernelNN,
         std::function<void(double&, T&, NodeFMM_MORTON_2D&)> initKernelPN,
-        //std::function<void(double&, NodeFMM_MORTON_2D&, T&)> initKernelNP,
         std::function<void(double&, T&, T&)> initKernelPP,
         int initMaxChildren,
         unsigned int initTreeDepth,
@@ -59,7 +54,6 @@ public:
     {
         kernelNN = initKernelNN;
         kernelPN = initKernelPN;
-        //kernelNP = initKernelNP;
         kernelPP = initKernelPP;
         this->maxChildren = initMaxChildren;
         initNodesSize(initTreeDepth);

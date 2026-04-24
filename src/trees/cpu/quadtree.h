@@ -6,85 +6,55 @@
 #include <iostream>
 #include <limits>
 #include <utility>
+#include <Fastor/Fastor.h>
 
-template <typename T>
+#include "../../policies/BH_policy.h"
+#include "../../policies/rBH_policy.h"
+#include "../../policies/MP_policy.h"
+#include "../../policies/rMP_policy.h"
+
+template <typename T, typename Policy>
 class QuadTree
 {
 public:
-	int maxChildren;
-	std::vector<T>* allParticles;
+	typename Policy::Node_Summary summary;
 
-	float totalMass;
-	glm::dvec2 centreOfMass;
+	glm::dvec2 BBcentre{0.0};
+	double BBlength{0.0};
 
-	glm::dvec2 lowestCorner;
-	glm::dvec2 highestCorner;
+	std::vector<int> occupants{};
+	std::vector<QuadTree*> children{};
 
-	std::vector<int> occupants;
+	QuadTree() = default;
 
-	std::vector<QuadTree*> children; // maybe change to no a pointer
-
-	QuadTree() {}
-
-	QuadTree(int initMaxChildren, std::vector<T>* initAllParticles)
+	QuadTree(int maxChildren, std::vector<T>& allParticles)
 	{
-		maxChildren = initMaxChildren;
-		allParticles = initAllParticles;
-
 		glm::dvec2 setLowestCorner(std::numeric_limits<double>::infinity());
 		glm::dvec2 setHighestCorner(-std::numeric_limits<double>::infinity());
 
-		for (int i = 0; i < allParticles->size(); i++)
+		for (int i = 0; i < allParticles.size(); i++)
 		{
 			occupants.push_back(i);
 
-			setLowestCorner = glm::min(setLowestCorner, (*allParticles)[i].position);
-			setHighestCorner = glm::max(setHighestCorner, (*allParticles)[i].position);
+			setLowestCorner = glm::min(setLowestCorner, allParticles[i].position);
+			setHighestCorner = glm::max(setHighestCorner, allParticles[i].position);
 		}
 
-		double largestDifference = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
-		setHighestCorner.x = setLowestCorner.x + largestDifference + 0.0001;
-		setHighestCorner.y = setLowestCorner.y + largestDifference + 0.0001;
+		BBlength = std::max(setHighestCorner.x - setLowestCorner.x, setHighestCorner.y - setLowestCorner.y);
+		BBcentre = setLowestCorner + 0.5 * BBlength;
 
-		lowestCorner = setLowestCorner;
-		highestCorner = setHighestCorner;
-
-		std::pair<double, glm::vec2> childMassPosition = createTree();
+		auto childMassPosition = createTree(allParticles, maxChildren);
 	}
 
-	QuadTree(int initMaxChildren, std::vector<T>* initAllParticles, std::vector<int>& initOccupants, glm::dvec2 initLowestCorner, glm::dvec2 initHighestCorner)
+	QuadTree(std::vector<int> initOccupants, glm::dvec2 initBBcentre, double initBBlength)
 	{
-		maxChildren = initMaxChildren;
-		allParticles = initAllParticles;
-
-		lowestCorner = initLowestCorner;
-		highestCorner = initHighestCorner;
-
 		occupants = initOccupants;
+
+		BBcentre = initBBcentre;
+		BBlength = initBBlength;
 	}
 
-	QuadTree& operator=(QuadTree&& other) noexcept // move assignment operator
-	{
-		if (this != &other) // self-assignment check
-		{
-			maxChildren = other.maxChildren;
-			allParticles = std::move(other.allParticles);
-			other.allParticles = nullptr;
-
-			totalMass = other.totalMass;
-			centreOfMass = other.centreOfMass;
-
-			lowestCorner = other.lowestCorner;
-			highestCorner = other.highestCorner;
-
-			occupants = std::move(other.occupants);
-
-			for (QuadTree* quadTreeBH : children) { delete quadTreeBH; }
-			children = std::move(other.children);
-		}
-		return *this;
-	}
-
+	// Destructor
 	~QuadTree()
 	{
 		for (QuadTree* quadTree : children)
@@ -93,7 +63,79 @@ public:
 		}
 	}
 
-	std::pair<float, glm::vec2> createTree()
+	// Copy constructor
+	QuadTree(const QuadTree& other) :
+		summary(other.summary),
+		BBcentre(other.BBcentre),
+		BBlength(other.BBlength),
+		occupants(other.occupants)
+	{
+		children.reserve(other.children.size());
+		for (QuadTree* quadTree : other.children)
+		{
+			children.push_back(new QuadTree(*quadTree));
+		}
+	}
+
+	// swap
+	friend void swap(QuadTree& a, QuadTree& b) noexcept
+	{
+		std::swap(a.summary, b.summary);
+		std::swap(a.BBcentre, b.BBcentre);
+		std::swap(a.BBlength, b.BBlength);
+		std::swap(a.occupants, b.occupants);
+		std::swap(a.children, b.children);
+	}
+
+	// Copy assignment
+	QuadTree& operator=(const QuadTree& other)
+	{
+		if (this != &other) //check if not assigning to itself
+		{
+			QuadTree temp(other);
+			swap(*this, temp);
+		}
+		return *this;
+	}
+
+	// Move constructor
+	QuadTree(QuadTree&& other) noexcept :
+		summary(other.summary),
+		BBcentre(other.BBcentre),
+		BBlength(other.BBlength),
+		occupants(std::move(other.occupants)),
+		children(std::move(other.children))
+	{
+		other.summary = {};// clean up other (but not the moved items)
+		other.BBcentre = glm::dvec2(0.0);
+		other.BBlength = 0.0;
+	}
+
+	// Move assignment
+	QuadTree& operator=(QuadTree&& other) noexcept
+	{
+		if (this != &other) //check if not assigning to itself
+		{
+			for (QuadTree* quadTreeBH : children) { delete quadTreeBH; } // clean up this
+
+			summary = other.summary; // copy other to this
+			BBcentre = other.BBcentre;
+			BBlength = other.BBlength;
+			occupants = std::move(other.occupants); // move other to this
+			children = std::move(other.children);
+
+			other.summary = {}; // clean up other (but not the moved items)
+			other.BBcentre = glm::dvec2(0.0);
+			other.BBlength = 0.0;
+		}
+		return *this;
+	}
+
+
+
+
+
+	auto createTree(std::vector<T>& allParticles, int maxChildren)
 	{
 		if (occupants.size() > maxChildren)
 		{
@@ -102,27 +144,23 @@ public:
 			std::vector<int> LH;
 			std::vector<int> LL;
 
-			double l = (highestCorner.x - lowestCorner.x) / 2.0;
-			double middleX = lowestCorner.x + l;
-			double middleY = lowestCorner.y + l;
-
 			for (int i = 0; i < occupants.size(); i++)
 			{
 				int index = occupants[i];
 
-				if ((*allParticles)[index].position.x >= middleX && (*allParticles)[index].position.y >= middleY)
+				if (allParticles[index].position.x >= BBcentre.x && allParticles[index].position.y >= BBcentre.y)
 				{
 					HH.push_back(occupants[i]);
 				}
-				else if ((*allParticles)[index].position.x >= middleX && (*allParticles)[index].position.y < middleY)
+				else if (allParticles[index].position.x >= BBcentre.x && allParticles[index].position.y < BBcentre.y)
 				{
 					HL.push_back(occupants[i]);
 				}
-				else if ((*allParticles)[index].position.x < middleX && (*allParticles)[index].position.y >= middleY)
+				else if (allParticles[index].position.x < BBcentre.x && allParticles[index].position.y >= BBcentre.y)
 				{
 					LH.push_back(occupants[i]);
 				}
-				else if ((*allParticles)[index].position.x < middleX && (*allParticles)[index].position.y < middleY)
+				else if (allParticles[index].position.x < BBcentre.x && allParticles[index].position.y < BBcentre.y)
 				{
 					LL.push_back(occupants[i]);
 				}
@@ -132,42 +170,41 @@ public:
 				}
 			}
 
-			if (HH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HH, glm::dvec2(middleX, middleY),               glm::dvec2(highestCorner.x, highestCorner.y))); }
-			if (HL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, HL, glm::dvec2(middleX, lowestCorner.y),        glm::dvec2(highestCorner.x, middleY))); }
-			if (LH.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LH, glm::dvec2(lowestCorner.x, middleY),        glm::dvec2(middleX, highestCorner.y))); }
-			if (LL.size() != 0) { children.push_back(new QuadTree(maxChildren, allParticles, LL, glm::dvec2(lowestCorner.x, lowestCorner.y), glm::dvec2(middleX, middleY))); }
-
-			//occupants.clear();
-
-			totalMass = 0.0;
-			centreOfMass = glm::dvec2(0.0);
-			for (QuadTree* quadTree : children)
-			{
-				std::pair<double, glm::dvec2> childMassPosition = quadTree->createTree();
-				totalMass += childMassPosition.first;
-				centreOfMass += childMassPosition.first * childMassPosition.second;
+			float new_BBlength = BBlength * 0.5;
+			if (HH.size() != 0) 
+			{ 
+				children.push_back
+				(
+					new QuadTree(HH, BBcentre + glm::dvec2(BBlength * 0.25, BBlength * 0.25), new_BBlength)
+				); 
+			}
+			if (HL.size() != 0) 
+			{ 
+				children.push_back
+				(
+					new QuadTree(HL, BBcentre + glm::dvec2(BBlength * 0.25, -BBlength * 0.25), new_BBlength)
+				); 
+			}
+			if (LH.size() != 0) 
+			{ 
+				children.push_back
+				(
+					new QuadTree(LH, BBcentre + glm::dvec2(-BBlength * 0.25, BBlength * 0.25), new_BBlength)
+				); 
+			}
+			if (LL.size() != 0) 
+			{ 
+				children.push_back
+				(
+					new QuadTree(LL, BBcentre + glm::dvec2(-BBlength * 0.25, -BBlength * 0.25), new_BBlength)
+				); 
 			}
 
-			centreOfMass /= totalMass;
-
-			return std::make_pair(totalMass, centreOfMass);
+			return Policy::compute_node(allParticles, maxChildren, summary, children);
 		}
 		else
 		{
-			totalMass = 0.0;
-			centreOfMass = glm::dvec2(0.0);
-			//std::cout << "leaf" << std::endl;
-			for (int i = 0; i < occupants.size(); i++)
-			{
-				//totalMass += allParticles[occupants[i]].mass;
-				totalMass += 1.0;
-				//centreOfMass += allParticles[occupants[i]].mass * allParticles[occupants[i]].position;
-				centreOfMass += 1.0 * (*allParticles)[occupants[i]].position;
-			}
-
-			centreOfMass /= totalMass;
-
-			return std::make_pair(totalMass, centreOfMass);
+			return Policy::compute_leaf(allParticles, maxChildren, summary, occupants);
 		}
 	}
 
@@ -187,6 +224,8 @@ public:
 			};
 
 			glm::vec3 color = colors[std::min(showLevel+1, colorsSize-1)];
+			glm::dvec2 lowestCorner = BBcentre - 0.5 * BBlength;
+			glm::dvec2 highestCorner = BBcentre + 0.5 * BBlength;
 
 			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(lowestCorner.x,  lowestCorner.y),  color));
 			nodesBufferData.push_back(VertexPos2Col3(glm::vec2(highestCorner.x, lowestCorner.y),  color));
@@ -206,8 +245,6 @@ public:
 			octTree->getNodesBufferData(nodesBufferData, level + 1, showLevel);
 		}
 	}
-
-private:
 };
 
 
