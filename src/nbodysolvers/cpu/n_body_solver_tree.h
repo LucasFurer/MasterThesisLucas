@@ -16,15 +16,15 @@
 #include "../../policies/rMP_policy.h"
 
 template <typename T, typename Policy>
-class NBodySolverBH : public NBodySolver<T>
+class NBodySolverTree : public NBodySolver<T>
 {
 public:
     QuadTree<T, Policy> root;
 
-    NBodySolverBH() = default;
+    NBodySolverTree() = default;
 
 
-    NBodySolverBH
+    NBodySolverTree
     (
         int initMaxChildren, 
         double initTheta

@@ -26,15 +26,11 @@
 #include "../dataLoaders/loader.h"
 #include "../nbodysolvers/cpu/nBodySolverNaive.h"
 #include "../nbodysolvers/cpu/nBodySolverTest.h"
-#include "../nbodysolvers/cpu/nBodySolverBH.h"
-#include "../nbodysolvers/cpu/nBodySolverBHR.h"
-#include "../nbodysolvers/cpu/nBodySolverBHRMP.h"
-//#include "../nbodysolvers/cpu/nBodySolverBHMP.h"
+#include "../nbodysolvers/cpu/n_body_solver_tree.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM_MORTON.h"
 #include "../nbodysolvers/cpu/nBodySolverFMM_SYM_MORTON.h"
 #include "../nbodysolvers/cpu/nBodySolverPM.h"
-//#include "../nbodysolvers/cpu/nBodySolverFMMiter.h"
 #include "../ffthelper.h"
 #include "../Timer.h"
 #include "../particleMesh.h"
@@ -108,13 +104,13 @@ public:
 
         int max_children_per_node = 16;
         nBodySolvers["naive"] = new NBodySolverNaive<TsnePoint2D>(&TSNEnaiveKernel);
-        nBodySolvers["BH"] = new NBodySolverBH<TsnePoint2D, Policy_BH>(max_children_per_node, max_theta);
+        nBodySolvers["BH"] = new NBodySolverTree<TsnePoint2D, Policy_BH>(max_children_per_node, max_theta);
         nBodySolvers["BH"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHR"] = new NBodySolverBH<TsnePoint2D, Policy_rBH>(max_children_per_node, max_theta);
+        nBodySolvers["BHR"] = new NBodySolverTree<TsnePoint2D, Policy_rBH>(max_children_per_node, max_theta);
         nBodySolvers["BHR"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHMP"] = new NBodySolverBH<TsnePoint2D, Policy_MP>(max_children_per_node, max_theta);
+        nBodySolvers["BHMP"] = new NBodySolverTree<TsnePoint2D, Policy_MP>(max_children_per_node, max_theta);
         nBodySolvers["BHMP"]->updateTree(embeddedPoints, minPos, maxPos);
-        nBodySolvers["BHRMP"] = new NBodySolverBH<TsnePoint2D, Policy_rMP>(max_children_per_node, max_theta);
+        nBodySolvers["BHRMP"] = new NBodySolverTree<TsnePoint2D, Policy_rMP>(max_children_per_node, max_theta);
         nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
         //nBodySolvers["BHRMP"] = new NBodySolverBHRMP<TsnePoint2D>(&TSNEBHRMPNPKernel, &TSNEBHRMPPPKernel, max_children_per_node, max_theta);
         //nBodySolvers["BHRMP"]->updateTree(embeddedPoints, minPos, maxPos);
